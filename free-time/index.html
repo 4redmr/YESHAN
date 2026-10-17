@@ -69,6 +69,23 @@
     background: color-mix(in srgb, var(--accent) 18%, transparent); color: var(--text); }
   .hint { margin: 10px 0 0; font-size: 13px; color: var(--muted); }
   .row button { flex: 1; }
+  .step { margin: 4px 0 8px; font-size: 13px; color: var(--muted); }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+  .chip { border-radius: 20px; padding: 7px 14px; }
+  .chip.on { background: var(--accent); border-color: var(--accent); color: #17150f; font-weight: 600; }
+  .chip.ghost { color: var(--muted); border-style: dashed; }
+  .chips.editing .chip.act::after { content: " ✕"; color: #c0504d; }
+  .mins { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+  .mins button { padding: 12px 0; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .used { margin-top: 16px; }
+  .used li { align-items: center; }
+  .used .name { min-width: 64px; font-size: 14px; }
+  .used .track { flex: 1; height: 8px; border-radius: 4px; background: var(--line); overflow: hidden; }
+  .used .track span { display: block; height: 100%; background: var(--accent); }
+  .used .m { min-width: 64px; text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .sumline { display: flex; justify-content: space-between; margin-top: 12px; padding-top: 12px;
+    border-top: 1px solid var(--line); font-size: 14px; color: var(--muted); }
+  .sumline b { color: var(--text); font-variant-numeric: tabular-nums; }
   details summary { cursor: pointer; margin-top: 12px; }
   #install p { margin: 0; font-size: 14px; color: var(--muted); }
   #install .row { margin-top: 10px; }
@@ -118,13 +135,22 @@
   </section>
 
   <section class="card">
-    <h2>오늘의 기록</h2>
+    <h2>오늘 쓴 시간</h2>
     <p id="nudge" hidden>알림 시간이 지났어요. 아직 오늘 기록이 없어요.</p>
-    <label>남은 시간을 어디에 썼나요?<textarea id="note" placeholder="예: 영어 30분, 피아노 20분, 가족과 산책"></textarea></label>
-    <div class="row">
-      <button class="primary" id="save">오늘 기록 저장</button>
-      <button id="toNotion">노션에 보내기</button>
+    <p class="step">① 무엇을 했나요?</p>
+    <div class="chips" id="acts"></div>
+    <p class="step">② 몇 분 했나요? 누를 때마다 더해져요.</p>
+    <div class="mins" id="mins">
+      <button data-m="5">+5분</button><button data-m="10">+10분</button><button data-m="15">+15분</button>
+      <button data-m="30">+30분</button><button data-m="60">+1시간</button>
     </div>
+    <ul class="used" id="used"></ul>
+    <div class="sumline"><span>오늘 쓴 시간 <b id="usedSum">0분</b></span><span>자유 시간 <b id="freeSum">–</b></span></div>
+    <div class="row">
+      <button id="undo">되돌리기</button>
+      <button class="primary" id="toNotion">노션에 보내기</button>
+    </div>
+    <label style="margin-top:14px">한 줄 메모 (선택)<textarea id="note" placeholder="예: 아침 기도가 특히 좋았다"></textarea></label>
     <details id="notionSetup">
       <summary class="hint">노션 연결 설정</summary>
       <label style="margin-top:8px">노션 기록 페이지 주소<input type="url" id="notionUrl" placeholder="https://www.notion.so/..."></label>
@@ -150,6 +176,7 @@
       <div><b id="sum">–</b><span class="label">7일 합계</span></div>
       <div><b id="days">0</b><span class="label">기록한 날</span></div>
     </div>
+    <ul class="used" id="weekActs"></ul>
   </section>
 
   <section class="card">
@@ -165,7 +192,7 @@
 <script>
 const $ = id => document.getElementById(id);
 const FIELDS = ['wake', 'sleep', 'workStart', 'workEnd', 'commuteIn', 'commuteOut'];
-const DEFAULTS = { notionUrl: '', remindAt: '21:30', notifyOn: false, wake: '06:30', sleep: '23:30', workStart: '09:00', workEnd: '18:00', commuteIn: 40, commuteOut: 40 };
+const DEFAULTS = { acts: ['독서', '공부', '휴식', '기도', '운동'], act: '독서', notionUrl: '', remindAt: '21:30', notifyOn: false, wake: '06:30', sleep: '23:30', workStart: '09:00', workEnd: '18:00', commuteIn: 40, commuteOut: 40 };
 
 function load(key, fallback) {
   try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; } catch (e) { return fallback; }
@@ -234,8 +261,76 @@ function render() {
   $('lgCommute').textContent = fmt(p.commute);
   $('lgFree').textContent = fmt(p.free);
 
+  $('freeSum').textContent = fmt(p.free);
+  renderToday();
   renderHistory();
   $('nudge').hidden = !!records[dateKey(now)] || nowMin < toMin(settings.remindAt);
+}
+
+const usedTotal = acts => Object.values(acts || {}).reduce((a, b) => a + b, 0);
+const actsText = acts => Object.entries(acts || {}).map(([k, v]) => k + ' ' + fmt(v)).join(', ');
+
+// Rows of "name ▮▮▮ minutes", longest first; onRemove adds a ✕ button per row.
+function fillBars(ul, acts, onRemove) {
+  const entries = Object.entries(acts || {}).sort((a, b) => b[1] - a[1]);
+  const max = Math.max(1, ...entries.map(e => e[1]));
+  ul.innerHTML = '';
+  for (const [name, m] of entries) {
+    const li = document.createElement('li');
+    li.innerHTML = '<span class="name"></span><span class="track"><span></span></span><span class="m"></span>';
+    li.children[0].textContent = name;
+    li.children[1].firstChild.style.width = (m / max * 100) + '%';
+    li.children[2].textContent = fmt(m);
+    if (onRemove) {
+      const b = document.createElement('button');
+      b.textContent = '✕';
+      b.onclick = () => onRemove(name);
+      li.appendChild(b);
+    }
+    ul.appendChild(li);
+  }
+}
+
+function renderToday() {
+  const r = records[dateKey(new Date())] || {};
+  fillBars($('used'), r.acts, name => {
+    if (!confirm('오늘 ' + name + ' 기록(' + fmt(r.acts[name]) + ')을 지울까요?')) return;
+    delete r.acts[name];
+    saveToday(r.acts);
+  });
+  $('usedSum').textContent = fmt(usedTotal(r.acts));
+
+  const box = $('acts');
+  box.innerHTML = '';
+  box.classList.toggle('editing', editing);
+  for (const name of settings.acts) {
+    const b = document.createElement('button');
+    b.className = 'chip act' + (!editing && name === settings.act ? ' on' : '');
+    b.textContent = name;
+    b.onclick = () => {
+      if (editing) {
+        if (!confirm('"' + name + '"을 목록에서 뺄까요? 지난 기록은 그대로 남아요.')) return;
+        settings.acts = settings.acts.filter(a => a !== name);
+        if (settings.act === name) settings.act = settings.acts[0] || '';
+      } else settings.act = name;
+      store('ft.settings', settings); renderToday();
+    };
+    box.appendChild(b);
+  }
+  const add = document.createElement('button');
+  add.className = 'chip ghost'; add.textContent = '+ 추가';
+  add.onclick = () => {
+    const name = (prompt('새 활동 이름 (예: 피아노, 영어, 산책)') || '').trim().slice(0, 10);
+    if (!name) return;
+    if (!settings.acts.includes(name)) settings.acts.push(name);
+    settings.act = name; editing = false;
+    store('ft.settings', settings); renderToday();
+  };
+  box.appendChild(add);
+  const edit = document.createElement('button');
+  edit.className = 'chip ghost'; edit.textContent = editing ? '완료' : '편집';
+  edit.onclick = () => { editing = !editing; renderToday(); };
+  box.appendChild(edit);
 }
 
 function renderHistory() {
@@ -250,7 +345,7 @@ function renderHistory() {
       li.innerHTML = '<span class="d"></span><span class="h"></span><span class="n"></span><button>삭제</button>';
       li.children[0].textContent = (d.getMonth() + 1) + '/' + d.getDate() + ' ' + '일월화수목금토'[d.getDay()];
       li.children[1].textContent = fmt(r.free);
-      li.children[2].textContent = (r.off ? '[쉬는 날] ' : '') + (r.note || '');
+      li.children[2].textContent = (r.off ? '[쉬는 날] ' : '') + [actsText(r.acts), r.note].filter(Boolean).join(' · ');
       li.children[3].onclick = () => {
         if (!confirm(k + ' 기록을 지울까요?')) return;
         delete records[k]; store('ft.records', records); renderHistory();
@@ -260,8 +355,12 @@ function renderHistory() {
   }
 
   const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 6);
-  const recent = keys.filter(k => k >= dateKey(cutoff)).map(k => records[k].free);
+  const recentKeys = keys.filter(k => k >= dateKey(cutoff));
+  const recent = recentKeys.map(k => records[k].free);
   const total = recent.reduce((a, b) => a + b, 0);
+  const week = {};
+  for (const k of recentKeys) for (const [a, m] of Object.entries(records[k].acts || {})) week[a] = (week[a] || 0) + m;
+  fillBars($('weekActs'), week);
   $('days').textContent = recent.length;
   $('sum').textContent = recent.length ? fmt(total) : '–';
   $('avg').textContent = recent.length ? fmt(total / recent.length) : '–';
@@ -277,24 +376,52 @@ FIELDS.forEach(f => {
   $(f).addEventListener('input', () => { settings[f] = $(f).value; store('ft.settings', settings); render(); });
 });
 
+let editing = false;
+const undoStack = [];
+
 const todayKey = dateKey(new Date());
 if (records[todayKey]) { $('note').value = records[todayKey].note || ''; $('dayOff').checked = !!records[todayKey].off; }
-$('dayOff').addEventListener('change', render);
 
-$('save').onclick = () => {
-  const p = plan();
-  records[dateKey(new Date())] = { free: p.free, work: p.work, commute: p.commute, off: p.off, note: $('note').value.trim() };
+// Everything saves as soon as it changes; a day with no minutes and no memo has no record.
+function saveToday(acts) {
+  const key = dateKey(new Date()), p = plan(), note = $('note').value.trim();
+  acts = acts || (records[key] || {}).acts || {};
+  if (!usedTotal(acts) && !note) delete records[key];
+  else records[key] = { free: p.free, work: p.work, commute: p.commute, off: p.off, acts, note };
   store('ft.records', records);
-  renderHistory();
-  toast('오늘 기록을 저장했어요');
-  $('nudge').hidden = true;
+  render();
+}
+
+$('dayOff').addEventListener('change', () => { if (records[dateKey(new Date())]) saveToday(); else render(); });
+$('note').addEventListener('input', () => saveToday());
+
+$('mins').onclick = e => {
+  const m = +e.target.dataset.m;
+  if (!m) return;
+  if (!settings.act) { toast('먼저 활동을 골라 주세요'); return; }
+  const key = dateKey(new Date());
+  const acts = Object.assign({}, (records[key] || {}).acts);
+  acts[settings.act] = (acts[settings.act] || 0) + m;
+  undoStack.push({ key, act: settings.act, m });
+  saveToday(acts);
+  toast(settings.act + ' +' + fmt(m) + ' → 오늘 ' + fmt(acts[settings.act]));
+};
+
+$('undo').onclick = () => {
+  const last = undoStack.pop();
+  if (!last || last.key !== dateKey(new Date()) || !records[last.key]) { toast('되돌릴 기록이 없어요'); return; }
+  const acts = Object.assign({}, records[last.key].acts);
+  acts[last.act] = (acts[last.act] || 0) - last.m;
+  if (acts[last.act] <= 0) delete acts[last.act];
+  saveToday(acts);
+  toast(last.act + ' ' + fmt(last.m) + ' 뺐어요');
 };
 
 $('csv').onclick = () => {
-  const rows = [['날짜', '자유(분)', '근무(분)', '출퇴근(분)', '쉬는 날', '메모']];
+  const rows = [['날짜', '자유(분)', '쓴 시간(분)', '활동', '근무(분)', '출퇴근(분)', '쉬는 날', '메모']];
   Object.keys(records).sort().forEach(k => {
     const r = records[k];
-    rows.push([k, r.free, r.work, r.commute, r.off ? 'O' : '', r.note || '']);
+    rows.push([k, r.free, usedTotal(r.acts), actsText(r.acts), r.work, r.commute, r.off ? 'O' : '', r.note || '']);
   });
   const csv = '﻿' + rows.map(r => r.map(c => '"' + String(c).replace(/"/g, '""') + '"').join(',')).join('\r\n');
   const a = document.createElement('a');
@@ -334,8 +461,9 @@ $('toNotion').onclick = () => {
     toast('먼저 노션 페이지 주소를 넣어 주세요');
     return;
   }
-  const p = plan(), note = $('note').value.trim();
-  const line = '자유 ' + fmt(p.free) + (p.off ? ' (쉬는 날)' : '') + (note ? ' · ' + note : '');
+  const p = plan(), note = $('note').value.trim(), acts = (records[dateKey(new Date())] || {}).acts;
+  const used = usedTotal(acts) ? '쓴 시간 ' + fmt(usedTotal(acts)) + ' (' + actsText(acts) + ')' : '';
+  const line = ['자유 ' + fmt(p.free) + (p.off ? ' (쉬는 날)' : ''), used, note].filter(Boolean).join(' · ');
   const ok = copyText(line);
   toast(ok ? '복사했어요. 오늘 줄의 "남은 시간" 칸에 붙여넣으세요' : '복사가 안 됐어요. 직접 적어 주세요');
   window.open(settings.notionUrl, '_blank');

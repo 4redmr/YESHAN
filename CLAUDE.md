@@ -16,6 +16,8 @@ A second project, `free-time/` ("오늘 남은 시간"), is a small installable 
 - Live at https://namun-sigan.netlify.app (Netlify, uploaded by hand). To ship a change, send the user a zip of `free-time/`; they unzip it and drag the folder onto the site's Deploys tab. This sandbox's network can't reach netlify.app, so ask the user to check the live site on their phone.
 - Bump `VERSION` in `sw.js` whenever any cached file changes.
 - The daily reminder is a repeating calendar event (.ics download or Google Calendar link), because a closed web app can't be woken on a schedule without a push server. The in-app notification only fires while the app is running.
+- Daily log: the user picks an activity chip (editable list, default 독서/공부/휴식/기도/운동) and taps +5/+10/+15/+30/+60 minute buttons; minutes add up per activity and save immediately (`records[date].acts`). An optional one-line memo goes with them. The line sent to Notion is `자유 … · 쓴 시간 … (독서 40분, 기도 15분) · 메모`.
+- The user is a beginner who got lost when replies mixed in English or technical steps. Explain in plain Korean, keep steps few, and say exactly where to tap.
 - "노션에 보내기" copies today's line and opens the Notion page whose address the user saved in the app. No Notion URL or ID is hardcoded, because the app is meant to be sold to others.
 - Notion page **⏳ 남은 시간 앱** (under 자기개발 홈, id `3fc3d8e501e781dd803ecc00a9fd2e4e`) holds the three feedback questions and **🗣️ 피드백 기록** (`collection://1dc7161c-c33b-4427-87fe-331e470a7435`): one row per person the app was sent to. The user fills it in, so read it when planning the next version and don't overwrite their answers.
 
