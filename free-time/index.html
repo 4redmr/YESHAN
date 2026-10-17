@@ -64,7 +64,11 @@
   li .n { flex: 1; font-size: 14px; word-break: break-all; }
   li button { padding: 2px 8px; font-size: 12px; color: var(--muted); }
   .empty { color: var(--muted); font-size: 14px; }
-  #install[hidden] { display: none; }
+  #install[hidden], #nudge[hidden] { display: none; }
+  #nudge { margin: 0 0 10px; padding: 8px 12px; border-radius: 9px; font-size: 14px;
+    background: color-mix(in srgb, var(--accent) 18%, transparent); color: var(--text); }
+  .hint { margin: 10px 0 0; font-size: 13px; color: var(--muted); }
+  .row button { flex: 1; }
   #install p { margin: 0; font-size: 14px; color: var(--muted); }
   #install .row { margin-top: 10px; }
   .toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: var(--text); color: var(--bg);
@@ -114,10 +118,22 @@
 
   <section class="card">
     <h2>오늘의 기록</h2>
+    <p id="nudge" hidden>알림 시간이 지났어요. 아직 오늘 기록이 없어요.</p>
     <label>남은 시간을 어디에 썼나요?<textarea id="note" placeholder="예: 영어 30분, 피아노 20분, 아내와 산책"></textarea></label>
     <div class="row">
       <button class="primary" id="save">오늘 기록 저장</button>
     </div>
+  </section>
+
+  <section class="card">
+    <h2>매일 기록 알림</h2>
+    <label>알림 시간<input type="time" id="remindAt"></label>
+    <div class="row">
+      <button id="icsBtn">휴대폰 캘린더에 추가</button>
+      <button id="gcalBtn">구글 캘린더에 추가</button>
+    </div>
+    <label class="check"><input type="checkbox" id="notifyOn">앱이 열려 있을 때도 알림 받기</label>
+    <p class="hint">캘린더에 한 번 추가해 두면 매일 그 시간에 휴대폰이 울려요. 알림 시간을 바꿨다면 캘린더의 예전 일정은 지우고 다시 추가하세요.</p>
   </section>
 
   <section class="card">
@@ -142,7 +158,7 @@
 <script>
 const $ = id => document.getElementById(id);
 const FIELDS = ['wake', 'sleep', 'workStart', 'workEnd', 'commuteIn', 'commuteOut'];
-const DEFAULTS = { wake: '06:30', sleep: '23:30', workStart: '09:00', workEnd: '18:00', commuteIn: 40, commuteOut: 40 };
+const DEFAULTS = { remindAt: '21:30', notifyOn: false, wake: '06:30', sleep: '23:30', workStart: '09:00', workEnd: '18:00', commuteIn: 40, commuteOut: 40 };
 
 function load(key, fallback) {
   try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; } catch (e) { return fallback; }
@@ -212,6 +228,7 @@ function render() {
   $('lgFree').textContent = fmt(p.free);
 
   renderHistory();
+  $('nudge').hidden = !!records[dateKey(now)] || nowMin < toMin(settings.remindAt);
 }
 
 function renderHistory() {
@@ -263,6 +280,7 @@ $('save').onclick = () => {
   store('ft.records', records);
   renderHistory();
   toast('오늘 기록을 저장했어요');
+  $('nudge').hidden = true;
 };
 
 $('csv').onclick = () => {
@@ -281,6 +299,82 @@ $('csv').onclick = () => {
 render();
 setInterval(render, 30000);
 document.addEventListener('visibilitychange', () => { if (!document.hidden) render(); });
+
+// Daily reminder. Phone browsers can't wake a closed web app on a schedule without a push
+// server, so the dependable path is a repeating calendar alarm; the in-app notification
+// only fires while the app is still running.
+const REMIND_TITLE = '오늘 남은 시간 기록하기';
+const REMIND_TEXT = '남은 시간을 어디에 썼는지 한 줄 남겨요.';
+const appUrl = location.protocol.startsWith('http') ? location.href.split('#')[0] : '';
+const stamp = (d, t) => dateKey(d).replace(/-/g, '') + 'T' + t.replace(':', '') + '00';
+const plus10 = t => { const m = toMin(t) + 10; return String(Math.floor(m / 60) % 24).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0'); };
+
+$('remindAt').value = settings.remindAt;
+$('remindAt').addEventListener('change', () => {
+  settings.remindAt = $('remindAt').value || DEFAULTS.remindAt;
+  store('ft.settings', settings); render(); scheduleNotify();
+});
+
+$('icsBtn').onclick = () => {
+  const t = settings.remindAt, desc = (REMIND_TEXT + (appUrl ? '\\n' + appUrl : '')).replace(/,/g, '\\,');
+  const ics = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//free-time//KO', 'BEGIN:VEVENT',
+    'UID:free-time-reminder-' + Date.now() + '@free-time',
+    'DTSTAMP:' + new Date().toISOString().replace(/[-:]/g, '').slice(0, 15) + 'Z',
+    'DTSTART:' + stamp(new Date(), t), 'DTEND:' + stamp(new Date(), plus10(t)),
+    'RRULE:FREQ=DAILY', 'SUMMARY:' + REMIND_TITLE, 'DESCRIPTION:' + desc]
+    .concat(appUrl ? ['URL:' + appUrl] : [])
+    .concat(['BEGIN:VALARM', 'ACTION:DISPLAY', 'TRIGGER:PT0M', 'DESCRIPTION:' + REMIND_TITLE, 'END:VALARM',
+      'END:VEVENT', 'END:VCALENDAR']).join('\r\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([ics], { type: 'text/calendar' }));
+  a.download = '남은시간_알림.ics';
+  a.click();
+};
+
+$('gcalBtn').onclick = () => {
+  const t = settings.remindAt, d = new Date();
+  const q = new URLSearchParams({
+    action: 'TEMPLATE', text: REMIND_TITLE,
+    dates: stamp(d, t) + '/' + stamp(d, plus10(t)),
+    ctz: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    recur: 'RRULE:FREQ=DAILY',
+    details: REMIND_TEXT + (appUrl ? '\n' + appUrl : '')
+  });
+  window.open('https://calendar.google.com/calendar/render?' + q, '_blank');
+};
+
+let notifyTimer = null;
+function scheduleNotify() {
+  clearTimeout(notifyTimer);
+  if (!settings.notifyOn || !('Notification' in window) || Notification.permission !== 'granted') return;
+  const now = new Date(), at = new Date(now);
+  const m = toMin(settings.remindAt);
+  at.setHours(Math.floor(m / 60), m % 60, 0, 0);
+  if (at <= now) at.setDate(at.getDate() + 1);
+  notifyTimer = setTimeout(async () => {
+    if (!records[dateKey(new Date())]) {
+      const opts = { body: REMIND_TEXT, icon: 'icons/icon-192.png', tag: 'daily-reminder' };
+      const reg = 'serviceWorker' in navigator && await navigator.serviceWorker.getRegistration();
+      if (reg) reg.showNotification(REMIND_TITLE, opts); else new Notification(REMIND_TITLE, opts);
+    }
+    render();
+    scheduleNotify();
+  }, at - now);
+}
+
+$('notifyOn').checked = !!settings.notifyOn && 'Notification' in window && Notification.permission === 'granted';
+$('notifyOn').addEventListener('change', async () => {
+  if ($('notifyOn').checked) {
+    if (!('Notification' in window)) { toast('이 브라우저는 알림을 지원하지 않아요'); $('notifyOn').checked = false; return; }
+    if (await Notification.requestPermission() !== 'granted') {
+      toast('알림이 허용되지 않았어요'); $('notifyOn').checked = false; return;
+    }
+  }
+  settings.notifyOn = $('notifyOn').checked;
+  store('ft.settings', settings);
+  scheduleNotify();
+});
+scheduleNotify();
 
 // Home-screen install: Chrome/Edge/Samsung fire beforeinstallprompt; iOS Safari needs the Share menu.
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {

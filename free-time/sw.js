@@ -1,5 +1,5 @@
 // Bump VERSION whenever any cached file changes so installed copies pick up the update.
-const VERSION = 'v1';
+const VERSION = 'v2';
 const FILES = ['./', './index.html', './manifest.webmanifest',
   './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png'];
 
@@ -23,4 +23,12 @@ self.addEventListener('fetch', e => {
       return res;
     })
     .catch(() => caches.match(e.request, { ignoreSearch: true })));
+});
+
+self.addEventListener('notificationclick', e => {
+  e.notification.close();
+  e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
+    const open = list.find(c => 'focus' in c);
+    return open ? open.focus() : self.clients.openWindow('./');
+  }));
 });
