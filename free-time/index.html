@@ -69,6 +69,7 @@
     background: color-mix(in srgb, var(--accent) 18%, transparent); color: var(--text); }
   .hint { margin: 10px 0 0; font-size: 13px; color: var(--muted); }
   .row button { flex: 1; }
+  details summary { cursor: pointer; margin-top: 12px; }
   #install p { margin: 0; font-size: 14px; color: var(--muted); }
   #install .row { margin-top: 10px; }
   .toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: var(--text); color: var(--bg);
@@ -119,10 +120,16 @@
   <section class="card">
     <h2>오늘의 기록</h2>
     <p id="nudge" hidden>알림 시간이 지났어요. 아직 오늘 기록이 없어요.</p>
-    <label>남은 시간을 어디에 썼나요?<textarea id="note" placeholder="예: 영어 30분, 피아노 20분, 아내와 산책"></textarea></label>
+    <label>남은 시간을 어디에 썼나요?<textarea id="note" placeholder="예: 영어 30분, 피아노 20분, 가족과 산책"></textarea></label>
     <div class="row">
       <button class="primary" id="save">오늘 기록 저장</button>
+      <button id="toNotion">노션에 보내기</button>
     </div>
+    <details id="notionSetup">
+      <summary class="hint">노션 연결 설정</summary>
+      <label style="margin-top:8px">노션 기록 페이지 주소<input type="url" id="notionUrl" placeholder="https://www.notion.so/..."></label>
+      <p class="hint">노션에서 기록 데이터베이스를 열고 공유 → 링크 복사로 얻은 주소를 붙여넣으세요. "노션에 보내기"를 누르면 오늘 기록이 복사되고 그 페이지가 열려요. 오늘 줄의 "남은 시간" 칸에 붙여넣으면 끝이에요.</p>
+    </details>
   </section>
 
   <section class="card">
@@ -158,7 +165,7 @@
 <script>
 const $ = id => document.getElementById(id);
 const FIELDS = ['wake', 'sleep', 'workStart', 'workEnd', 'commuteIn', 'commuteOut'];
-const DEFAULTS = { remindAt: '21:30', notifyOn: false, wake: '06:30', sleep: '23:30', workStart: '09:00', workEnd: '18:00', commuteIn: 40, commuteOut: 40 };
+const DEFAULTS = { notionUrl: '', remindAt: '21:30', notifyOn: false, wake: '06:30', sleep: '23:30', workStart: '09:00', workEnd: '18:00', commuteIn: 40, commuteOut: 40 };
 
 function load(key, fallback) {
   try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; } catch (e) { return fallback; }
@@ -299,6 +306,40 @@ $('csv').onclick = () => {
 render();
 setInterval(render, 30000);
 document.addEventListener('visibilitychange', () => { if (!document.hidden) render(); });
+
+// Notion link. A static page can't call the Notion API (no CORS, and a token would be
+// exposed), so we copy today's line to the clipboard and open the user's own Notion page.
+$('notionUrl').value = settings.notionUrl;
+$('notionUrl').addEventListener('change', () => {
+  settings.notionUrl = $('notionUrl').value.trim();
+  store('ft.settings', settings);
+});
+
+// Copy and open synchronously inside the tap so phones don't block the new window as a popup.
+function copyText(text) {
+  const ta = document.createElement('textarea');
+  ta.value = text; ta.setAttribute('readonly', ''); ta.style.position = 'fixed'; ta.style.opacity = '0';
+  document.body.appendChild(ta); ta.select(); ta.setSelectionRange(0, text.length);
+  let ok = false;
+  try { ok = document.execCommand('copy'); } catch (e) {}
+  ta.remove();
+  if (!ok && navigator.clipboard) { navigator.clipboard.writeText(text).catch(() => {}); ok = true; }
+  return ok;
+}
+
+$('toNotion').onclick = () => {
+  if (!settings.notionUrl) {
+    $('notionSetup').open = true;
+    $('notionUrl').focus();
+    toast('먼저 노션 페이지 주소를 넣어 주세요');
+    return;
+  }
+  const p = plan(), note = $('note').value.trim();
+  const line = '자유 ' + fmt(p.free) + (p.off ? ' (쉬는 날)' : '') + (note ? ' · ' + note : '');
+  const ok = copyText(line);
+  toast(ok ? '복사했어요. 오늘 줄의 "남은 시간" 칸에 붙여넣으세요' : '복사가 안 됐어요. 직접 적어 주세요');
+  window.open(settings.notionUrl, '_blank');
+};
 
 // Daily reminder. Phone browsers can't wake a closed web app on a schedule without a push
 // server, so the dependable path is a repeating calendar alarm; the in-app notification

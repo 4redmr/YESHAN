@@ -11,6 +11,12 @@ A single personal project, `millionaire-advice/`: "억만장자의 아침 서신
 - `install-mac.sh` writes a launchd agent `com.yeshan.millionaire-advice` (`RunAtLoad` + 07:00). `--uninstall` removes it.
 - Both installers store the **absolute path** of `index.html`, so moving the folder requires reinstalling (README tells the user this).
 
+A second project, `free-time/` ("오늘 남은 시간"), is a small installable web app (PWA) the user wants to try selling. It shows today's free time after sleep, work, and commuting, and keeps a daily log in `localStorage`.
+- Files: `index.html` (inline CSS/JS), `manifest.webmanifest`, `sw.js`, `icons/`. Install and the service worker need an https host (e.g. Netlify Drop); they don't work from `file://`.
+- Bump `VERSION` in `sw.js` whenever any cached file changes.
+- The daily reminder is a repeating calendar event (.ics download or Google Calendar link), because a closed web app can't be woken on a schedule without a push server. The in-app notification only fires while the app is running.
+- "노션에 보내기" copies today's line and opens the Notion page whose address the user saved in the app. No Notion URL or ID is hardcoded, because the app is meant to be sold to others.
+
 ## Constraints that are easy to break
 
 - `install-windows.ps1` must stay **ASCII-only**: Windows PowerShell 5.1 misreads a UTF-8 file without a BOM, so put no Korean text in it.
@@ -36,7 +42,7 @@ A single personal project, `millionaire-advice/`: "억만장자의 아침 서신
 
 The letter's "오늘의 기록 남기러 가기" button opens the Notion page **회장님과의 동행** (under 자기개발 홈, id `3fc3d8e501e781e2b16fcf52d69d2ccc`). Every piece of advice is meant to be recorded there, so when advice is added or changed in the letter, update the Notion databases too:
 - **📜 회장님의 조언 기록** (`collection://4fec76a5-0eb3-4182-8ec9-bef02a89a1cb`): one row per advice item. Fields: 조언, 영역 (신앙/마음/가정/일과 방향/배움/돈 관리/클로드), 상태 (아직/실천 중/습관이 됨), 핵심 한 줄, 오늘 해 볼 일, 받은 날, 출처, 순서. Add new rows as 상태 = 아직, and never overwrite the 상태 or 내 메모 fields the user has filled in.
-- **✅ 오늘의 동행 기록** (`collection://0528d17a-f793-437a-a298-7b7276a25443`): the user's daily log (prayer/Bible/exercise checks, 뿌듯했던 순간, 지쳤던 순간, 해낸 일, 감사 세 가지). This is the user's data; read it for weekly reviews but don't edit it.
+- **✅ 오늘의 동행 기록** (`collection://0528d17a-f793-437a-a298-7b7276a25443`): the user's daily log (prayer/Bible/exercise checks, 뿌듯했던 순간, 지쳤던 순간, 해낸 일, 감사 세 가지, and 남은 시간, which the user pastes from the free-time app). This is the user's data; read it for weekly reviews but don't edit it.
 - **💰 돈 관리 첫걸음** (`collection://475b6366-57c9-4b7d-b6c4-f6783543fb3e`): ordered beginner money steps with 완료 checkboxes.
 - **🪜 사다리 한 칸씩** (`collection://3b75a626-8fa3-443f-82bc-5a12cb154998`, on the child page 수입의 사다리, id `3fc3d8e501e78181b322ec9e827c5d7d`): checklist for Chapter Ⅲ. Each step is in one of four 칸 (1 새는 돈 막기 / 2 회사에서 더 받기 / 3 월급 밖 첫 1만 원 / 4 모은 돈 불리기). Income advice must stay realistic: say to check the hospital's 겸직 rules before any side income, give no specific investment picks, and point to official sites for benefit amounts. The steps have a 한 달 효과 (won) field for the monthly amount each step saved or earned.
 - **📒 월별 가계 장부** (`collection://f9d1df6b-d6ff-47d4-8156-201e538f959e`, also on 수입의 사다리): one row per month with income and spending numbers. 총수입, 총지출, 남은 돈, and 저축률 are formulas. This is the user's data; read it for reviews but don't change their numbers. Its 구매 지출 rollup sums 지출 금액 from the linked rows of the user's own **🛒 사고 싶은 것** database (`collection://8d7643bb-8b90-4126-b1af-03aea43d18ae`, on 메모.체크리스트). There, 지출 금액 = 가격 once 구매완료 is checked, and the 가계 장부 relation picks the month. 구매 지출 is included in 총지출 and 남은 돈, so 생활비 should exclude those purchases. If asked to tidy up purchases, link each checked item to the ledger row for the month of its 구매일.
