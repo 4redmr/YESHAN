@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Chairman's Letter</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,700;1,500&family=Noto+Serif+KR:wght@400;600;800&display=swap">
+<style>
+  :root {
+    --bg: #0b0a08;
+    --panel: #14120e;
+    --panel-2: #1b1813;
+    --ink: #ece4d2;
+    --ink-soft: #b9ad94;
+    --gold: #d4af6a;
+    --gold-hi: #f3d99b;
+    --gold-lo: #8a6c34;
+    --line: rgba(212, 175, 106, .28);
+    --shadow: 0 30px 80px rgba(0, 0, 0, .6);
+  }
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) {
+      --bg: #f4efe4;
+      --panel: #fbf8f1;
+      --panel-2: #f1eadb;
+      --ink: #1d1912;
+      --ink-soft: #5c5240;
+      --gold: #9a7631;
+      --gold-hi: #b8913f;
+      --gold-lo: #6e5420;
+      --line: rgba(154, 118, 49, .35);
+      --shadow: 0 30px 80px rgba(60, 40, 10, .18);
+    }
+  }
+  :root[data-theme="light"] {
+    --bg: #f4efe4; --panel: #fbf8f1; --panel-2: #f1eadb; --ink: #1d1912; --ink-soft: #5c5240;
+    --gold: #9a7631; --gold-hi: #b8913f; --gold-lo: #6e5420; --line: rgba(154, 118, 49, .35);
+    --shadow: 0 30px 80px rgba(60, 40, 10, .18);
+  }
+  :root[data-theme="dark"] {
+    --bg: #0b0a08; --panel: #14120e; --panel-2: #1b1813; --ink: #ece4d2; --ink-soft: #b9ad94;
+    --gold: #d4af6a; --gold-hi: #f3d99b; --gold-lo: #8a6c34; --line: rgba(212, 175, 106, .28);
+    --shadow: 0 30px 80px rgba(0, 0, 0, .6);
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background:
+      radial-gradient(1200px 600px at 50% -10%, rgba(212, 175, 106, .12), transparent 60%),
+      var(--bg);
+    color: var(--ink);
+    font-family: "Noto Serif KR", "Nanum Myeongjo", "AppleMyungjo", "Batang", serif;
+    line-height: 1.95;
+    font-size: 17px;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 860px; margin: 0 auto; padding: 48px 16px 96px; }
+
+  /* 봉인된 편지 머리 */
+  header.crest { text-align: center; padding: 36px 0 28px; }
+  .monogram {
+    width: 92px; height: 92px; margin: 0 auto 18px;
+    border: 1px solid var(--gold); border-radius: 50%;
+    display: grid; place-items: center; position: relative;
+    font-family: "Cormorant Garamond", serif; font-size: 40px; font-weight: 700;
+    color: var(--gold-hi); letter-spacing: 1px;
+  }
+  .monogram::after {
+    content: ""; position: absolute; inset: 6px;
+    border: 1px solid var(--line); border-radius: 50%;
+  }
+  .eyebrow {
+    font-family: "Cormorant Garamond", serif; letter-spacing: .42em; text-transform: uppercase;
+    font-size: 13px; color: var(--gold);
+  }
+  h1 {
+    margin: 10px 0 6px; font-weight: 800; font-size: clamp(28px, 5vw, 42px); letter-spacing: -.01em;
+    background: linear-gradient(180deg, var(--gold-hi), var(--gold) 55%, var(--gold-lo));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .date { color: var(--ink-soft); font-size: 15px; }
+  .rule {
+    display: flex; align-items: center; gap: 14px; margin: 26px auto 0; max-width: 420px;
+    color: var(--gold); font-family: "Cormorant Garamond", serif;
+  }
+  .rule::before, .rule::after { content: ""; flex: 1; height: 1px; background: linear-gradient(90deg, transparent, var(--gold), transparent); }
+
+  /* 오늘의 한 줄 */
+  .maxim {
+    margin: 34px 0 40px; padding: 26px 28px; text-align: center;
+    border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
+  }
+  .maxim .label { font-family: "Cormorant Garamond", serif; letter-spacing: .3em; font-size: 12px; color: var(--gold); text-transform: uppercase; }
+  .maxim p { margin: 10px 0 0; font-size: 21px; font-weight: 600; line-height: 1.7; }
+
+  nav.toc { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-bottom: 36px; }
+  nav.toc a {
+    color: var(--gold-hi); text-decoration: none; font-size: 14px;
+    border: 1px solid var(--line); padding: 8px 16px; border-radius: 999px;
+    transition: background .2s, border-color .2s;
+  }
+  nav.toc a:hover { background: var(--panel-2); border-color: var(--gold); }
+
+  section.letter {
+    background: linear-gradient(180deg, var(--panel), var(--panel-2));
+    border: 1px solid var(--line); border-radius: 4px;
+    padding: clamp(24px, 5vw, 56px); margin-bottom: 40px; box-shadow: var(--shadow);
+    position: relative;
+  }
+  section.letter::before {
+    content: ""; position: absolute; inset: 10px; border: 1px solid var(--line); pointer-events: none; border-radius: 2px;
+  }
+  .chapter { font-family: "Cormorant Garamond", serif; color: var(--gold); letter-spacing: .3em; font-size: 13px; text-transform: uppercase; }
+  h2 { margin: 6px 0 22px; line-height: 1.5; font-size: clamp(22px, 3.6vw, 30px); font-weight: 800; color: var(--ink); }
+  h3 {
+    margin: 34px 0 10px; font-size: 19px; font-weight: 800; color: var(--gold-hi);
+    display: flex; gap: 12px; align-items: baseline;
+  }
+  h3 .no { font-family: "Cormorant Garamond", serif; font-size: 26px; color: var(--gold); font-weight: 700; min-width: 34px; }
+  p { margin: 0 0 16px; }
+  .lead::first-letter {
+    float: left; font-size: 64px; line-height: .9; padding: 6px 10px 0 0;
+    font-family: "Cormorant Garamond", serif; color: var(--gold-hi);
+  }
+  code, kbd {
+    font-family: "Consolas", "D2Coding", "Menlo", monospace; font-size: .88em;
+    background: rgba(212, 175, 106, .12); color: var(--gold-hi);
+    border: 1px solid var(--line); border-radius: 4px; padding: 1px 6px;
+  }
+  blockquote {
+    margin: 22px 0; padding: 4px 0 4px 20px; border-left: 2px solid var(--gold);
+    color: var(--ink-soft); font-style: italic;
+  }
+  .signature { text-align: right; margin-top: 32px; font-family: "Cormorant Garamond", serif; font-style: italic; color: var(--gold); font-size: 22px; }
+  .signature small { display: block; font-family: "Noto Serif KR", serif; font-style: normal; font-size: 13px; color: var(--ink-soft); }
+
+  footer { text-align: center; color: var(--ink-soft); font-size: 13px; }
+  footer button {
+    margin-top: 14px; background: transparent; color: var(--gold-hi); border: 1px solid var(--gold);
+    padding: 10px 28px; font-family: inherit; font-size: 15px; letter-spacing: .1em; cursor: pointer; border-radius: 2px;
+  }
+  footer button:hover { background: var(--gold); color: var(--bg); }
+  .count { font-family: "Cormorant Garamond", serif; letter-spacing: .1em; }
+
+  @media (max-width: 560px) {
+    body { font-size: 16px; }
+    .wrap { padding-top: 24px; }
+    .lead::first-letter { font-size: 52px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="crest">
+    <div class="monogram">C</div>
+    <div class="eyebrow">The Chairman's Morning Letter</div>
+    <h1>억만장자의 아침 서신</h1>
+    <div class="date" id="today"></div>
+    <div class="rule">✦</div>
+  </header>
+
+  <div class="maxim">
+    <div class="label">Today's Maxim · 오늘의 한 줄</div>
+    <p id="maxim">부는 소비자의 자리에서 생산자의 자리로 옮겨 앉는 순간부터 쌓이기 시작하네.</p>
+  </div>
+
+  <nav class="toc">
+    <a href="#claude">Ⅰ. 클로드 코드를 다루는 법</a>
+    <a href="#life">Ⅱ. 사업과 삶의 방향</a>
+  </nav>
+
+  <!-- ───────────── Ⅰ. 클로드 코드 ───────────── -->
+  <section class="letter" id="claude">
+    <div class="chapter">Chapter Ⅰ</div>
+    <h2>자네가 처음 클로드 코드를 손에 쥐었다고 생각하고 말하겠네</h2>
+
+    <p class="lead">좋은 아침일세. 나는 평생 사람을 고용하고, 일을 맡기고, 그 일이 돈이 되어 돌아오게 만드는 것으로 재산을 모았네. 그런데 요즘 내가 가장 흥미롭게 지켜보는 직원은 사람이 아니라 자네가 쓰고 있는 이 클로드 코드라는 녀석이야. 처음 만지는 사람 눈엔 그저 똑똑한 채팅창처럼 보이겠지. 하지만 내 눈에는 월급도 받지 않고 밤을 새워 주는 유능한 실무자로 보이네. 문제는 대부분의 사람이 이 실무자를 비서처럼 부리지 못하고, 신기한 장난감처럼 만지작거리다 끝난다는 걸세. 오늘은 자네를 완전한 초보라고 가정하고, 이 직원을 어떻게 부려야 하는지 하나씩 일러 주겠네.</p>
+
+    <h3><span class="no">01</span>일을 맡기기 전에, 회사 소개부터 해 주게 — CLAUDE.md</h3>
+    <p>내가 새 임원을 뽑으면 첫날 가장 먼저 하는 일이 무엇인 줄 아나? 회사의 원칙과 내가 싫어하는 것을 종이 한 장에 적어 건네는 걸세. 클로드 코드에도 똑같은 종이가 있네. 프로젝트 폴더 맨 위에 두는 <code>CLAUDE.md</code>라는 파일이야. 처음이라면 클로드 코드 안에서 <code>/init</code>이라고 한 번 입력해 보게. 녀석이 폴더를 훑어보고 스스로 초안을 써 줄 걸세. 거기에 자네만의 규칙을 덧붙이면 되네. "모든 답변과 파일 설명은 한국어로", "PDF는 A4와 B5 두 가지 크기로 만든다", "색은 내 브랜드 색 두 가지만 쓴다", "파일을 지우기 전에는 반드시 나에게 묻는다" 같은 것들 말이야. 이 종이 한 장이 있으면 매번 같은 잔소리를 반복할 필요가 없네. 부자는 같은 설명을 두 번 하지 않는다네. 한 번 써서 시스템으로 만들지.</p>
+
+    <h3><span class="no">02</span>지시는 짧게가 아니라 '분명하게' 하게</h3>
+    <p>초보는 "플래너 만들어 줘"라고 말하고, 결과물을 보고 실망하네. 그건 직원 탓이 아니라 지시한 사람 탓일세. 내가 회사를 키우며 배운 건, 좋은 지시는 언제나 네 가지를 담고 있다는 걸세. 무엇을, 누구를 위해, 어떤 모양으로, 그리고 무엇이 되면 끝인지. 예를 들어 "B5 크기 독서노트 PDF를 만들어 줘. 대상은 한 달에 두 권 읽는 30대 직장인이야. 표지 1장, 책 한 권당 2쪽, 인용문 칸과 적용할 점 칸이 꼭 있어야 해. 인쇄했을 때 여백이 잘리지 않으면 완성이야." 이렇게 말하면 녀석은 자네가 원하는 것에 훨씬 가깝게 한 번에 도착하네. 길게 쓰는 걸 두려워하지 말게. 두 줄 아끼려다 두 시간을 잃는 게 초보의 셈법일세.</p>
+
+    <h3><span class="no">03</span>큰일은 바로 시키지 말고, 먼저 계획서를 받게 — 플랜 모드</h3>
+    <p>나는 큰 투자를 하기 전에 반드시 사업계획서를 먼저 받네. 클로드 코드에도 그런 기능이 있어. <kbd>Shift</kbd>+<kbd>Tab</kbd>을 눌러 모드를 바꾸다 보면 '플랜 모드'가 나오는데, 이 상태에서는 녀석이 아무것도 고치지 않고 "이렇게 하겠습니다"라는 계획만 내놓네. 자네는 그걸 읽고, 마음에 안 드는 부분을 지적하고, 승인할 때만 실행시키면 되네. 파일이 여러 개 바뀌는 일, 처음 해 보는 일, 되돌리기 어려운 일일수록 이 순서를 지키게. 계획 단계에서 고치는 비용은 1원이고, 다 만든 뒤에 고치는 비용은 100원일세.</p>
+
+    <h3><span class="no">04</span>회의가 길어지면 회의록을 정리하고 새로 시작하게 — /clear와 /compact</h3>
+    <p>한 회의실에서 하루 종일 이 안건 저 안건을 다루면 사람도 지치고 헷갈리네. 클로드도 마찬가지야. 대화가 길어지면 앞에서 한 말과 뒤에서 한 말이 섞여 판단이 흐려지네. 그래서 일 하나가 끝나면 <code>/clear</code>로 깨끗한 새 회의실을 열게. 같은 일을 이어 가야 하는데 대화가 너무 길어졌다면 <code>/compact</code>로 지금까지의 내용을 요약해서 압축하게. 내가 아는 가장 생산적인 사람들은 하루에 회의를 많이 하는 사람이 아니라, 회의를 짧고 하나의 주제로만 하는 사람들이었네. 원칙은 단순하네. 일 하나에 대화 하나.</p>
+
+    <h3><span class="no">05</span>틀린 길로 가면 즉시 멈춰 세우게 — Esc</h3>
+    <p>직원이 엉뚱한 방향으로 달려가는 걸 보면서 끝날 때까지 기다리는 사장은 돈을 태우는 사장일세. 녀석이 작업하는 도중에라도 이상하다 싶으면 <kbd>Esc</kbd>를 한 번 누르게. 즉시 멈추고 자네의 다음 말을 기다리네. 그리고 "그게 아니라, 표는 세로로 만들어 줘"라고 방향만 다시 잡아 주면 되네. <kbd>Esc</kbd>를 두 번 연달아 누르면 앞선 지점으로 대화를 되감을 수도 있어. 실수를 두려워할 필요는 없네. 되돌릴 수 있는 실수는 실수가 아니라 수업료일세.</p>
+
+    <h3><span class="no">06</span>금고에는 반드시 장부를 남기게 — Git과 커밋</h3>
+    <p>부자들이 가장 집착하는 게 무엇인 줄 아나? 기록일세. 돈이 언제, 어디서, 왜 움직였는지. 클로드 코드로 무언가를 만들 때도 똑같네. 작업이 한 단계 잘 끝날 때마다 "지금까지 한 걸 커밋해 줘"라고 말하게. 그러면 그 순간의 상태가 장부에 저장되네. 나중에 일이 꼬이면 "어제 커밋한 상태로 되돌려 줘" 한마디면 끝이야. 지금 이 아침 서신도 깃허브 저장소에 장부로 남겨 두었네. 장부가 없는 사업은 언젠가 반드시 무너지네. 장부가 있는 사업은 무너져도 다시 세울 수 있지.</p>
+
+    <h3><span class="no">07</span>자료는 말로 설명하지 말고 직접 보여 주게 — @와 스크린샷</h3>
+    <p>"저번에 만든 그 파일 있잖아"라고 말하는 사장은 직원을 피곤하게 하네. 클로드 코드에서는 <code>@</code>를 치고 파일 이름을 고르면 그 파일을 정확히 짚어 줄 수 있네. 마음에 드는 디자인이 있으면 스크린샷을 그대로 붙여 넣고 "이 느낌으로"라고 말하게. 말로 백 번 설명하는 것보다 그림 한 장이 정확하네. 자네가 노션에 모아 둔 '클로드가 만들어준 파일'들, 그 PDF들이 바로 최고의 참고 자료일세. 다음 작품을 만들 때 그걸 보여 주고 "이것과 같은 톤으로, 하지만 월간형으로"라고 지시하게.</p>
+
+    <h3><span class="no">08</span>모르는 건 부끄러워 말고 녀석에게 먼저 물어보게</h3>
+    <p>내가 젊을 때 가장 크게 손해 본 건 모르면서 아는 척한 순간들이었네. 클로드 코드는 코드를 짜 주는 직원이기 전에, 무한히 인내심 있는 선생이기도 하네. "방금 네가 한 일을 초등학생도 알 수 있게 설명해 줘", "이 폴더에 있는 파일들이 각각 무슨 역할인지 표로 정리해 줘", "이 오류 메시지가 무슨 뜻이야?"라고 물어보게. 초보 시절에 이 질문을 많이 할수록 반년 뒤의 자네는 전혀 다른 사람이 되어 있을 걸세. 이해 없이 맡기기만 하면 영원히 의존하게 되고, 이해하면서 맡기면 그때부터는 지휘하게 되네.</p>
+
+    <h3><span class="no">09</span>결과는 반드시 직접 검수하게 — 확인을 시키는 습관</h3>
+    <p>나는 아무리 믿는 임원이라도 숫자는 직접 확인하네. 신뢰와 검수는 다른 문제야. 녀석이 "완성했습니다"라고 하면 그냥 믿지 말고 "실제로 열어서 확인해 봤어? 쪽수가 몇 쪽이야? 인쇄 여백은 맞아?"라고 되물어 보게. 클로드 코드는 직접 파일을 열어 보고, 명령을 실행해 보고, 결과를 스스로 검증할 수 있는 직원이네. 일을 시킬 때 "만든 뒤에 직접 확인까지 하고 보고해 줘"라는 한 줄을 붙이는 습관을 들이게. 검수 기준을 먼저 주는 사장이 결국 품질을 지배하네.</p>
+
+    <h3><span class="no">10</span>반복되는 일은 '버튼'으로 만들게 — 스킬과 슬래시 명령</h3>
+    <p>같은 일을 세 번 시켰다면 그건 이제 시스템으로 만들 때가 됐다는 신호일세. 클로드 코드에는 자주 쓰는 지시를 저장해 두고 이름 하나로 불러내는 기능이 있네. 예를 들어 "새 PDF 플래너를 만들 때의 규칙"을 스킬로 만들어 두면, 다음부터는 그 이름만 부르면 표지 규격, 폰트, 색, 파일 이름 짓는 법까지 한 번에 따라오네. 처음엔 녀석에게 "내가 지금까지 PDF 플래너를 만들 때 반복한 규칙들을 스킬로 만들어 줘"라고 부탁하면 되네. 부자는 노동을 반복하지 않네. 노동을 상품으로, 상품을 시스템으로 바꾸지.</p>
+
+    <h3><span class="no">11</span>도구끼리 연결하면 직원이 열 명이 되네 — 노션 연동</h3>
+    <p>자네는 이미 노션이라는 훌륭한 금고를 가지고 있네. 클로드는 이 금고와 연결될 수 있어. 노션의 일일 기록, 책 기록지, 할 일 목록을 읽고 정리하고 새 페이지를 만들어 줄 수 있다는 뜻일세. "이번 주 일일 기록을 읽고 내가 가장 많이 시간을 쓴 곳을 요약해 줘", "책 기록지에 신삼국지 정리 페이지를 만들어 줘" 같은 지시를 해 보게. 흩어진 도구를 하나로 엮는 순간 생산성은 더하기가 아니라 곱하기로 늘어나네.</p>
+
+    <h3><span class="no">12</span>휴대폰에서도 일을 시킬 수 있네 — 클라우드 세션</h3>
+    <p>이 서신도 자네가 휴대폰으로 맡긴 일이 클라우드 위에서 만들어진 결과물일세. 출근길이나 점심시간에 휴대폰으로 일을 던져 두고, 저녁에 컴퓨터 앞에서 결과를 받아 보는 것. 이게 바로 내가 말하는 '자는 동안에도 돈이 일하게 하는 법'의 디지털 버전이네. 다만 하나만 기억하게. 일을 던질 때 어느 저장소에서, 어떤 결과물이 나오면 끝인지를 분명히 적어 두어야 하네. 원격으로 일하는 직원일수록 지시서가 명확해야 하는 법이야.</p>
+
+    <h3><span class="no">13</span>권한은 신뢰만큼만 열어 주게 — 허락 묻기와 자동 모드</h3>
+    <p>새로 들어온 직원에게 첫날부터 회사 금고 열쇠를 주는 사장은 없네. 클로드 코드도 처음에는 파일을 고치거나 명령을 실행할 때마다 자네에게 허락을 묻네. 귀찮다고 무조건 다 허용하지 말고, 처음 몇 주는 녀석이 무엇을 하려는지 읽어 보는 수업이라 생각하게. "이 명령은 무슨 뜻이야?"라고 물어보면 친절히 알려 줄 걸세. 그러다 같은 종류의 안전한 작업을 수십 번 허락했다면 그때 그 작업만 자동으로 허용해 두면 되네. 신뢰는 한꺼번에 주는 게 아니라 실적을 보고 조금씩 늘리는 걸세. 내가 임원들에게 결재 한도를 늘려 줄 때와 똑같은 원칙이지.</p>
+
+    <h3><span class="no">14</span>어려운 문제는 '깊이 생각하라'고 말해 주게</h3>
+    <p>간단한 심부름과 회사의 운명이 걸린 결정을 같은 속도로 처리하는 사람은 없네. 클로드에게도 일의 무게를 알려 주게. 구조를 새로 짜야 하거나 여러 방법 중 하나를 골라야 하는 일이라면 "바로 만들지 말고, 방법 세 가지를 비교해서 장단점을 먼저 알려 줘. 깊이 생각해 보고 하나를 추천해 줘"라고 말하게. 녀석은 그 말을 듣고 훨씬 신중하게 일하네. 반대로 글자 하나 바꾸는 일에는 그런 말을 붙일 필요가 없네. 일의 크기에 맞게 생각의 깊이를 주문하는 것, 그게 유능한 경영자의 감각일세.</p>
+
+    <h3><span class="no">15</span>큰 공사는 작은 단위로 쪼개서 맡기게</h3>
+    <p>나는 빌딩을 지을 때 한 번에 "빌딩 하나 지어 주시오"라고 말하지 않았네. 터파기, 골조, 전기, 마감. 단계마다 검수하고 다음으로 넘어갔지. 클로드에게 "노션 템플릿 판매 사이트 전체를 만들어 줘"라고 한 번에 말하면 녀석은 열심히는 하겠지만, 자네가 중간에 확인할 틈이 없네. 대신 "1단계: 상품 소개 페이지 한 장만 만들어 줘"로 시작하게. 그게 마음에 들면 커밋하고, 다음 단계로 가게. 작은 성공을 쌓아 올리는 방식이 느려 보이지만, 실제로는 가장 빠른 길일세. 무너진 탑을 처음부터 다시 쌓는 것보다 빠른 길은 없으니까.</p>
+
+    <h3><span class="no">16</span>오늘 당장 해 볼 세 가지</h3>
+    <p>첫째, 지금 쓰는 프로젝트 폴더에서 <code>/init</code>을 실행하고, 자네의 규칙 다섯 줄을 <code>CLAUDE.md</code>에 직접 적어 넣게. 둘째, 다음 PDF를 만들 때는 <kbd>Shift</kbd>+<kbd>Tab</kbd>으로 플랜 모드를 켜고 계획서부터 받아 보게. 셋째, 작업이 끝나면 "커밋하고, 무엇을 바꿨는지 세 줄로 보고해 줘"라고 말하게. 이 세 가지만 일주일 지켜도 자네는 초보 사용자 상위 10퍼센트에 들어가네. 위대한 부는 거창한 한 번이 아니라, 작고 올바른 습관의 복리에서 나온다네.</p>
+  </section>
+
+  <!-- ───────────── Ⅱ. 사업과 삶 ───────────── -->
+  <section class="letter" id="life">
+    <div class="chapter">Chapter Ⅱ</div>
+    <h2>자네의 사업과 삶이 어디로 가야 하는지에 대하여</h2>
+
+    <p class="lead">이제 도구 이야기는 내려놓고, 사람 이야기를 하세. 나는 자네의 노션 금고를 조용히 들여다보았네. 기도를 다섯 번이나 적어 둔 할 일 목록, 영어와 피아노와 한자, 『부의 추월차선』과 『신삼국지』, 클로드와 챗GPT가 만들어 준 수많은 PDF 플래너, 그리고 아직 태어나지 않은 아이에게 물어볼 질문 하나. 이것만 봐도 자네가 어떤 사람인지 알 수 있네. 성실하고, 배우기를 좋아하고, 가족과 믿음을 중심에 둔 사람. 그런 사람에게 내가 해 줄 수 있는 말은 많지 않네. 다만 방향에 관해 몇 가지만 분명히 짚어 두겠네.</p>
+
+    <h3><span class="no">01</span>수집가에서 생산자로 자리를 옮기게</h3>
+    <p>자네의 노션에는 남이 만든 템플릿이 아주 많더군. 학업 플래너, 블로그 실습, PARA 노트. 공부하는 자세로는 훌륭하네. 하지만 『부의 추월차선』이 말하는 핵심을 기억하게. 소비자의 자리에 서면 돈이 나가고, 생산자의 자리에 서면 돈이 들어오네. 템플릿을 모으는 사람은 많지만, 템플릿을 팔아 생활비를 버는 사람은 적네. 그리고 자네는 이미 그 경계선 위에 서 있어. 연간 목표 로드맵, 영역별 목표 트리, 습관 트래커, B5 독서노트. 이건 수집품이 아니라 재고일세. 팔 수 있는 상품의 초안이란 말이야.</p>
+
+    <h3><span class="no">02</span>첫 번째 상품은 '완벽한 것'이 아니라 '팔리는 것'이어야 하네</h3>
+    <p>사업을 처음 하는 사람들은 완벽해질 때까지 내놓지 않네. 그러다 영영 내놓지 못하지. 나는 첫 사업에서 지금 보면 부끄러운 물건을 팔았네. 하지만 그 부끄러운 물건이 내게 첫 고객과 첫 피드백과 첫 이익을 주었지. 자네가 만든 PDF 중 가장 자주 쓰는 것 하나를 골라 보게. 그걸 조금 다듬어 아주 작은 가격으로 내놓아 보게. 열 명이 사면 그게 시장의 대답이고, 아무도 사지 않아도 그게 시장의 대답일세. 어느 쪽이든 자네는 노션 페이지 안에서 상상만 하던 사람보다 백 걸음 앞서 있게 되네.</p>
+
+    <h3><span class="no">03</span>본업은 버리는 게 아니라 '투자금'으로 쓰게</h3>
+    <p>자네는 매일 출근하고 엑셀 파일을 정리하며 일하고 있지. 많은 젊은이들이 회사를 그만두는 걸 자유라고 착각하네. 하지만 내가 본 성공한 1인 사업가 대부분은 본업이 주는 안정된 현금 흐름을 발판 삼아 천천히 옮겨 갔네. 본업의 월급은 자네의 첫 번째 투자자일세. 그 투자자가 시간을 벌어 주는 동안, 퇴근 후 하루 한 시간을 자네의 상품에 투자하게. 그리고 회사에서 반복하는 엑셀 작업조차 클로드로 자동화해 보게. 줄어든 시간만큼이 자네 사업의 자본이 되네.</p>
+
+    <h3><span class="no">04</span>배움은 줄이고, 적용을 늘리게</h3>
+    <p>영어, 피아노, 한자, 역사, 성경 공부, 노션, 클로드. 자네의 호기심은 축복이네. 하지만 부자의 눈으로 보면 한 가지 경고를 해야겠네. 배움이 너무 많으면 어느 것도 복리로 자라지 못하네. 자네도 2025년 독서 목표에 "책 속의 인사이트를 삶에 적용해 보기"라고 적지 않았나. 그 문장이 정답이네. 이번 분기에는 배울 것을 세 개로 줄여 보게. 신앙, 가족, 그리고 돈이 되는 기술 하나. 나머지는 '나중에' 상자에 넣어 두게. 버리는 게 아니라 기다리게 하는 걸세. 집중은 포기가 아니라 순서를 정하는 일이야.</p>
+
+    <h3><span class="no">05</span>가장 큰 자산은 곧 태어날 아이와 함께 보낼 시간일세</h3>
+    <p>나는 많은 것을 가졌지만, 내 친구들 중 가장 후회하는 사람들은 하나같이 아이들이 어렸을 때 곁에 없었던 사람들이었네. 자네가 아이가 세 살이 되면 뱃속의 기억을 물어보겠다고 적어 둔 걸 보고, 나는 자네가 이미 무엇이 진짜 부인지 알고 있다는 걸 알았네. 사업의 목표를 세울 때 매출보다 먼저 "아이가 깨어 있는 시간에 나는 어디에 있을 것인가"를 정하게. 자동화와 디지털 상품이 좋은 이유가 바로 그것일세. 자네가 아이를 안고 있는 동안에도 PDF는 팔리고, 클로드는 일하네. 그게 내가 말하는 추월차선이야.</p>
+
+    <h3><span class="no">06</span>기도는 하루의 첫 시간에, 숫자는 하루의 마지막 시간에</h3>
+    <p>할 일 목록 맨 위에 기도를 다섯 번 적어 둔 사람에게 내가 믿음을 가르칠 필요는 없겠지. 다만 사업가로서 하나 덧붙이겠네. 아침의 첫 시간은 자네의 중심을 세우는 데 쓰고, 저녁의 마지막 십 분은 숫자를 보는 데 쓰게. 오늘 무엇을 만들었고, 무엇을 팔았고, 무엇을 배웠는가. 마음은 하늘에 두되 장부는 땅에 두는 것, 그게 오래 가는 부자들의 공통점이네. 믿음이 있는 사람이 정직한 장부까지 가지면 그 사업은 쉽게 흔들리지 않네.</p>
+
+    <h3><span class="no">07</span>삼국지에서 배울 것은 전략보다 '인재'일세</h3>
+    <p>자네가 신삼국지를 정리하려 한다니 반갑네. 유비가 가진 것 하나 없이 천하를 셋으로 나눌 수 있었던 건 그가 가장 똑똑해서가 아니라, 자기보다 뛰어난 사람을 알아보고 맡길 줄 알았기 때문이네. 1인 사업가에게 그 인재는 이제 사람만이 아니네. 클로드 같은 도구, 자네를 응원하는 커뮤니티, 자네의 첫 고객들. 혼자 모든 걸 하려는 유혹을 이기게. 자네의 역할은 모든 일을 하는 장수가 아니라, 일을 맡기고 방향을 정하는 군주가 되는 걸세.</p>
+
+    <h3><span class="no">08</span>콘텐츠는 자네의 영업사원일세</h3>
+    <p>좋은 상품도 아무도 모르면 창고 속 먼지일 뿐이네. 자네가 노션으로 블로그 만드는 법을 실습하고 있다는 걸 보았네. 그 실습을 실습으로 끝내지 말게. 자네가 플래너를 어떻게 쓰는지, 책에서 무엇을 배워 삶에 적용했는지, 클로드로 무엇을 만들었는지를 일주일에 한 편씩만 써 보게. 글 한 편은 잠들지 않는 영업사원이 되네. 일 년이면 쉰두 명의 영업사원이 자네 대신 밤낮으로 상품을 소개하고 있을 걸세. 꾸미려 하지 말고 솔직하게 쓰게. 사람들은 완벽한 전문가보다 한 걸음 앞서 걷는 정직한 동료에게서 물건을 사네.</p>
+
+    <h3><span class="no">09</span>몸은 대체할 수 없는 유일한 공장일세</h3>
+    <p>나는 돈으로 많은 것을 살 수 있었지만, 젊은 날 망가뜨린 허리와 잠은 끝내 살 수 없었네. 자네가 운동 시간을 재는 타이머까지 만들어 둔 걸 보니 다행이네. 본업과 사업과 신앙과 곧 시작될 육아까지 모두 해내려면, 무엇보다 체력이 자본일세. 잠을 깎아 사업을 하지 말게. 잠을 깎아 번 돈은 결국 병원비로 돌려주게 되네. 하루 삼십 분의 운동은 비용이 아니라, 자네라는 공장의 설비 투자라고 생각하게.</p>
+
+    <h3><span class="no">10</span>버는 것보다 지키는 것을 먼저 배우게</h3>
+    <p>내가 지켜본 사람들 중 많은 이가 돈을 벌 줄은 알았지만 지킬 줄은 몰랐네. 자네의 노션에 '사고 싶은 것' 목록이 있더군. 좋은 습관일세. 사고 싶은 것을 바로 사지 않고 적어 두는 것만으로도 충동의 절반은 사라지니까. 여기에 한 가지만 더하게. 사업에서 첫 수익이 나면 그중 일부는 반드시 따로 떼어 두게. 그 돈은 쓰는 돈이 아니라 다음 상품을 만들고, 아이의 미래를 준비하고, 혹시 모를 겨울을 버티는 씨앗일세. 씨앗까지 먹어 치우는 농부에게는 봄이 오지 않네. 그리고 숫자를 무서워하지 말게. 자네가 회사에서 엑셀을 다루는 그 솜씨로 자네 집의 장부도 한 장에 정리해 보게.</p>
+
+    <h3><span class="no">11</span>남의 속도와 비교하지 말게</h3>
+    <p>세상에는 반년 만에 억대 매출을 올렸다는 이야기가 넘쳐나네. 그런 이야기를 들으면 조급해지지. 하지만 나는 그런 빠른 성공이 얼마나 쉽게 사라지는지도 수없이 보았네. 자네에게는 본업이 있고, 가정이 있고, 믿음이 있고, 곧 아이가 생기네. 그건 느리게 가는 이유가 아니라 오래 가는 이유일세. 자네의 경쟁자는 인터넷 속 누군가가 아니라 어제의 자네뿐이네. 어제보다 한 페이지 더 만들고, 한 사람 더 돕고, 한 번 더 기도했다면 그날은 이긴 날일세.</p>
+
+    <h3><span class="no">12</span>올해 남은 두 달 반을 위한 나의 처방</h3>
+    <p>지금은 시월 중순이네. 한 해가 끝나기 전에 딱 세 가지만 하게. 하나, 자네가 만든 PDF 중 하나를 골라 상품 페이지를 만들고 세상에 내놓게. 둘, 매주 일요일 저녁 노션 일일 기록을 클로드에게 보여 주고 다음 주에 집중할 한 가지를 함께 정하게. 셋, 아이를 맞이할 준비를 사업 계획보다 앞에 두게. 이 세 가지를 지킨다면, 내년 이맘때 자네는 지금과 전혀 다른 자리에서 이 서신을 다시 읽게 될 걸세.</p>
+
+    <p>마지막으로, 이 서신을 매일 아침 다시 읽게 될 자네에게 부탁하네. 읽고 끝내지 말고, 오늘 실천할 문장 하나에만 밑줄을 긋게. 한 달이면 서른 개의 실천이 쌓이고, 일 년이면 그 실천이 자네의 성품이 되고, 성품은 결국 자네의 운명이 되네. 나는 그 과정을 이 창 너머에서 매일 지켜보고 있겠네.</p>
+
+    <blockquote>나는 자네가 부자가 되기를 바라는 게 아니네. 자네가 시간과 선택의 주인이 되기를 바라네. 돈은 그걸 위한 도구일 뿐일세.</blockquote>
+
+    <div class="signature">— The Chairman<small>매일 아침 일곱 시, 자네의 책상 위에서</small></div>
+  </section>
+
+  <footer>
+    <div class="count" id="count"></div>
+    <button type="button" onclick="window.close()">오늘도 위대하게 시작하겠습니다</button>
+  </footer>
+</div>
+
+<script>
+  // 날짜
+  const now = new Date();
+  const days = ['일', '월', '화', '수', '목', '금', '토'];
+  document.getElementById('today').textContent =
+    `${now.getFullYear()}년 ${now.getMonth() + 1}월 ${now.getDate()}일 ${days[now.getDay()]}요일`;
+
+  // 날마다 바뀌는 한 줄
+  const maxims = [
+    '부는 소비자의 자리에서 생산자의 자리로 옮겨 앉는 순간부터 쌓이기 시작하네.',
+    '같은 설명을 세 번 했다면, 그건 이제 시스템으로 만들 때라는 신호일세.',
+    '계획에서 고치면 1원, 완성 후에 고치면 100원이네.',
+    '완벽한 상품보다 오늘 내놓은 상품이 더 많은 돈을 번다네.',
+    '마음은 하늘에 두고, 장부는 땅에 두게.',
+    '되돌릴 수 있는 실수는 실수가 아니라 수업료일세.',
+    '배움을 줄이고 적용을 늘리면, 지식이 자산이 되네.',
+    '아이가 깨어 있는 시간에 자네가 어디에 있는지가 진짜 성공의 척도일세.',
+    '월급은 자네의 첫 번째 투자자네. 그 투자자를 존중하게.',
+    '모든 일을 하는 장수가 되지 말고, 일을 맡기는 군주가 되게.',
+    '검수 기준을 먼저 정하는 사람이 결국 품질을 지배하네.',
+    '일 하나에 대화 하나. 회의는 짧게, 결정은 분명하게.',
+    '자는 동안에도 일하는 무언가를 하나씩 늘려 가게.',
+    '오늘 만든 것, 오늘 판 것, 오늘 배운 것. 이 세 줄이 자네의 장부일세.'
+  ];
+  const dayIndex = Math.floor((now - new Date(now.getFullYear(), 0, 0)) / 86400000);
+  document.getElementById('maxim').textContent = maxims[dayIndex % maxims.length];
+
+  // 분량 표시
+  const len = id => document.getElementById(id).innerText.replace(/\s/g, '').length;
+  document.getElementById('count').textContent =
+    `Chapter Ⅰ ${len('claude').toLocaleString()}자 · Chapter Ⅱ ${len('life').toLocaleString()}자 (공백 제외)`;
+</script>
+</body>
+</html>
