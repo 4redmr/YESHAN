@@ -103,6 +103,10 @@
     transition: background .2s, border-color .2s;
   }
   nav.toc a:hover { background: var(--panel-2); border-color: var(--gold); }
+  nav.toc a.record { background: var(--gold); color: var(--bg); border-color: var(--gold); font-weight: 600; }
+  nav.toc a.record:hover { background: var(--gold-hi); }
+  .maxim .verse { margin-top: 18px; font-size: 16px; font-weight: 400; color: var(--ink-soft); }
+  .maxim .verse cite { display: block; margin-top: 4px; font-style: normal; font-size: 13px; color: var(--gold); letter-spacing: .08em; }
 
   section.letter {
     background: linear-gradient(180deg, var(--panel), var(--panel-2));
@@ -166,11 +170,13 @@
   <div class="maxim">
     <div class="label">Today's Maxim · 오늘의 한 줄</div>
     <p id="maxim">방향은 생각해서 찾는 게 아니라, 작게 움직이다 보면 발밑에서 보이네.</p>
+    <p class="verse" id="verse">사람이 마음으로 자기의 길을 계획할지라도 그의 걸음을 인도하시는 이는 여호와시니라<cite>잠언 16:9</cite></p>
   </div>
 
   <nav class="toc">
     <a href="#claude">Ⅰ. 클로드 코드를 다루는 법</a>
     <a href="#life">Ⅱ. 나의 삶과 방향</a>
+    <a class="record" href="https://www.notion.so/3fc3d8e501e781e2b16fcf52d69d2ccc" target="_blank" rel="noopener">오늘의 기록 남기러 가기 →</a>
   </nav>
 
   <!-- ───────────── Ⅰ. 클로드 코드 ───────────── -->
@@ -311,6 +317,24 @@
   ];
   const dayIndex = Math.floor((now - new Date(now.getFullYear(), 0, 0)) / 86400000);
   document.getElementById('maxim').textContent = maxims[dayIndex % maxims.length];
+
+  // 날마다 바뀌는 말씀 (개역개정)
+  const verses = [
+    ['사람이 마음으로 자기의 길을 계획할지라도 그의 걸음을 인도하시는 이는 여호와시니라', '잠언 16:9'],
+    ['너의 행사를 여호와께 맡기라 그리하면 네가 경영하는 것이 이루어지리라', '잠언 16:3'],
+    ['너는 마음을 다하여 여호와를 신뢰하고 네 명철을 의지하지 말라', '잠언 3:5'],
+    ['너의 길을 여호와께 맡기라 그를 의지하면 그가 이루시고', '시편 37:5'],
+    ['그런즉 너희는 먼저 그의 나라와 그의 의를 구하라 그리하면 이 모든 것을 너희에게 더하시리라', '마태복음 6:33'],
+    ['지극히 작은 것에 충성된 자는 큰 것에도 충성되고', '누가복음 16:10'],
+    ['부지런한 자의 경영은 풍부함에 이를 것이나 조급한 자는 궁핍함에 이를 따름이니라', '잠언 21:5'],
+    ['내게 능력 주시는 자 안에서 내가 모든 것을 할 수 있느니라', '빌립보서 4:13']
+  ];
+  const [verseText, verseRef] = verses[dayIndex % verses.length];
+  const verseEl = document.getElementById('verse');
+  verseEl.textContent = verseText;
+  const cite = document.createElement('cite');
+  cite.textContent = verseRef;
+  verseEl.appendChild(cite);
 
   // 분량 표시
   const len = id => document.getElementById(id).innerText.replace(/\s/g, '').length;
