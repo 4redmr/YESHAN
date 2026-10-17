@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>남은 시간</title>
+<style>
+  :root {
+    --bg: #101114; --card: #1a1c21; --line: #2a2d34; --text: #eceae4; --muted: #9a9890;
+    --accent: #d8b45a; --work: #5b7fbf; --commute: #8a6fb5; --sleep: #3d4a5c; --free: #d8b45a;
+  }
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) {
+      --bg: #f7f5ef; --card: #ffffff; --line: #e4e0d5; --text: #22211d; --muted: #77746a;
+      --accent: #a67c1c; --work: #4c6fae; --commute: #7d62a8; --sleep: #b9c2cf; --free: #c99a2e;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 16px/1.5 -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  }
+  main { max-width: 560px; margin: 0 auto; padding: 24px 16px 48px; }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  .sub { color: var(--muted); font-size: 14px; margin: 0 0 20px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 18px; margin-bottom: 14px; }
+  .big { font-size: 44px; font-weight: 700; color: var(--accent); line-height: 1.1; font-variant-numeric: tabular-nums; }
+  .label { color: var(--muted); font-size: 13px; }
+  .bar { display: flex; height: 14px; border-radius: 7px; overflow: hidden; margin: 14px 0 8px; background: var(--line); }
+  .bar span { display: block; height: 100%; }
+  .legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 13px; color: var(--muted); }
+  .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  label { display: block; font-size: 13px; color: var(--muted); }
+  input, textarea {
+    width: 100%; margin-top: 4px; padding: 9px 10px; font: inherit; color: var(--text);
+    background: var(--bg); border: 1px solid var(--line); border-radius: 9px;
+  }
+  textarea { resize: vertical; min-height: 60px; }
+  .row { display: flex; gap: 8px; align-items: center; margin-top: 12px; }
+  .check { display: flex; gap: 8px; align-items: center; font-size: 14px; color: var(--text); margin-top: 12px; }
+  .check input { width: auto; margin: 0; }
+  button {
+    font: inherit; padding: 10px 14px; border-radius: 9px; border: 1px solid var(--line);
+    background: var(--bg); color: var(--text); cursor: pointer;
+  }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #17150f; font-weight: 600; flex: 1; }
+  h2 { font-size: 15px; margin: 0 0 12px; }
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; text-align: center; }
+  .stats b { display: block; font-size: 17px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  ul { list-style: none; margin: 0; padding: 0; }
+  li { border-top: 1px solid var(--line); padding: 10px 0; display: flex; gap: 10px; }
+  li:first-child { border-top: 0; }
+  li .d { min-width: 74px; color: var(--muted); font-size: 13px; }
+  li .h { min-width: 52px; font-weight: 600; color: var(--accent); font-variant-numeric: tabular-nums; }
+  li .n { flex: 1; font-size: 14px; word-break: break-all; }
+  li button { padding: 2px 8px; font-size: 12px; color: var(--muted); }
+  .empty { color: var(--muted); font-size: 14px; }
+  .toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: var(--text); color: var(--bg);
+    padding: 8px 14px; border-radius: 20px; font-size: 14px; opacity: 0; transition: opacity .2s; pointer-events: none; }
+  .toast.on { opacity: 1; }
+</style>
+</head>
+<body>
+<main>
+  <h1>오늘 남은 시간</h1>
+  <p class="sub" id="today"></p>
+
+  <section class="card">
+    <div class="label">지금부터 잠들 때까지 쓸 수 있는 자유 시간</div>
+    <div class="big" id="left">–</div>
+    <div class="label" id="leftNote"></div>
+    <div class="bar" id="bar"></div>
+    <div class="legend">
+      <span><i style="background:var(--sleep)"></i>잠 <b id="lgSleep"></b></span>
+      <span><i style="background:var(--work)"></i>근무 <b id="lgWork"></b></span>
+      <span><i style="background:var(--commute)"></i>출퇴근 <b id="lgCommute"></b></span>
+      <span><i style="background:var(--free)"></i>자유 <b id="lgFree"></b></span>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>나의 하루</h2>
+    <div class="grid">
+      <label>일어나는 시간<input type="time" id="wake"></label>
+      <label>잠드는 시간<input type="time" id="sleep"></label>
+      <label>출근 시간<input type="time" id="workStart"></label>
+      <label>퇴근 시간<input type="time" id="workEnd"></label>
+      <label>출근길 (분)<input type="number" id="commuteIn" min="0" step="5" inputmode="numeric"></label>
+      <label>퇴근길 (분)<input type="number" id="commuteOut" min="0" step="5" inputmode="numeric"></label>
+    </div>
+    <label class="check"><input type="checkbox" id="dayOff">오늘은 쉬는 날 (근무·출퇴근 없음)</label>
+  </section>
+
+  <section class="card">
+    <h2>오늘의 기록</h2>
+    <label>남은 시간을 어디에 썼나요?<textarea id="note" placeholder="예: 영어 30분, 피아노 20분, 아내와 산책"></textarea></label>
+    <div class="row">
+      <button class="primary" id="save">오늘 기록 저장</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>최근 7일</h2>
+    <div class="stats">
+      <div><b id="avg">–</b><span class="label">하루 평균 자유</span></div>
+      <div><b id="sum">–</b><span class="label">7일 합계</span></div>
+      <div><b id="days">0</b><span class="label">기록한 날</span></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>지난 기록</h2>
+    <ul id="list"></ul>
+    <div class="row">
+      <button id="csv">CSV로 내보내기</button>
+    </div>
+  </section>
+</main>
+<div class="toast" id="toast"></div>
+
+<script>
+const $ = id => document.getElementById(id);
+const FIELDS = ['wake', 'sleep', 'workStart', 'workEnd', 'commuteIn', 'commuteOut'];
+const DEFAULTS = { wake: '06:30', sleep: '23:30', workStart: '09:00', workEnd: '18:00', commuteIn: 40, commuteOut: 40 };
+
+function load(key, fallback) {
+  try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; } catch (e) { return fallback; }
+}
+function store(key, val) {
+  try { localStorage.setItem(key, JSON.stringify(val)); } catch (e) {}
+}
+
+let settings = Object.assign({}, DEFAULTS, load('ft.settings', {}));
+let records = load('ft.records', {});
+
+const toMin = t => { const [h, m] = (t || '0:0').split(':').map(Number); return h * 60 + m; };
+const dateKey = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+const fmt = min => {
+  min = Math.max(0, Math.round(min));
+  const h = Math.floor(min / 60), m = min % 60;
+  return h ? (m ? h + '시간 ' + m + '분' : h + '시간') : m + '분';
+};
+
+// Length of a span from a to b on the clock, wrapping past midnight.
+const span = (a, b) => ((b - a) % 1440 + 1440) % 1440;
+
+function plan() {
+  const s = settings, off = $('dayOff').checked;
+  const wake = toMin(s.wake), sleep = toMin(s.sleep);
+  const awake = span(wake, sleep) || 1440;
+  const work = off ? 0 : span(toMin(s.workStart), toMin(s.workEnd));
+  const commute = off ? 0 : (+s.commuteIn || 0) + (+s.commuteOut || 0);
+  return { wake, sleep, awake, work, commute, off, free: Math.max(0, awake - work - commute) };
+}
+
+// Free minutes still ahead today, counting only the busy blocks that haven't passed yet.
+function freeLeft(p, now) {
+  const sinceWake = span(p.wake, now);
+  if (sinceWake >= p.awake) return 0;
+  const leftAwake = p.awake - sinceWake;
+  if (p.off) return leftAwake;
+  const ws = toMin(settings.workStart), we = toMin(settings.workEnd);
+  const blocks = [
+    [ws - (+settings.commuteIn || 0), ws],
+    [ws, ws + p.work],
+    [we, we + (+settings.commuteOut || 0)]
+  ];
+  let busy = 0;
+  for (const [a, b] of blocks) {
+    const start = span(p.wake, a), end = start + (b - a);
+    busy += Math.max(0, end - Math.max(start, sinceWake));
+  }
+  return Math.max(0, leftAwake - busy);
+}
+
+function render() {
+  const now = new Date(), p = plan();
+  const nowMin = now.getHours() * 60 + now.getMinutes();
+  $('today').textContent = now.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'long' });
+
+  const left = freeLeft(p, nowMin);
+  $('left').textContent = fmt(left);
+  $('leftNote').textContent = '오늘 하루 자유 시간은 모두 ' + fmt(p.free) + '이에요.';
+
+  const sleepMin = 1440 - p.awake;
+  const parts = [['sleep', sleepMin], ['work', p.work], ['commute', p.commute], ['free', p.free]];
+  $('bar').innerHTML = parts.map(([k, v]) => '<span style="width:' + (v / 14.4) + '%;background:var(--' + k + ')"></span>').join('');
+  $('lgSleep').textContent = fmt(sleepMin);
+  $('lgWork').textContent = fmt(p.work);
+  $('lgCommute').textContent = fmt(p.commute);
+  $('lgFree').textContent = fmt(p.free);
+
+  renderHistory();
+}
+
+function renderHistory() {
+  const keys = Object.keys(records).sort().reverse();
+  const list = $('list');
+  if (!keys.length) { list.innerHTML = '<li class="empty">아직 기록이 없어요. 오늘 첫 기록을 남겨 보세요.</li>'; }
+  else {
+    list.innerHTML = '';
+    for (const k of keys) {
+      const r = records[k], li = document.createElement('li');
+      const d = new Date(k + 'T00:00');
+      li.innerHTML = '<span class="d"></span><span class="h"></span><span class="n"></span><button>삭제</button>';
+      li.children[0].textContent = (d.getMonth() + 1) + '/' + d.getDate() + ' ' + '일월화수목금토'[d.getDay()];
+      li.children[1].textContent = fmt(r.free);
+      li.children[2].textContent = (r.off ? '[쉬는 날] ' : '') + (r.note || '');
+      li.children[3].onclick = () => {
+        if (!confirm(k + ' 기록을 지울까요?')) return;
+        delete records[k]; store('ft.records', records); renderHistory();
+      };
+      list.appendChild(li);
+    }
+  }
+
+  const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 6);
+  const recent = keys.filter(k => k >= dateKey(cutoff)).map(k => records[k].free);
+  const total = recent.reduce((a, b) => a + b, 0);
+  $('days').textContent = recent.length;
+  $('sum').textContent = recent.length ? fmt(total) : '–';
+  $('avg').textContent = recent.length ? fmt(total / recent.length) : '–';
+}
+
+function toast(msg) {
+  const t = $('toast'); t.textContent = msg; t.classList.add('on');
+  clearTimeout(toast.timer); toast.timer = setTimeout(() => t.classList.remove('on'), 1600);
+}
+
+FIELDS.forEach(f => {
+  $(f).value = settings[f];
+  $(f).addEventListener('input', () => { settings[f] = $(f).value; store('ft.settings', settings); render(); });
+});
+
+const todayKey = dateKey(new Date());
+if (records[todayKey]) { $('note').value = records[todayKey].note || ''; $('dayOff').checked = !!records[todayKey].off; }
+$('dayOff').addEventListener('change', render);
+
+$('save').onclick = () => {
+  const p = plan();
+  records[dateKey(new Date())] = { free: p.free, work: p.work, commute: p.commute, off: p.off, note: $('note').value.trim() };
+  store('ft.records', records);
+  renderHistory();
+  toast('오늘 기록을 저장했어요');
+};
+
+$('csv').onclick = () => {
+  const rows = [['날짜', '자유(분)', '근무(분)', '출퇴근(분)', '쉬는 날', '메모']];
+  Object.keys(records).sort().forEach(k => {
+    const r = records[k];
+    rows.push([k, r.free, r.work, r.commute, r.off ? 'O' : '', r.note || '']);
+  });
+  const csv = '﻿' + rows.map(r => r.map(c => '"' + String(c).replace(/"/g, '""') + '"').join(',')).join('\r\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+  a.download = '남은시간_기록.csv';
+  a.click();
+};
+
+render();
+setInterval(render, 30000);
+</script>
+</body>
+</html>
