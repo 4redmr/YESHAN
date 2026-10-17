@@ -64,7 +64,7 @@
   li .n { flex: 1; font-size: 14px; word-break: break-all; }
   li button { padding: 2px 8px; font-size: 12px; color: var(--muted); }
   .empty { color: var(--muted); font-size: 14px; }
-  #install[hidden], #nudge[hidden] { display: none; }
+  #install[hidden], #nudge[hidden], #notionRow[hidden] { display: none; }
   #nudge { margin: 0 0 10px; padding: 8px 12px; border-radius: 9px; font-size: 14px;
     background: color-mix(in srgb, var(--accent) 18%, transparent); color: var(--text); }
   .hint { margin: 10px 0 0; font-size: 13px; color: var(--muted); }
@@ -148,11 +148,12 @@
     <div class="sumline"><span>오늘 쓴 시간 <b id="usedSum">0분</b></span><span>자유 시간 <b id="freeSum">–</b></span></div>
     <div class="row">
       <button id="undo">되돌리기</button>
-      <button class="primary" id="toNotion">노션에 보내기</button>
+      <button class="primary" id="shareBtn">기록 보내기</button>
     </div>
+    <div class="row" id="notionRow" hidden><button id="toNotion">노션에 보내기</button></div>
     <label style="margin-top:14px">한 줄 메모 (선택)<textarea id="note" placeholder="예: 아침 기도가 특히 좋았다"></textarea></label>
     <details id="notionSetup">
-      <summary class="hint">노션 연결 설정</summary>
+      <summary class="hint">노션 연결 설정 (노션을 쓰는 분만)</summary>
       <label style="margin-top:8px">노션 기록 페이지 주소<input type="url" id="notionUrl" placeholder="https://www.notion.so/..."></label>
       <p class="hint">노션에서 기록 데이터베이스를 열고 공유 → 링크 복사로 얻은 주소를 붙여넣으세요. "노션에 보내기"를 누르면 오늘 기록이 복사되고 그 페이지가 열려요. 오늘 줄의 "남은 시간" 칸에 붙여넣으면 끝이에요.</p>
     </details>
@@ -182,8 +183,19 @@
   <section class="card">
     <h2>지난 기록</h2>
     <ul id="list"></ul>
+  </section>
+
+  <section class="card">
+    <h2>백업</h2>
+    <p class="hint" id="backupInfo" style="margin:0 0 4px"></p>
+    <p class="hint" style="margin:0">기록은 이 휴대폰에만 저장돼요. 백업 파일을 카톡 "나에게 보내기"나 구글 드라이브에 저장해 두면, 앱을 지우거나 휴대폰을 바꿔도 되살릴 수 있어요.</p>
     <div class="row">
-      <button id="csv">CSV로 내보내기</button>
+      <button class="primary" id="backupBtn">백업 저장</button>
+      <button id="restoreBtn">백업 불러오기</button>
+    </div>
+    <input type="file" id="restoreFile" accept=".txt,.json,text/plain,application/json" hidden>
+    <div class="row">
+      <button id="csv">엑셀용 표로 내보내기</button>
     </div>
   </section>
 </main>
@@ -417,6 +429,69 @@ $('undo').onclick = () => {
   toast(last.act + ' ' + fmt(last.m) + ' 뺐어요');
 };
 
+// Hand a file to the phone's share sheet (KakaoTalk, Drive, Files...) when it can take
+// files; otherwise download it. Chrome only shares a short list of types, so the backup
+// is JSON in a .txt file.
+async function shareOrDownload(file) {
+  if (navigator.canShare && navigator.canShare({ files: [file] })) {
+    try { await navigator.share({ files: [file], title: file.name }); return true; }
+    catch (e) { if (e.name === 'AbortError') return false; }
+  }
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(file);
+  a.download = file.name;
+  a.click();
+  return true;
+}
+
+function renderBackupInfo() {
+  const last = settings.lastBackup;
+  if (!last) { $('backupInfo').textContent = '아직 백업한 적이 없어요.'; return; }
+  const days = Math.round((new Date(dateKey(new Date())) - new Date(last)) / 864e5);
+  $('backupInfo').textContent = '마지막 백업: ' + (days <= 0 ? '오늘' : days + '일 전') + (days >= 7 ? ' · 백업할 때가 됐어요' : '');
+}
+
+$('backupBtn').onclick = async () => {
+  const today = dateKey(new Date());
+  const data = { app: 'namun-sigan', version: 1, savedAt: new Date().toISOString(), settings, records };
+  const file = new File([JSON.stringify(data)], 'namun-sigan-backup-' + today.replace(/-/g, '') + '.txt', { type: 'text/plain' });
+  if (!await shareOrDownload(file)) return;
+  settings.lastBackup = today;
+  store('ft.settings', settings);
+  renderBackupInfo();
+  toast('백업 파일을 만들었어요');
+};
+
+$('restoreBtn').onclick = () => $('restoreFile').click();
+$('restoreFile').onchange = async () => {
+  const f = $('restoreFile').files[0];
+  $('restoreFile').value = '';
+  if (!f) return;
+  let data;
+  try { data = JSON.parse(await f.text()); } catch (e) {}
+  if (!data || data.app !== 'namun-sigan' || typeof data.records !== 'object') {
+    toast('남은 시간 백업 파일이 아니에요'); return;
+  }
+  const incoming = Object.keys(data.records);
+  if (!confirm(incoming.length + '일치 기록을 불러올까요?\n같은 날짜가 이미 있으면 지금 휴대폰의 기록을 남겨요.')) return;
+  const fresh = !Object.keys(records).length;
+  let added = 0;
+  for (const k of incoming) if (!records[k]) { records[k] = data.records[k]; added++; }
+  // On a new phone take the old settings too; otherwise only bring over missing activities.
+  if (fresh && data.settings) settings = Object.assign({}, DEFAULTS, data.settings);
+  else if (data.settings && Array.isArray(data.settings.acts)) {
+    for (const a of data.settings.acts) if (!settings.acts.includes(a)) settings.acts.push(a);
+  }
+  store('ft.records', records);
+  store('ft.settings', settings);
+  FIELDS.forEach(f => { $(f).value = settings[f]; });
+  $('remindAt').value = settings.remindAt;
+  $('notionUrl').value = settings.notionUrl;
+  $('note').value = (records[dateKey(new Date())] || {}).note || '';
+  render(); renderBackupInfo(); renderNotionRow();
+  toast(added + '일치 기록을 불러왔어요');
+};
+
 $('csv').onclick = () => {
   const rows = [['날짜', '자유(분)', '쓴 시간(분)', '활동', '근무(분)', '출퇴근(분)', '쉬는 날', '메모']];
   Object.keys(records).sort().forEach(k => {
@@ -424,10 +499,7 @@ $('csv').onclick = () => {
     rows.push([k, r.free, usedTotal(r.acts), actsText(r.acts), r.work, r.commute, r.off ? 'O' : '', r.note || '']);
   });
   const csv = '﻿' + rows.map(r => r.map(c => '"' + String(c).replace(/"/g, '""') + '"').join(',')).join('\r\n');
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
-  a.download = '남은시간_기록.csv';
-  a.click();
+  shareOrDownload(new File([csv], 'namun-sigan-records.csv', { type: 'text/csv' }));
 };
 
 render();
@@ -437,10 +509,14 @@ document.addEventListener('visibilitychange', () => { if (!document.hidden) rend
 // Notion link. A static page can't call the Notion API (no CORS, and a token would be
 // exposed), so we copy today's line to the clipboard and open the user's own Notion page.
 $('notionUrl').value = settings.notionUrl;
+const renderNotionRow = () => { $('notionRow').hidden = !settings.notionUrl; };
 $('notionUrl').addEventListener('change', () => {
   settings.notionUrl = $('notionUrl').value.trim();
   store('ft.settings', settings);
+  renderNotionRow();
 });
+renderNotionRow();
+renderBackupInfo();
 
 // Copy and open synchronously inside the tap so phones don't block the new window as a popup.
 function copyText(text) {
@@ -454,6 +530,32 @@ function copyText(text) {
   return ok;
 }
 
+// One line for the Notion column; the weekly summary parses this format, so keep it stable.
+function notionLine() {
+  const p = plan(), note = $('note').value.trim(), acts = (records[dateKey(new Date())] || {}).acts;
+  const used = usedTotal(acts) ? '쓴 시간 ' + fmt(usedTotal(acts)) + ' (' + actsText(acts) + ')' : '';
+  return ['자유 ' + fmt(p.free) + (p.off ? ' (쉬는 날)' : ''), used, note].filter(Boolean).join(' · ');
+}
+
+// A friendlier multi-line version for KakaoTalk, memo apps, and so on.
+function shareText() {
+  const now = new Date(), p = plan(), r = records[dateKey(now)] || {};
+  const lines = ['📅 ' + now.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' }) + ' 남은 시간',
+    '자유 시간 ' + fmt(p.free) + (p.off ? ' (쉬는 날)' : '') + ' 중 ' + fmt(usedTotal(r.acts)) + ' 사용'];
+  Object.entries(r.acts || {}).sort((a, b) => b[1] - a[1]).forEach(([k, v]) => lines.push('· ' + k + ' ' + fmt(v)));
+  if ($('note').value.trim()) lines.push('메모: ' + $('note').value.trim());
+  return lines.join('\n');
+}
+
+$('shareBtn').onclick = async () => {
+  const text = shareText();
+  if (navigator.share) {
+    try { await navigator.share({ text }); return; }
+    catch (e) { if (e.name === 'AbortError') return; }
+  }
+  toast(copyText(text) ? '복사했어요. 원하는 곳에 붙여넣으세요' : '복사가 안 됐어요');
+};
+
 $('toNotion').onclick = () => {
   if (!settings.notionUrl) {
     $('notionSetup').open = true;
@@ -461,10 +563,7 @@ $('toNotion').onclick = () => {
     toast('먼저 노션 페이지 주소를 넣어 주세요');
     return;
   }
-  const p = plan(), note = $('note').value.trim(), acts = (records[dateKey(new Date())] || {}).acts;
-  const used = usedTotal(acts) ? '쓴 시간 ' + fmt(usedTotal(acts)) + ' (' + actsText(acts) + ')' : '';
-  const line = ['자유 ' + fmt(p.free) + (p.off ? ' (쉬는 날)' : ''), used, note].filter(Boolean).join(' · ');
-  const ok = copyText(line);
+  const ok = copyText(notionLine());
   toast(ok ? '복사했어요. 오늘 줄의 "남은 시간" 칸에 붙여넣으세요' : '복사가 안 됐어요. 직접 적어 주세요');
   window.open(settings.notionUrl, '_blank');
 };
@@ -496,7 +595,7 @@ $('icsBtn').onclick = () => {
       'END:VEVENT', 'END:VCALENDAR']).join('\r\n');
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([ics], { type: 'text/calendar' }));
-  a.download = '남은시간_알림.ics';
+  a.download = 'namun-sigan-reminder.ics';
   a.click();
 };
 
