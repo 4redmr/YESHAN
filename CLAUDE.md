@@ -13,6 +13,7 @@ A single personal project, `millionaire-advice/`: "억만장자의 아침 서신
 
 A second project, `free-time/` ("오늘 남은 시간"), is a small installable web app (PWA) the user wants to try selling. It shows today's free time after sleep, work, and commuting, and keeps a daily log in `localStorage`.
 - Files: `index.html` (inline CSS/JS), `manifest.webmanifest`, `sw.js`, `icons/`. Install and the service worker need an https host (e.g. Netlify Drop); they don't work from `file://`.
+- Live at https://namun-sigan.netlify.app (Netlify, uploaded by hand). To ship a change, send the user a zip of `free-time/`; they unzip it and drag the folder onto the site's Deploys tab. This sandbox's network can't reach netlify.app, so ask the user to check the live site on their phone.
 - Bump `VERSION` in `sw.js` whenever any cached file changes.
 - The daily reminder is a repeating calendar event (.ics download or Google Calendar link), because a closed web app can't be woken on a schedule without a push server. The in-app notification only fires while the app is running.
 - "노션에 보내기" copies today's line and opens the Notion page whose address the user saved in the app. No Notion URL or ID is hardcoded, because the app is meant to be sold to others.
