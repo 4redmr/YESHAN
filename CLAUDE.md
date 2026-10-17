@@ -19,7 +19,7 @@ A second project, `free-time/` ("오늘 남은 시간"), is a small installable 
 - Daily log: the user picks an activity chip (editable list, default 독서/공부/휴식/기도/운동) and taps +5/+10/+15/+30/+60 minute buttons; minutes add up per activity and save immediately (`records[date].acts`). An optional one-line memo goes with them. The line sent to Notion is `자유 … · 쓴 시간 … (독서 40분, 기도 15분) · 메모`.
 - The user is a beginner who got lost when replies mixed in English or technical steps. Explain in plain Korean, keep steps few, and say exactly where to tap.
 - "기록 보내기" opens the phone's share sheet with a friendly multi-line summary (KakaoTalk, memo apps), falling back to copy. The 백업 card saves all settings and records as JSON in a `.txt` file (Chrome only shares a few file types) via the share sheet or a download, and restores by merging: dates already on the phone are kept. Keep download file names ASCII; Korean names came out as "download" in Chromium.
-- "노션에 보내기" (shown only once a Notion address is saved) copies today's line and opens the Notion page whose address the user saved in the app. No Notion URL or ID is hardcoded, because the app is meant to be sold to others.
+- "노션에 저장하기" (always shown; tapping it without an address opens the setup box) copies today's line and opens the Notion page whose address the user saved in the app. No Notion URL or ID is hardcoded, because the app is meant to be sold to others.
 - Notion page **⏳ 남은 시간 앱** (under 자기개발 홈, id `3fc3d8e501e781dd803ecc00a9fd2e4e`) holds the three feedback questions and **🗣️ 피드백 기록** (`collection://1dc7161c-c33b-4427-87fe-331e470a7435`): one row per person the app was sent to. The user fills it in, so read it when planning the next version and don't overwrite their answers.
 
 ## Constraints that are easy to break
@@ -41,6 +41,7 @@ A second project, `free-time/` ("오늘 남은 시간"), is a small installable 
 - The writer is a fictional mentor persona, "The Chairman", speaking in a warm mentor register (자네, ~하게, ~일세). Never attribute words to a real person.
 - The reader is an ordinary office worker who answers a hospital's main phone line (reservations, simple problem-solving, routing calls to departments). They are still figuring out their direction and are not running a business. An earlier version that pushed launching products felt overwhelming to them, so keep the advice small, concrete, and doable now.
 - Context the advice draws on (from their Notion): Christian faith (prayer, Bible study), preparing for a first child, learning English, piano, and hanja, reading 『부의 추월차선』 and 『신삼국지』, and making PDF planners with Claude.
+- Their own words for their hope: to help people who are struggling, to share their faith, to save lives, and to become someone who can give freely without running short. They asked to be grown and guided toward it. Tie advice back to this hope, but in small steps they can take now, not big leaps.
 - Any advice about using Claude at work must say to keep patient information (names, phone numbers, medical details) out of it.
 
 ## Notion record system

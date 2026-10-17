@@ -64,7 +64,7 @@
   li .n { flex: 1; font-size: 14px; word-break: break-all; }
   li button { padding: 2px 8px; font-size: 12px; color: var(--muted); }
   .empty { color: var(--muted); font-size: 14px; }
-  #install[hidden], #nudge[hidden], #notionRow[hidden] { display: none; }
+  #install[hidden], #nudge[hidden] { display: none; }
   #nudge { margin: 0 0 10px; padding: 8px 12px; border-radius: 9px; font-size: 14px;
     background: color-mix(in srgb, var(--accent) 18%, transparent); color: var(--text); }
   .hint { margin: 10px 0 0; font-size: 13px; color: var(--muted); }
@@ -150,12 +150,12 @@
       <button id="undo">되돌리기</button>
       <button class="primary" id="shareBtn">기록 보내기</button>
     </div>
-    <div class="row" id="notionRow" hidden><button id="toNotion">노션에 보내기</button></div>
+    <div class="row"><button id="toNotion">노션에 저장하기</button></div>
     <label style="margin-top:14px">한 줄 메모 (선택)<textarea id="note" placeholder="예: 아침 기도가 특히 좋았다"></textarea></label>
     <details id="notionSetup">
-      <summary class="hint">노션 연결 설정 (노션을 쓰는 분만)</summary>
+      <summary class="hint">노션 연결 설정</summary>
       <label style="margin-top:8px">노션 기록 페이지 주소<input type="url" id="notionUrl" placeholder="https://www.notion.so/..."></label>
-      <p class="hint">노션에서 기록 데이터베이스를 열고 공유 → 링크 복사로 얻은 주소를 붙여넣으세요. "노션에 보내기"를 누르면 오늘 기록이 복사되고 그 페이지가 열려요. 오늘 줄의 "남은 시간" 칸에 붙여넣으면 끝이에요.</p>
+      <p class="hint">노션에서 기록 데이터베이스를 열고 공유 → 링크 복사로 얻은 주소를 붙여넣으세요. "노션에 저장하기"를 누르면 오늘 기록이 복사되고 그 페이지가 열려요. 오늘 줄의 "남은 시간" 칸에 붙여넣으면 끝이에요.</p>
     </details>
   </section>
 
@@ -488,7 +488,7 @@ $('restoreFile').onchange = async () => {
   $('remindAt').value = settings.remindAt;
   $('notionUrl').value = settings.notionUrl;
   $('note').value = (records[dateKey(new Date())] || {}).note || '';
-  render(); renderBackupInfo(); renderNotionRow();
+  render(); renderBackupInfo();
   toast(added + '일치 기록을 불러왔어요');
 };
 
@@ -509,13 +509,11 @@ document.addEventListener('visibilitychange', () => { if (!document.hidden) rend
 // Notion link. A static page can't call the Notion API (no CORS, and a token would be
 // exposed), so we copy today's line to the clipboard and open the user's own Notion page.
 $('notionUrl').value = settings.notionUrl;
-const renderNotionRow = () => { $('notionRow').hidden = !settings.notionUrl; };
-$('notionUrl').addEventListener('change', () => {
+// Save on every keystroke: on phones the app is often closed before the field loses focus.
+$('notionUrl').addEventListener('input', () => {
   settings.notionUrl = $('notionUrl').value.trim();
   store('ft.settings', settings);
-  renderNotionRow();
 });
-renderNotionRow();
 renderBackupInfo();
 
 // Copy and open synchronously inside the tap so phones don't block the new window as a popup.
