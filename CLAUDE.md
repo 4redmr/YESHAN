@@ -39,6 +39,13 @@ The letter's "오늘의 기록 남기러 가기" button opens the Notion page **
 - **✅ 오늘의 동행 기록** (`collection://0528d17a-f793-437a-a298-7b7276a25443`): the user's daily log (prayer/Bible/exercise checks, 뿌듯했던 순간, 지쳤던 순간, 해낸 일, 감사 세 가지). This is the user's data; read it for weekly reviews but don't edit it.
 - **💰 돈 관리 첫걸음** (`collection://475b6366-57c9-4b7d-b6c4-f6783543fb3e`): ordered beginner money steps with 완료 checkboxes.
 
+A child page **🎧 고객지원실** (id `3fc3d8e501e781bc92e4c880aceb47a5`) holds workplace counseling. Its principles: confirm facts before apologizing; if it was the user's mistake, apologize once with a fix; if not, state the facts and offer a solution; record yelling incidents factually. It has three databases:
+- **📋 일어난 일 기록** (`collection://884a9621-15b6-476a-828d-ac77a14f45f0`): incidents, with 사실 확인 status, 받은 조언, and 다음엔 이렇게.
+- **💬 상황별 대응 문장** (`collection://d4931591-7b6e-4922-a73f-a390fbb66485`): ready-to-say scripts by situation.
+- **📞 지점별 진료 안내표** (`collection://f9168c1a-cca9-452c-b05a-0a9e70090c40`): weekday and Saturday availability of treatments per branch.
+
+When counseling, read the latest incident first. Add new advice to that row's 받은 조언 field and new scripts to 상황별 대응 문장. Never record patient names, phone numbers, or medical details anywhere.
+
 ## Web copy
 
 A viewable copy of the letter is also published as a claude.ai artifact. It is derived from `index.html` and must differ in three ways:
