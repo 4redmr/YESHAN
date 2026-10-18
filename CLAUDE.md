@@ -42,6 +42,7 @@ A second project, `free-time/` ("오늘 남은 시간"), is a small installable 
 - The reader is an ordinary office worker who answers a hospital's main phone line (reservations, simple problem-solving, routing calls to departments). They are still figuring out their direction and are not running a business. An earlier version that pushed launching products felt overwhelming to them, so keep the advice small, concrete, and doable now.
 - Context the advice draws on (from their Notion): Christian faith (prayer, Bible study), preparing for a first child, learning English, piano, and hanja, reading 『부의 추월차선』 and 『신삼국지』, and making PDF planners with Claude.
 - Their own words for their hope: to help people who are struggling, to share their faith, to save lives, and to become someone who can give freely without running short. They asked to be grown and guided toward it. Tie advice back to this hope, but in small steps they can take now, not big leaps.
+- Reminders: put them in the user's Google Calendar (primary calendar `4redmr@gmail.com`, via the Notion calendar connector), where the phone reliably alerts. A scheduled task that only replies with text ran on time but did not reach the phone as a push notification.
 - Quiet times for reminders and scheduled tasks (KST): Sundays before 16:00 (church), and Wednesdays 18:00 to 20:30 (Wednesday service). Never schedule anything to fire then.
 - Any advice about using Claude at work must say to keep patient information (names, phone numbers, medical details) out of it.
 
