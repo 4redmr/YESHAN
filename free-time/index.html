@@ -64,7 +64,9 @@
   li .n { flex: 1; font-size: 14px; word-break: break-all; }
   li button { padding: 2px 8px; font-size: 12px; color: var(--muted); }
   .empty { color: var(--muted); font-size: 14px; }
-  #install[hidden], #nudge[hidden] { display: none; }
+  #install[hidden], #nudge[hidden], #ovBox[hidden], #ovTimes[hidden], #ovBadge[hidden] { display: none; }
+  #ovBadge { display: inline-block; margin-top: 8px; padding: 3px 10px; border-radius: 20px; font-size: 13px;
+    background: color-mix(in srgb, var(--accent) 18%, transparent); color: var(--text); }
   #nudge { margin: 0 0 10px; padding: 8px 12px; border-radius: 9px; font-size: 14px;
     background: color-mix(in srgb, var(--accent) 18%, transparent); color: var(--text); }
   .hint { margin: 10px 0 0; font-size: 13px; color: var(--muted); }
@@ -112,6 +114,7 @@
     <div class="label">지금부터 잠들 때까지 쓸 수 있는 자유 시간</div>
     <div class="big" id="left">–</div>
     <div class="label" id="leftNote"></div>
+    <div id="ovBadge" hidden></div>
     <div class="bar" id="bar"></div>
     <div class="legend">
       <span><i style="background:var(--sleep)"></i>잠 <b id="lgSleep"></b></span>
@@ -131,7 +134,20 @@
       <label>출근길 (분)<input type="number" id="commuteIn" min="0" step="5" inputmode="numeric"></label>
       <label>퇴근길 (분)<input type="number" id="commuteOut" min="0" step="5" inputmode="numeric"></label>
     </div>
-    <label class="check"><input type="checkbox" id="dayOff">오늘은 쉬는 날 (근무·출퇴근 없음)</label>
+    <div class="row"><button id="ovBtn">오늘만 다르게</button></div>
+    <div id="ovBox" hidden>
+      <p class="step" style="margin-top:14px">반차·연차·조퇴처럼 오늘 하루만 바뀌어요. 내일은 원래 시간으로 돌아가요.</p>
+      <div class="chips" id="ovPresets">
+        <button class="chip" data-ov="am">오전 반차</button>
+        <button class="chip" data-ov="pm">오후 반차</button>
+        <button class="chip" data-ov="off">연차·쉬는 날</button>
+        <button class="chip ghost" data-ov="reset">원래대로</button>
+      </div>
+      <div class="grid" id="ovTimes">
+        <label>오늘 출근<input type="time" id="ovStart"></label>
+        <label>오늘 퇴근<input type="time" id="ovEnd"></label>
+      </div>
+    </div>
   </section>
 
   <section class="card">
@@ -215,6 +231,8 @@ function store(key, val) {
 
 let settings = Object.assign({}, DEFAULTS, load('ft.settings', {}));
 let records = load('ft.records', {});
+// One-day changes to the work schedule, keyed by date: { workStart, workEnd, off, label }.
+let overrides = load('ft.overrides', {});
 
 const toMin = t => { const [h, m] = (t || '0:0').split(':').map(Number); return h * 60 + m; };
 const dateKey = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
@@ -227,8 +245,16 @@ const fmt = min => {
 // Length of a span from a to b on the clock, wrapping past midnight.
 const span = (a, b) => ((b - a) % 1440 + 1440) % 1440;
 
+// Today's schedule: the usual settings with any one-day change for today laid on top.
+function sched() {
+  const o = overrides[dateKey(new Date())] || {};
+  return Object.assign({}, settings, {
+    workStart: o.workStart || settings.workStart, workEnd: o.workEnd || settings.workEnd, off: !!o.off, label: o.label || ''
+  });
+}
+
 function plan() {
-  const s = settings, off = $('dayOff').checked;
+  const s = sched(), off = s.off;
   const wake = toMin(s.wake), sleep = toMin(s.sleep);
   const awake = span(wake, sleep) || 1440;
   const work = off ? 0 : span(toMin(s.workStart), toMin(s.workEnd));
@@ -242,11 +268,11 @@ function freeLeft(p, now) {
   if (sinceWake >= p.awake) return 0;
   const leftAwake = p.awake - sinceWake;
   if (p.off) return leftAwake;
-  const ws = toMin(settings.workStart), we = toMin(settings.workEnd);
+  const s = sched(), ws = toMin(s.workStart), we = toMin(s.workEnd);
   const blocks = [
-    [ws - (+settings.commuteIn || 0), ws],
+    [ws - (+s.commuteIn || 0), ws],
     [ws, ws + p.work],
-    [we, we + (+settings.commuteOut || 0)]
+    [we, we + (+s.commuteOut || 0)]
   ];
   let busy = 0;
   for (const [a, b] of blocks) {
@@ -261,7 +287,9 @@ function render() {
   const nowMin = now.getHours() * 60 + now.getMinutes();
   $('today').textContent = now.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'long' });
 
-  const left = freeLeft(p, nowMin);
+  const left = freeLeft(p, nowMin), s = sched();
+  $('ovBadge').hidden = !s.label;
+  $('ovBadge').textContent = '오늘만: ' + s.label + (s.off ? '' : ' · ' + s.workStart + '~' + s.workEnd);
   $('left').textContent = fmt(left);
   $('leftNote').textContent = '오늘 하루 자유 시간은 모두 ' + fmt(p.free) + '이에요.';
 
@@ -392,7 +420,15 @@ let editing = false;
 const undoStack = [];
 
 const todayKey = dateKey(new Date());
-if (records[todayKey]) { $('note').value = records[todayKey].note || ''; $('dayOff').checked = !!records[todayKey].off; }
+if (records[todayKey]) $('note').value = records[todayKey].note || '';
+// Earlier versions kept "쉬는 날" only on the day's record; carry it over as a one-day change.
+if (records[todayKey] && records[todayKey].off && !overrides[todayKey]) overrides[todayKey] = { off: true, label: '쉬는 날' };
+// Drop one-day changes older than 60 days.
+{
+  const cut = new Date(); cut.setDate(cut.getDate() - 60);
+  for (const k of Object.keys(overrides)) if (k < dateKey(cut)) delete overrides[k];
+  store('ft.overrides', overrides);
+}
 
 // Everything saves as soon as it changes; a day with no minutes and no memo has no record.
 function saveToday(acts) {
@@ -404,7 +440,45 @@ function saveToday(acts) {
   render();
 }
 
-$('dayOff').addEventListener('change', () => { if (records[dateKey(new Date())]) saveToday(); else render(); });
+function setOverride(o) {
+  const key = dateKey(new Date());
+  if (o) overrides[key] = o; else delete overrides[key];
+  store('ft.overrides', overrides);
+  renderOverride();
+  if (records[key]) saveToday(); else render();
+}
+
+function renderOverride() {
+  const o = overrides[dateKey(new Date())], s = sched();
+  $('ovBtn').textContent = o ? '오늘만 다르게 · ' + o.label : '오늘만 다르게';
+  $('ovBtn').classList.toggle('primary', !!o);
+  $('ovTimes').hidden = s.off;
+  $('ovStart').value = s.workStart;
+  $('ovEnd').value = s.workEnd;
+  for (const b of $('ovPresets').children) b.classList.toggle('on', !!o && b.dataset.ov === o.kind);
+}
+
+$('ovBtn').onclick = () => { $('ovBox').hidden = !$('ovBox').hidden; renderOverride(); };
+
+// Half days assume a 12:30 to 13:30 lunch; the times stay editable below.
+$('ovPresets').onclick = e => {
+  const kind = e.target.dataset.ov;
+  if (!kind) return;
+  if (kind === 'reset') { setOverride(null); toast('오늘은 원래 시간으로 돌아왔어요'); return; }
+  const presets = {
+    am: { kind, label: '오전 반차', workStart: '13:30', workEnd: settings.workEnd },
+    pm: { kind, label: '오후 반차', workStart: settings.workStart, workEnd: '12:30' },
+    off: { kind, label: '연차·쉬는 날', off: true }
+  };
+  setOverride(presets[kind]);
+  toast('오늘만 ' + presets[kind].label + '(으)로 바꿨어요');
+};
+
+for (const id of ['ovStart', 'ovEnd']) $(id).addEventListener('change', () => {
+  const o = overrides[dateKey(new Date())] || { kind: 'custom', label: '시간 변경' };
+  setOverride(Object.assign({}, o, { workStart: $('ovStart').value || settings.workStart, workEnd: $('ovEnd').value || settings.workEnd }));
+});
+renderOverride();
 $('note').addEventListener('input', () => saveToday());
 
 $('mins').onclick = e => {
@@ -453,7 +527,7 @@ function renderBackupInfo() {
 
 $('backupBtn').onclick = async () => {
   const today = dateKey(new Date());
-  const data = { app: 'namun-sigan', version: 1, savedAt: new Date().toISOString(), settings, records };
+  const data = { app: 'namun-sigan', version: 1, savedAt: new Date().toISOString(), settings, records, overrides };
   const file = new File([JSON.stringify(data)], 'namun-sigan-backup-' + today.replace(/-/g, '') + '.txt', { type: 'text/plain' });
   if (!await shareOrDownload(file)) return;
   settings.lastBackup = today;
@@ -477,6 +551,8 @@ $('restoreFile').onchange = async () => {
   const fresh = !Object.keys(records).length;
   let added = 0;
   for (const k of incoming) if (!records[k]) { records[k] = data.records[k]; added++; }
+  for (const [k, o] of Object.entries(data.overrides || {})) if (!overrides[k]) overrides[k] = o;
+  store('ft.overrides', overrides);
   // On a new phone take the old settings too; otherwise only bring over missing activities.
   if (fresh && data.settings) settings = Object.assign({}, DEFAULTS, data.settings);
   else if (data.settings && Array.isArray(data.settings.acts)) {
@@ -488,7 +564,7 @@ $('restoreFile').onchange = async () => {
   $('remindAt').value = settings.remindAt;
   $('notionUrl').value = settings.notionUrl;
   $('note').value = (records[dateKey(new Date())] || {}).note || '';
-  render(); renderBackupInfo();
+  render(); renderBackupInfo(); renderOverride();
   toast(added + '일치 기록을 불러왔어요');
 };
 
