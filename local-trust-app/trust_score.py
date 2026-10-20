@@ -1,15 +1,19 @@
 #!/usr/bin/env python3
 """
-지역 맛집 신뢰도 프로토타입 - 1단계.
+지역 맛집 신뢰도 프로토타입 - 2단계.
 
-구글 Places API(공식)의 rating, userRatingCount만으로 "평점은 높은데 리뷰가
-거의 없는" 가게를 광고 의심으로 표시한다. 자세한 배경은 README.md 참고.
+구글 Places API(공식)의 rating, userRatingCount로 "평점은 높은데 리뷰가 거의
+없는" 가게를 광고 의심으로 표시하고, 리뷰 텍스트는 ad_filter.py의 규칙으로
+광고성 문구를 추가로 점검한다. 자세한 배경은 README.md와 data-source-design.md
+참고.
 """
 
 import json
 import os
 import sys
 import urllib.request
+
+from ad_filter import classify, score_review
 
 API_KEY = os.environ.get("GOOGLE_PLACES_API_KEY")
 SEARCH_URL = "https://places.googleapis.com/v1/places:searchText"
@@ -34,7 +38,7 @@ def search_place(query: str) -> dict | None:
             "X-Goog-Api-Key": API_KEY,
             "X-Goog-FieldMask": (
                 "places.displayName,places.formattedAddress,"
-                "places.rating,places.userRatingCount"
+                "places.rating,places.userRatingCount,places.reviews"
             ),
         },
     )
@@ -63,6 +67,21 @@ def load_queries(path: str) -> list[str]:
         return [line.strip() for line in f if line.strip() and not line.startswith("#")]
 
 
+def check_reviews(place: dict) -> list[str]:
+    """리뷰 텍스트별로 ad_filter 규칙을 적용해 사람이 읽을 요약 줄을 만든다."""
+    lines = []
+    for review in place.get("reviews") or []:
+        text = (review.get("text") or {}).get("text", "")
+        if not text:
+            continue
+        score, reasons = score_review(text)
+        verdict = classify(score)
+        if verdict != "일반 리뷰":
+            snippet = text[:40] + ("…" if len(text) > 40 else "")
+            lines.append(f"    - [{verdict}, {score}점] {snippet} ({'; '.join(reasons)})")
+    return lines
+
+
 def main() -> None:
     if len(sys.argv) != 2:
         print(f"사용법: {sys.argv[0]} stores.sample.txt")
@@ -83,6 +102,8 @@ def main() -> None:
         rating = place.get("rating", "-")
         review_count = place.get("userRatingCount", "-")
         print(f"{name:<24}{rating!s:<8}{review_count!s:<10}{verdict:<10}{reason}")
+        for line in check_reviews(place):
+            print(line)
 
 
 if __name__ == "__main__":
