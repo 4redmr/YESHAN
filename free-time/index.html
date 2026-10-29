@@ -115,6 +115,13 @@
   #memoPreview { flex: 1; min-width: 0; font-size: 13px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   #memoBox[open] #memoPreview { display: none; }
   #memo { min-height: 160px; margin-top: 12px; }
+  #editDlg { width: min(92vw, 420px); padding: 18px; border: 1px solid var(--line); border-radius: 14px;
+    background: var(--card); color: var(--text); }
+  #editDlg::backdrop { background: rgba(0, 0, 0, .5); }
+  #editDlg h2 { margin-bottom: 4px; }
+  .erow { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
+  .erow span { flex: 1; font-weight: 600; }
+  .erow input { width: 96px; margin: 0; text-align: right; }
   #install p { margin: 0; font-size: 14px; color: var(--muted); }
   #install .row { margin-top: 10px; }
   .toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: var(--text); color: var(--bg);
@@ -194,8 +201,9 @@
     <div class="sumline"><span>오늘 쓴 시간 <b id="usedSum">0분</b></span><span>자유 시간 <b id="freeSum">–</b></span></div>
     <div class="row">
       <button id="undo">되돌리기</button>
-      <button class="primary" id="shareBtn">기록 보내기</button>
+      <button id="editToday">기록 고치기</button>
     </div>
+    <div class="row"><button class="primary" id="shareBtn">기록 보내기</button></div>
     <div class="row"><button id="toNotion">노션에 저장하기</button></div>
     <label style="margin-top:14px">오늘 한 줄 (선택)<textarea id="note" placeholder="예: 아침 기도가 특히 좋았다"></textarea></label>
     <details id="notionSetup">
@@ -279,6 +287,16 @@
     </div>
   </section>
 </main>
+<dialog id="editDlg">
+  <h2 id="editTitle"></h2>
+  <p class="hint" style="margin:0">분 단위로 고쳐 주세요. 0으로 하면 지워져요.</p>
+  <div id="editRows"></div>
+  <div class="row">
+    <button id="editCancel">취소</button>
+    <button class="primary" id="editSave">저장</button>
+  </div>
+  <div class="row"><button id="editDelete">이 날 기록 모두 지우기</button></div>
+</dialog>
 <div class="toast" id="toast"></div>
 
 <script>
@@ -397,11 +415,7 @@ function fillBars(ul, acts, onRemove) {
 
 function renderToday() {
   const r = records[dateKey(new Date())] || {};
-  fillBars($('used'), r.acts, name => {
-    if (!confirm('오늘 ' + name + ' 기록(' + fmt(r.acts[name]) + ')을 지울까요?')) return;
-    delete r.acts[name];
-    saveToday(r.acts);
-  });
+  fillBars($('used'), r.acts);
   $('usedSum').textContent = fmt(usedTotal(r.acts) + (timer && timer.date === dateKey(new Date()) ? elapsedMin() : 0));
 
   renderTasks();
@@ -474,14 +488,11 @@ function renderHistory() {
     for (const k of keys) {
       const r = records[k], li = document.createElement('li');
       const d = new Date(k + 'T00:00');
-      li.innerHTML = '<span class="d"></span><span class="h"></span><span class="n"></span><button>삭제</button>';
+      li.innerHTML = '<span class="d"></span><span class="h"></span><span class="n"></span><button>고치기</button>';
       li.children[0].textContent = (d.getMonth() + 1) + '/' + d.getDate() + ' ' + '일월화수목금토'[d.getDay()];
       li.children[1].textContent = fmt(r.free);
       li.children[2].textContent = (r.off ? '[쉬는 날] ' : '') + [actsText(r.acts), r.note].filter(Boolean).join(' · ');
-      li.children[3].onclick = () => {
-        if (!confirm(k + ' 기록을 지울까요?')) return;
-        delete records[k]; store('ft.records', records); renderHistory();
-      };
+      li.children[3].onclick = () => openEditor(k);
       list.appendChild(li);
     }
   }
@@ -591,17 +602,23 @@ let timer = load('ft.timer', null);
 const elapsedMin = () => timer ? Math.max(0, (Date.now() - timer.start) / 60000) : 0;
 let audio = null;
 
+// Saves one day's minutes; a past day with no minutes and no memo loses its record.
+function setDayActs(key, acts) {
+  if (key === dateKey(new Date())) { saveToday(acts); return; }
+  const p = plan();
+  const r = Object.assign({ free: p.free, work: p.work, commute: p.commute, off: p.off, note: '' }, records[key], { acts });
+  if (!usedTotal(acts) && !r.note) delete records[key]; else records[key] = r;
+  store('ft.records', records);
+  render();
+}
+
 function addMinutes(key, act, m) {
   m = Math.round(m * 10) / 10;
   if (m <= 0) return;
   const acts = Object.assign({}, (records[key] || {}).acts);
   acts[act] = Math.round(((acts[act] || 0) + m) * 10) / 10;
   undoStack.push({ key, act, m });
-  if (key === dateKey(new Date())) { saveToday(acts); return; }
-  const p = plan();
-  records[key] = Object.assign({ free: p.free, work: p.work, commute: p.commute, off: p.off, note: '' }, records[key], { acts });
-  store('ft.records', records);
-  render();
+  setDayActs(key, acts);
 }
 
 function startTimer(name) {
@@ -666,7 +683,21 @@ setInterval(tick, 1000);
 
 // A timer left on for hours is usually forgotten; ask once every 3 hours.
 function checkForgotten() {
-  if (!timer || elapsedMin() < 180) return;
+  if (!timer) return;
+  // Past the user's bedtime, the likeliest story is that they fell asleep with it on.
+  const bed = new Date(timer.start), [bh, bm] = settings.sleep.split(':').map(Number);
+  bed.setHours(bh, bm, 0, 0);
+  if (bed <= new Date(timer.start)) bed.setDate(bed.getDate() + 1);
+  if (Date.now() > bed && !timer.bedAsked) {
+    timer.bedAsked = true; store('ft.timer', timer);
+    const guess = Math.round(Math.min(elapsedMin(), (bed - timer.start) / 60000));
+    const ans = prompt(eul(timer.act) + ' 재다가 잠드신 것 같아요 😴\n잠드는 시간(' + settings.sleep + ')이 지나도록 타이머가 켜져 있었어요.\n\n실제로 몇 분 했나요? (숫자만)\n아직 하는 중이면 "취소"를 눌러 주세요.', String(guess));
+    if (ans === null) { timer.askedAt = Date.now(); store('ft.timer', timer); return; }
+    const m = parseFloat(ans);
+    stopTimer(isNaN(m) ? guess : Math.max(0, m));
+    return;
+  }
+  if (elapsedMin() < 180) return;
   if (timer.askedAt && (Date.now() - timer.askedAt) / 60000 < 180) return;
   if (confirm(eul(timer.act) + ' ' + fmt(elapsedMin()) + ' 동안 재고 있어요.\n아직 하는 중이에요?\n\n확인: 계속 재기 / 취소: 멈추기')) {
     timer.askedAt = Date.now(); store('ft.timer', timer); return;
@@ -712,13 +743,58 @@ $('memoClear').onclick = () => {
 };
 renderMemo();
 
+// Editor for one day's minutes, so a wrong timer or tap can be fixed afterwards.
+let editKey = null;
+function openEditor(key) {
+  editKey = key;
+  const r = records[key] || {}, acts = r.acts || {}, d = new Date(key + 'T00:00');
+  $('editTitle').textContent = (d.getMonth() + 1) + '월 ' + d.getDate() + '일 기록 고치기';
+  const names = Object.keys(acts).concat(settings.acts.filter(a => !(a in acts)));
+  $('editRows').innerHTML = '';
+  for (const name of names) {
+    const row = document.createElement('label');
+    row.className = 'erow';
+    row.innerHTML = '<span></span><input type="number" min="0" step="1" inputmode="numeric"> 분';
+    row.firstChild.textContent = name;
+    row.children[1].value = Math.round(acts[name] || 0);
+    row.children[1].dataset.name = name;
+    $('editRows').appendChild(row);
+  }
+  $('editDelete').hidden = !records[key];
+  $('editDlg').showModal();
+}
+$('editToday').onclick = () => {
+  if (timer) stopTimer(undefined, true);
+  openEditor(dateKey(new Date()));
+};
+$('editCancel').onclick = () => $('editDlg').close();
+$('editSave').onclick = () => {
+  const acts = {};
+  for (const inp of $('editRows').querySelectorAll('input')) {
+    const m = parseFloat(inp.value);
+    if (m > 0) acts[inp.dataset.name] = Math.round(m * 10) / 10;
+  }
+  undoStack.length = 0;
+  setDayActs(editKey, acts);
+  $('editDlg').close();
+  toast('기록을 고쳤어요');
+};
+$('editDelete').onclick = () => {
+  if (!confirm('이 날 기록을 모두 지울까요? 되돌릴 수 없어요.')) return;
+  delete records[editKey];
+  store('ft.records', records);
+  $('editDlg').close();
+  render();
+  toast('지웠어요');
+};
+
 $('undo').onclick = () => {
   const last = undoStack.pop();
-  if (!last || last.key !== dateKey(new Date()) || !records[last.key]) { toast('되돌릴 기록이 없어요'); return; }
+  if (!last || !records[last.key]) { toast('되돌릴 기록이 없어요'); return; }
   const acts = Object.assign({}, records[last.key].acts);
-  acts[last.act] = (acts[last.act] || 0) - last.m;
+  acts[last.act] = Math.round(((acts[last.act] || 0) - last.m) * 10) / 10;
   if (acts[last.act] <= 0) delete acts[last.act];
-  saveToday(acts);
+  setDayActs(last.key, acts);
   toast(last.act + ' ' + fmt(last.m) + ' 뺐어요');
 };
 
