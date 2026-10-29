@@ -89,6 +89,32 @@
     border-top: 1px solid var(--line); font-size: 14px; color: var(--muted); }
   .sumline b { color: var(--text); font-variant-numeric: tabular-nums; }
   details summary { cursor: pointer; margin-top: 12px; }
+  .tasks li { display: block; border-top: 0; padding: 0; }
+  .task { color: var(--text); width: 100%; display: flex; align-items: center; gap: 10px; text-align: left; padding: 14px; margin-top: 8px; border-radius: 12px; }
+  .task .tname { flex: 1; font-size: 17px; font-weight: 600; word-break: break-all; }
+  .task .ttime { font-size: 15px; }
+  .task .ttime { color: var(--muted); font-variant-numeric: tabular-nums; }
+  .task .ticon { width: 30px; height: 30px; flex: none; border-radius: 50%; display: grid; place-items: center; background: var(--line); font-size: 13px; }
+  .task.running { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, var(--card)); }
+  .task.running .ttime { color: var(--accent); font-weight: 700; }
+  .task.running .ticon { background: var(--accent); color: #17150f; }
+  .tasks.editing .ticon { background: #c0504d; color: #fff; }
+  #focus[hidden], #memoClearRow[hidden] { display: none; }
+  #focus { position: sticky; top: 0; z-index: 5; margin: 0 -16px 14px; padding: max(10px, env(safe-area-inset-top)) 16px 12px;
+    background: var(--bg); border-bottom: 1px solid var(--line); }
+  #focus .ftop { display: flex; align-items: center; gap: 12px; }
+  #focus .fname { font-size: 14px; color: var(--muted); }
+  #focus .ftime { font-size: 40px; font-weight: 700; color: var(--accent); line-height: 1.1; font-variant-numeric: tabular-nums; }
+  #focus .fgoal { font-size: 13px; color: var(--muted); margin-top: 6px; }
+  #focus .fbar { height: 6px; border-radius: 3px; background: var(--line); overflow: hidden; margin-top: 8px; }
+  #focus .fbar span { display: block; height: 100%; width: 0; background: var(--accent); transition: width .5s; }
+  #focus button { margin-left: auto; flex: none; padding: 10px 16px; }
+  #memoBox summary { margin: 0; display: flex; align-items: baseline; gap: 8px; list-style: none; }
+  #memoBox summary::-webkit-details-marker { display: none; }
+  #memoBox summary h2 { margin: 0; }
+  #memoPreview { flex: 1; min-width: 0; font-size: 13px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #memoBox[open] #memoPreview { display: none; }
+  #memo { min-height: 160px; margin-top: 12px; }
   #install p { margin: 0; font-size: 14px; color: var(--muted); }
   #install .row { margin-top: 10px; }
   .toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: var(--text); color: var(--bg);
@@ -100,6 +126,15 @@
 <main>
   <h1>오늘 남은 시간</h1>
   <p class="sub" id="today"></p>
+
+  <div id="focus" hidden>
+    <div class="ftop">
+      <div><div class="fname" id="fName"></div><div class="ftime" id="fTime">0:00</div></div>
+      <button class="primary" id="fStop">⏸ 멈추기</button>
+    </div>
+    <div class="fbar" id="fBarWrap"><span id="fBar"></span></div>
+    <div class="fgoal" id="fGoal"></div>
+  </div>
 
   <section class="card" id="install" hidden>
     <h2>홈 화면에 설치하기</h2>
@@ -122,6 +157,60 @@
       <span><i style="background:var(--commute)"></i>출퇴근 <b id="lgCommute"></b></span>
       <span><i style="background:var(--free)"></i>자유 <b id="lgFree"></b></span>
     </div>
+  </section>
+
+  <section class="card">
+    <h2>할 일</h2>
+    <p id="nudge" hidden>알림 시간이 지났어요. 아직 오늘 기록이 없어요.</p>
+    <p class="step">누르면 시간 재기 시작, 한 번 더 누르면 멈춰요.</p>
+    <ul class="tasks" id="tasks"></ul>
+    <div class="row">
+      <button id="taskAdd">+ 할 일 추가</button>
+      <button id="taskEdit">편집</button>
+    </div>
+    <details id="manual">
+      <summary class="hint">깜빡했나요? 시간 직접 더하기</summary>
+      <div class="chips" id="acts" style="margin-top:10px"></div>
+      <div class="mins" id="mins">
+        <button data-m="5">+5분</button><button data-m="10">+10분</button><button data-m="15">+15분</button>
+        <button data-m="30">+30분</button><button data-m="60">+1시간</button>
+      </div>
+    </details>
+    <details id="focusSet">
+      <summary class="hint">집중 설정</summary>
+      <p class="step" style="margin-top:10px">목표 시간</p>
+      <div class="chips" id="goalChips">
+        <button class="chip" data-goal="0">없음</button><button class="chip" data-goal="15">15분</button>
+        <button class="chip" data-goal="25">25분</button><button class="chip" data-goal="50">50분</button>
+      </div>
+      <p class="step">목표 시간이 되면</p>
+      <div class="chips" id="alertChips">
+        <button class="chip" data-alert="silent">무음</button><button class="chip" data-alert="vibrate">진동</button>
+        <button class="chip" data-alert="sound">소리</button>
+      </div>
+      <p class="hint" style="margin:0">알림은 앱이 열려 있을 때만 울려요. 진동은 아이폰에서는 되지 않아요. 앱을 닫아도 시간은 계속 재고 있어요.</p>
+    </details>
+    <ul class="used" id="used"></ul>
+    <div class="sumline"><span>오늘 쓴 시간 <b id="usedSum">0분</b></span><span>자유 시간 <b id="freeSum">–</b></span></div>
+    <div class="row">
+      <button id="undo">되돌리기</button>
+      <button class="primary" id="shareBtn">기록 보내기</button>
+    </div>
+    <div class="row"><button id="toNotion">노션에 저장하기</button></div>
+    <label style="margin-top:14px">오늘 한 줄 (선택)<textarea id="note" placeholder="예: 아침 기도가 특히 좋았다"></textarea></label>
+    <details id="notionSetup">
+      <summary class="hint">노션 연결 설정</summary>
+      <label style="margin-top:8px">노션 기록 페이지 주소<input type="url" id="notionUrl" placeholder="https://www.notion.so/..."></label>
+      <p class="hint">노션에서 기록 데이터베이스를 열고 공유 → 링크 복사로 얻은 주소를 붙여넣으세요. "노션에 저장하기"를 누르면 오늘 기록이 복사되고 그 페이지가 열려요. 오늘 줄의 "남은 시간" 칸에 붙여넣으면 끝이에요.</p>
+    </details>
+  </section>
+
+  <section class="card">
+    <details id="memoBox">
+      <summary><h2>📝 메모장</h2><span id="memoPreview"></span></summary>
+      <textarea id="memo" placeholder="떠오른 생각, 나중에 할 일… 지우기 전까지 그대로 남아요."></textarea>
+      <div class="row" id="memoClearRow"><button id="memoClear">메모 지우기</button></div>
+    </details>
   </section>
 
   <section class="card">
@@ -148,31 +237,6 @@
         <label>오늘 퇴근<input type="time" id="ovEnd"></label>
       </div>
     </div>
-  </section>
-
-  <section class="card">
-    <h2>오늘 쓴 시간</h2>
-    <p id="nudge" hidden>알림 시간이 지났어요. 아직 오늘 기록이 없어요.</p>
-    <p class="step">① 무엇을 했나요?</p>
-    <div class="chips" id="acts"></div>
-    <p class="step">② 몇 분 했나요? 누를 때마다 더해져요.</p>
-    <div class="mins" id="mins">
-      <button data-m="5">+5분</button><button data-m="10">+10분</button><button data-m="15">+15분</button>
-      <button data-m="30">+30분</button><button data-m="60">+1시간</button>
-    </div>
-    <ul class="used" id="used"></ul>
-    <div class="sumline"><span>오늘 쓴 시간 <b id="usedSum">0분</b></span><span>자유 시간 <b id="freeSum">–</b></span></div>
-    <div class="row">
-      <button id="undo">되돌리기</button>
-      <button class="primary" id="shareBtn">기록 보내기</button>
-    </div>
-    <div class="row"><button id="toNotion">노션에 저장하기</button></div>
-    <label style="margin-top:14px">한 줄 메모 (선택)<textarea id="note" placeholder="예: 아침 기도가 특히 좋았다"></textarea></label>
-    <details id="notionSetup">
-      <summary class="hint">노션 연결 설정</summary>
-      <label style="margin-top:8px">노션 기록 페이지 주소<input type="url" id="notionUrl" placeholder="https://www.notion.so/..."></label>
-      <p class="hint">노션에서 기록 데이터베이스를 열고 공유 → 링크 복사로 얻은 주소를 붙여넣으세요. "노션에 저장하기"를 누르면 오늘 기록이 복사되고 그 페이지가 열려요. 오늘 줄의 "남은 시간" 칸에 붙여넣으면 끝이에요.</p>
-    </details>
   </section>
 
   <section class="card">
@@ -220,7 +284,7 @@
 <script>
 const $ = id => document.getElementById(id);
 const FIELDS = ['wake', 'sleep', 'workStart', 'workEnd', 'commuteIn', 'commuteOut'];
-const DEFAULTS = { acts: ['독서', '공부', '휴식', '기도', '운동'], act: '독서', notionUrl: '', remindAt: '21:30', notifyOn: false, wake: '06:30', sleep: '23:30', workStart: '09:00', workEnd: '18:00', commuteIn: 40, commuteOut: 40 };
+const DEFAULTS = { goal: 25, alert: 'vibrate', acts: ['독서', '공부', '휴식', '기도', '운동'], act: '독서', notionUrl: '', remindAt: '21:30', notifyOn: false, wake: '06:30', sleep: '23:30', workStart: '09:00', workEnd: '18:00', commuteIn: 40, commuteOut: 40 };
 
 function load(key, fallback) {
   try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; } catch (e) { return fallback; }
@@ -338,39 +402,67 @@ function renderToday() {
     delete r.acts[name];
     saveToday(r.acts);
   });
-  $('usedSum').textContent = fmt(usedTotal(r.acts));
+  $('usedSum').textContent = fmt(usedTotal(r.acts) + (timer && timer.date === dateKey(new Date()) ? elapsedMin() : 0));
 
+  renderTasks();
+
+  // Chips only pick which task the manual minute buttons add to.
   const box = $('acts');
   box.innerHTML = '';
-  box.classList.toggle('editing', editing);
   for (const name of settings.acts) {
     const b = document.createElement('button');
-    b.className = 'chip act' + (!editing && name === settings.act ? ' on' : '');
+    b.className = 'chip' + (name === settings.act ? ' on' : '');
     b.textContent = name;
-    b.onclick = () => {
-      if (editing) {
-        if (!confirm('"' + name + '"을 목록에서 뺄까요? 지난 기록은 그대로 남아요.')) return;
-        settings.acts = settings.acts.filter(a => a !== name);
-        if (settings.act === name) settings.act = settings.acts[0] || '';
-      } else settings.act = name;
-      store('ft.settings', settings); renderToday();
-    };
+    b.onclick = () => { settings.act = name; store('ft.settings', settings); renderToday(); };
     box.appendChild(b);
   }
-  const add = document.createElement('button');
-  add.className = 'chip ghost'; add.textContent = '+ 추가';
-  add.onclick = () => {
-    const name = (prompt('새 활동 이름 (예: 피아노, 영어, 산책)') || '').trim().slice(0, 10);
-    if (!name) return;
-    if (!settings.acts.includes(name)) settings.acts.push(name);
-    settings.act = name; editing = false;
-    store('ft.settings', settings); renderToday();
-  };
-  box.appendChild(add);
-  const edit = document.createElement('button');
-  edit.className = 'chip ghost'; edit.textContent = editing ? '완료' : '편집';
-  edit.onclick = () => { editing = !editing; renderToday(); };
-  box.appendChild(edit);
+  for (const b of $('goalChips').children) b.classList.toggle('on', +b.dataset.goal === +settings.goal);
+  for (const b of $('alertChips').children) b.classList.toggle('on', b.dataset.alert === settings.alert);
+}
+
+// Today's minutes for one task, counting a running timer.
+function taskMinutes(name) {
+  const r = records[dateKey(new Date())] || {};
+  const run = timer && timer.act === name && timer.date === dateKey(new Date()) ? elapsedMin() : 0;
+  return ((r.acts || {})[name] || 0) + run;
+}
+
+// Picks 을/를 for a Korean word by whether its last syllable has a final consonant.
+const eul = w => { const c = w.charCodeAt(w.length - 1) - 0xac00; return w + (c >= 0 && c < 11172 && c % 28 ? '을' : '를'); };
+
+const clock = min => {
+  const sec = Math.floor(min * 60), h = Math.floor(sec / 3600), m = Math.floor(sec / 60) % 60, s2 = sec % 60;
+  return (h ? h + ':' + String(m).padStart(2, '0') : m) + ':' + String(s2).padStart(2, '0');
+};
+
+function renderTasks() {
+  const ul = $('tasks');
+  ul.innerHTML = '';
+  ul.classList.toggle('editing', editing);
+  for (const name of settings.acts) {
+    const li = document.createElement('li'), b = document.createElement('button');
+    const running = timer && timer.act === name;
+    b.className = 'task' + (running ? ' running' : '');
+    b.dataset.name = name;
+    b.innerHTML = '<span class="tname"></span><span class="ttime"></span><span class="ticon"></span>';
+    b.children[0].textContent = name;
+    const m = taskMinutes(name);
+    b.children[1].textContent = running ? clock(elapsedMin()) : (m ? fmt(m) : '');
+    b.children[2].textContent = editing ? '✕' : running ? '⏸' : '▶';
+    b.onclick = () => {
+      if (editing) {
+        if (!confirm('"' + name + '" 할 일을 목록에서 뺄까요? 지난 기록은 그대로 남아요.')) return;
+        if (timer && timer.act === name) stopTimer();
+        settings.acts = settings.acts.filter(a => a !== name);
+        if (settings.act === name) settings.act = settings.acts[0] || '';
+        store('ft.settings', settings); renderToday();
+      } else if (running) stopTimer();
+      else startTimer(name);
+    };
+    li.appendChild(b);
+    ul.appendChild(li);
+  }
+  $('taskEdit').textContent = editing ? '완료' : '편집';
 }
 
 function renderHistory() {
@@ -493,6 +585,133 @@ $('mins').onclick = e => {
   toast(settings.act + ' +' + fmt(m) + ' → 오늘 ' + fmt(acts[settings.act]));
 };
 
+// Timer. Only the start time is stored, so it keeps counting while the app is closed or the
+// screen is off; minutes are credited to the day the timer started.
+let timer = load('ft.timer', null);
+const elapsedMin = () => timer ? Math.max(0, (Date.now() - timer.start) / 60000) : 0;
+let audio = null;
+
+function addMinutes(key, act, m) {
+  m = Math.round(m * 10) / 10;
+  if (m <= 0) return;
+  const acts = Object.assign({}, (records[key] || {}).acts);
+  acts[act] = Math.round(((acts[act] || 0) + m) * 10) / 10;
+  undoStack.push({ key, act, m });
+  if (key === dateKey(new Date())) { saveToday(acts); return; }
+  const p = plan();
+  records[key] = Object.assign({ free: p.free, work: p.work, commute: p.commute, off: p.off, note: '' }, records[key], { acts });
+  store('ft.records', records);
+  render();
+}
+
+function startTimer(name) {
+  if (timer) stopTimer(undefined, true);
+  // Sound needs an audio context unlocked by a tap, so make it here.
+  if (settings.alert === 'sound' && !audio) try { audio = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {}
+  timer = { act: name, start: Date.now(), date: dateKey(new Date()) };
+  settings.act = name;
+  store('ft.timer', timer); store('ft.settings', settings);
+  render(); tick();
+  toast(name + ' 시작!');
+}
+
+// minutes overrides the measured time (used when the user corrects a forgotten timer).
+function stopTimer(minutes, quiet) {
+  if (!timer) return;
+  const t = timer, m = minutes === undefined ? elapsedMin() : minutes;
+  timer = null;
+  store('ft.timer', null);
+  if (m >= 0.1) addMinutes(t.date, t.act, m); else render();
+  tick();
+  if (!quiet) toast(t.act + ' ' + (m >= 1 ? fmt(m) : '1분 미만') + ' 기록했어요');
+}
+
+function alertGoal() {
+  if (settings.alert === 'vibrate' && navigator.vibrate) navigator.vibrate([300, 150, 300]);
+  if (settings.alert === 'sound' && audio) {
+    try {
+      audio.resume();
+      [0, 0.35].forEach(d => {
+        const o = audio.createOscillator(), g = audio.createGain();
+        o.frequency.value = 880; o.connect(g); g.connect(audio.destination);
+        g.gain.setValueAtTime(0.2, audio.currentTime + d);
+        g.gain.exponentialRampToValueAtTime(0.001, audio.currentTime + d + 0.3);
+        o.start(audio.currentTime + d); o.stop(audio.currentTime + d + 0.3);
+      });
+    } catch (e) {}
+  }
+  toast('목표 ' + settings.goal + '분 달성! 🎉 계속하거나 멈추세요');
+}
+
+// Runs every second while a timer is on: updates the focus banner and the running row.
+function tick() {
+  $('focus').hidden = !timer;
+  if (!timer) return;
+  const m = elapsedMin(), goal = +settings.goal;
+  $('fName').textContent = '● ' + timer.act;
+  $('fTime').textContent = clock(m);
+  $('fBarWrap').hidden = !goal;
+  $('fBar').style.width = goal ? Math.min(100, m / goal * 100) + '%' : '0';
+  $('fGoal').textContent = !goal ? '' : m < goal ? '목표 ' + goal + '분까지 ' + Math.ceil(goal - m) + '분' : '목표 ' + goal + '분 달성 🎉';
+  const today = (records[dateKey(new Date())] || {}).acts;
+  $('usedSum').textContent = fmt(usedTotal(today) + (timer.date === dateKey(new Date()) ? m : 0));
+  const row = document.querySelector('.task.running .ttime');
+  if (row) row.textContent = clock(m);
+  if (goal && m >= goal && !timer.alerted) {
+    timer.alerted = true; store('ft.timer', timer);
+    if (!document.hidden) alertGoal();
+  }
+}
+setInterval(tick, 1000);
+
+// A timer left on for hours is usually forgotten; ask once every 3 hours.
+function checkForgotten() {
+  if (!timer || elapsedMin() < 180) return;
+  if (timer.askedAt && (Date.now() - timer.askedAt) / 60000 < 180) return;
+  if (confirm(eul(timer.act) + ' ' + fmt(elapsedMin()) + ' 동안 재고 있어요.\n아직 하는 중이에요?\n\n확인: 계속 재기 / 취소: 멈추기')) {
+    timer.askedAt = Date.now(); store('ft.timer', timer); return;
+  }
+  const ans = prompt('실제로 몇 분 했나요? (숫자만)', String(Math.round(elapsedMin())));
+  const m = parseFloat(ans);
+  if (ans === null) { timer.askedAt = Date.now(); store('ft.timer', timer); return; }
+  stopTimer(isNaN(m) ? elapsedMin() : Math.max(0, m));
+}
+
+$('fStop').onclick = () => stopTimer();
+$('taskAdd').onclick = () => {
+  const name = (prompt('할 일 이름 (예: 영어 단어, 피아노, 성경 읽기)') || '').trim().slice(0, 15);
+  if (!name) return;
+  if (!settings.acts.includes(name)) settings.acts.push(name);
+  editing = false;
+  store('ft.settings', settings); renderToday();
+};
+$('taskEdit').onclick = () => { editing = !editing; renderToday(); };
+$('goalChips').onclick = e => {
+  if (e.target.dataset.goal === undefined) return;
+  settings.goal = +e.target.dataset.goal; store('ft.settings', settings); renderToday(); tick();
+};
+$('alertChips').onclick = e => {
+  const a = e.target.dataset.alert;
+  if (!a) return;
+  settings.alert = a; store('ft.settings', settings); renderToday();
+  if (a === 'sound' && !audio) try { audio = new (window.AudioContext || window.webkitAudioContext)(); } catch (e2) {}
+  alertGoal();  // a sample, so the user knows what it feels like
+};
+
+// Memo pad: one note kept until the user clears it, separate from the daily records.
+function renderMemo() {
+  const v = $('memo').value;
+  $('memoPreview').textContent = v.trim() ? v.trim().split('\n')[0] : '떠오른 생각을 적어 두는 곳';
+  $('memoClearRow').hidden = !v;
+}
+$('memo').value = load('ft.memo', '');
+$('memo').addEventListener('input', () => { store('ft.memo', $('memo').value); renderMemo(); });
+$('memoClear').onclick = () => {
+  if (!confirm('메모를 모두 지울까요? 되돌릴 수 없어요.')) return;
+  $('memo').value = ''; store('ft.memo', ''); renderMemo();
+};
+renderMemo();
+
 $('undo').onclick = () => {
   const last = undoStack.pop();
   if (!last || last.key !== dateKey(new Date()) || !records[last.key]) { toast('되돌릴 기록이 없어요'); return; }
@@ -527,7 +746,7 @@ function renderBackupInfo() {
 
 $('backupBtn').onclick = async () => {
   const today = dateKey(new Date());
-  const data = { app: 'namun-sigan', version: 1, savedAt: new Date().toISOString(), settings, records, overrides };
+  const data = { app: 'namun-sigan', version: 1, savedAt: new Date().toISOString(), settings, records, overrides, memo: load('ft.memo', '') };
   const file = new File([JSON.stringify(data)], 'namun-sigan-backup-' + today.replace(/-/g, '') + '.txt', { type: 'text/plain' });
   if (!await shareOrDownload(file)) return;
   settings.lastBackup = today;
@@ -552,6 +771,7 @@ $('restoreFile').onchange = async () => {
   let added = 0;
   for (const k of incoming) if (!records[k]) { records[k] = data.records[k]; added++; }
   for (const [k, o] of Object.entries(data.overrides || {})) if (!overrides[k]) overrides[k] = o;
+  if (data.memo && !$('memo').value.trim()) { $('memo').value = data.memo; store('ft.memo', data.memo); renderMemo(); }
   store('ft.overrides', overrides);
   // On a new phone take the old settings too; otherwise only bring over missing activities.
   if (fresh && data.settings) settings = Object.assign({}, DEFAULTS, data.settings);
@@ -579,8 +799,10 @@ $('csv').onclick = () => {
 };
 
 render();
-setInterval(render, 30000);
-document.addEventListener('visibilitychange', () => { if (!document.hidden) render(); });
+setInterval(() => { if (!editing) render(); }, 30000);
+tick();
+setTimeout(checkForgotten, 500);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) { render(); tick(); checkForgotten(); } });
 
 // Notion link. A static page can't call the Notion API (no CORS, and a token would be
 // exposed), so we copy today's line to the clipboard and open the user's own Notion page.
