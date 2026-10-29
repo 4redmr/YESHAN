@@ -98,7 +98,9 @@
   .task.running { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, var(--card)); }
   .task.running .ttime { color: var(--accent); font-weight: 700; }
   .task.running .ticon { background: var(--accent); color: #17150f; }
-  .tasks.editing .ticon { background: #c0504d; color: #fff; }
+  .tasks li.editing { display: flex; gap: 8px; align-items: center; }
+  .tasks li.editing .task { flex: 1; }
+  .tasks .tdel { flex: none; margin-top: 8px; padding: 14px 16px; border-radius: 12px; color: #c0504d; font-weight: 600; }
   #focus[hidden], #memoClearRow[hidden] { display: none; }
   #focus { position: sticky; top: 0; z-index: 5; margin: 0 -16px 14px; padding: max(10px, env(safe-area-inset-top)) 16px 12px;
     background: var(--bg); border-bottom: 1px solid var(--line); }
@@ -169,7 +171,7 @@
   <section class="card">
     <h2>할 일</h2>
     <p id="nudge" hidden>알림 시간이 지났어요. 아직 오늘 기록이 없어요.</p>
-    <p class="step">누르면 시간 재기 시작, 한 번 더 누르면 멈춰요.</p>
+    <p class="step" id="taskHint">누르면 시간 재기 시작, 한 번 더 누르면 멈춰요.</p>
     <ul class="tasks" id="tasks"></ul>
     <div class="row">
       <button id="taskAdd">+ 할 일 추가</button>
@@ -462,21 +464,52 @@ function renderTasks() {
     b.children[0].textContent = name;
     const m = taskMinutes(name);
     b.children[1].textContent = running ? clock(elapsedMin()) : (m ? fmt(m) : '');
-    b.children[2].textContent = editing ? '✕' : running ? '⏸' : '▶';
+    b.children[2].textContent = editing ? '✏️' : running ? '⏸' : '▶';
     b.onclick = () => {
-      if (editing) {
+      if (editing) renameTask(name);
+      else if (running) stopTimer();
+      else startTimer(name);
+    };
+    li.appendChild(b);
+    if (editing) {
+      li.className = 'editing';
+      const del = document.createElement('button');
+      del.className = 'tdel'; del.textContent = '✕';
+      del.setAttribute('aria-label', name + ' 빼기');
+      del.onclick = () => {
         if (!confirm('"' + name + '" 할 일을 목록에서 뺄까요? 지난 기록은 그대로 남아요.')) return;
         if (timer && timer.act === name) stopTimer();
         settings.acts = settings.acts.filter(a => a !== name);
         if (settings.act === name) settings.act = settings.acts[0] || '';
         store('ft.settings', settings); renderToday();
-      } else if (running) stopTimer();
-      else startTimer(name);
-    };
-    li.appendChild(b);
+      };
+      li.appendChild(del);
+    }
     ul.appendChild(li);
   }
   $('taskEdit').textContent = editing ? '완료' : '편집';
+  $('taskHint').textContent = editing ? '✏️ 이름을 누르면 고칠 수 있어요. ✕는 목록에서 빼기예요.' : '누르면 시간 재기 시작, 한 번 더 누르면 멈춰요.';
+}
+
+// Renames a task everywhere: the list, a running timer, and every day's records, so the
+// weekly totals keep adding up. Renaming onto an existing task merges the two.
+function renameTask(name) {
+  const to = (prompt('새 이름 (지난 기록의 이름도 함께 바뀌어요)', name) || '').trim().slice(0, 15);
+  if (!to || to === name) return;
+  const merge = settings.acts.includes(to);
+  if (merge && !confirm('"' + to + '" 할 일이 이미 있어요. 둘을 합칠까요?\n지난 기록의 시간도 합쳐져요.')) return;
+  settings.acts = merge ? settings.acts.filter(a => a !== name) : settings.acts.map(a => a === name ? to : a);
+  if (settings.act === name) settings.act = to;
+  if (timer && timer.act === name) { timer.act = to; store('ft.timer', timer); }
+  for (const r of Object.values(records)) {
+    if (!r.acts || !(name in r.acts)) continue;
+    r.acts[to] = Math.round(((r.acts[to] || 0) + r.acts[name]) * 10) / 10;
+    delete r.acts[name];
+  }
+  for (const u of undoStack) if (u.act === name) u.act = to;
+  store('ft.settings', settings); store('ft.records', records);
+  render(); tick();
+  toast('"' + to + '"(으)로 바꿨어요');
 }
 
 function renderHistory() {
