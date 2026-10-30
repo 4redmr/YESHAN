@@ -420,7 +420,7 @@
     <details>
       <summary>🎯 집중 설정 (목표 시간 · 진동 · 소리)</summary>
       <ul>
-        <li>할 일 아래 <b>집중 설정</b>에서 목표 시간(없음, 15분, 25분, 50분)을 골라요.</li>
+        <li>할 일 아래 <b>집중 설정</b>에서 목표 시간(없음, 15분, 25분, 50분)을 골라요. 처음엔 "없음"이라 시간만 재요.</li>
         <li>목표 시간이 되면 <b>무음 / 진동 / 소리</b> 중 고른 방법으로 한 번 알려 줘요. 처음엔 진동이에요.</li>
         <li><b>재는 동안 화면 켜 두기</b>를 켜 두면 화면이 꺼지지 않아서 알림을 놓치지 않아요. 배터리가 조금 더 쓰여요.</li>
         <li>버튼을 누르면 어떤 느낌인지 미리 한 번 울려 줘요.</li>
@@ -557,7 +557,7 @@
 <script>
 const $ = id => document.getElementById(id);
 const FIELDS = ['wake', 'sleep', 'workStart', 'workEnd', 'commuteIn', 'commuteOut'];
-const DEFAULTS = { modeTimes: {}, weekly: {}, goals: {}, mode: '', customBusy: '', customGo: '', keepAwake: true, goal: 25, alert: 'vibrate', acts: ['독서', '공부', '휴식', '기도', '운동'], act: '독서', notionUrl: '', remindAt: '21:30', notifyOn: false, wake: '06:30', sleep: '23:30', workStart: '09:00', workEnd: '18:00', commuteIn: 40, commuteOut: 40 };
+const DEFAULTS = { modeTimes: {}, weekly: {}, goals: {}, mode: '', customBusy: '', customGo: '', keepAwake: true, goal: 0, alert: 'vibrate', acts: ['독서', '공부', '휴식', '기도', '운동'], act: '독서', notionUrl: '', remindAt: '21:30', notifyOn: false, wake: '06:30', sleep: '23:30', workStart: '09:00', workEnd: '18:00', commuteIn: 40, commuteOut: 40 };
 
 function load(key, fallback) {
   try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; } catch (e) { return fallback; }
