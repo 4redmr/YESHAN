@@ -256,7 +256,7 @@
     </details>
     <details id="focusSet">
       <summary class="hint">집중 설정</summary>
-      <p class="step" style="margin-top:10px">목표 시간</p>
+      <p class="step" style="margin-top:10px">기본 목표 시간 <span class="hint">(할 일마다 따로 정하려면 편집 → 할 일 누르기)</span></p>
       <div class="chips" id="goalChips">
         <button class="chip" data-goal="0">없음</button><button class="chip" data-goal="15">15분</button>
         <button class="chip" data-goal="25">25분</button><button class="chip" data-goal="50">50분</button>
@@ -420,7 +420,8 @@
     <details>
       <summary>🎯 집중 설정 (목표 시간 · 진동 · 소리)</summary>
       <ul>
-        <li>할 일 아래 <b>집중 설정</b>에서 목표 시간(없음, 15분, 25분, 50분)을 골라요. 처음엔 "없음"이라 시간만 재요.</li>
+        <li>할 일 아래 <b>집중 설정</b>에서 기본 목표 시간(없음, 15분, 25분, 50분)을 골라요. 처음엔 25분이고, <b>휴식은 목표가 없어요.</b></li>
+        <li>할 일마다 다르게 하려면 <b>편집</b> → 할 일을 누르고 <b>"한 번 잴 때 집중 목표"</b>를 골라요. (예: 기도 15분, 운동 50분)</li>
         <li>목표 시간이 되면 <b>무음 / 진동 / 소리</b> 중 고른 방법으로 한 번 알려 줘요. 처음엔 진동이에요.</li>
         <li><b>재는 동안 화면 켜 두기</b>를 켜 두면 화면이 꺼지지 않아서 알림을 놓치지 않아요. 배터리가 조금 더 쓰여요.</li>
         <li>버튼을 누르면 어떤 느낌인지 미리 한 번 울려 줘요.</li>
@@ -527,6 +528,11 @@
   <label>이름<input type="text" id="taskName" maxlength="15"></label>
   <label style="margin-top:10px">하루 목표 (분, 없으면 0)<input type="number" id="taskGoal" min="0" step="5" inputmode="numeric"></label>
   <p class="hint" style="margin:6px 0 0">목표를 정하면 할 일 아래에 막대가 차오르고, 다 채우면 ✅가 붙어요. 이름을 바꾸면 지난 기록의 이름도 같이 바뀌어요.</p>
+  <label style="margin-top:10px">한 번 잴 때 집중 목표 (알림)
+    <select id="taskFocus" style="width:100%;margin-top:4px;padding:9px 10px;font:inherit;color:var(--text);background:var(--bg);border:1px solid var(--line);border-radius:9px">
+      <option value="">기본값 따르기</option><option value="0">없음</option><option value="15">15분</option><option value="25">25분</option><option value="50">50분</option>
+    </select>
+  </label>
   <div class="row">
     <button id="taskCancel">취소</button>
     <button class="primary" id="taskSave">저장</button>
@@ -557,7 +563,7 @@
 <script>
 const $ = id => document.getElementById(id);
 const FIELDS = ['wake', 'sleep', 'workStart', 'workEnd', 'commuteIn', 'commuteOut'];
-const DEFAULTS = { modeTimes: {}, weekly: {}, goals: {}, mode: '', customBusy: '', customGo: '', keepAwake: true, goal: 0, alert: 'vibrate', acts: ['독서', '공부', '휴식', '기도', '운동'], act: '독서', notionUrl: '', remindAt: '21:30', notifyOn: false, wake: '06:30', sleep: '23:30', workStart: '09:00', workEnd: '18:00', commuteIn: 40, commuteOut: 40 };
+const DEFAULTS = { modeTimes: {}, weekly: {}, goals: {}, mode: '', customBusy: '', customGo: '', keepAwake: true, goal: 25, focusGoals: { '휴식': 0 }, alert: 'vibrate', acts: ['독서', '공부', '휴식', '기도', '운동'], act: '독서', notionUrl: '', remindAt: '21:30', notifyOn: false, wake: '06:30', sleep: '23:30', workStart: '09:00', workEnd: '18:00', commuteIn: 40, commuteOut: 40 };
 
 function load(key, fallback) {
   try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; } catch (e) { return fallback; }
@@ -795,6 +801,9 @@ function openTaskDlg(name) {
   taskDlgName = name;
   $('taskName').value = name;
   $('taskGoal').value = (settings.goals || {})[name] || 0;
+  const fg = (settings.focusGoals || {})[name];
+  $('taskFocus').value = fg === undefined ? '' : String(fg);
+  $('taskFocus').options[0].textContent = '기본값 따르기 (' + (+settings.goal ? settings.goal + '분' : '없음') + ')';
   $('taskDlg').showModal();
 }
 $('taskCancel').onclick = () => $('taskDlg').close();
@@ -802,6 +811,7 @@ $('taskSave').onclick = () => {
   const name = taskDlgName, to = $('taskName').value.trim().slice(0, 15) || name, goal = Math.max(0, parseInt($('taskGoal').value) || 0);
   if (to !== name && !renameTask(name, to)) return;
   if (goal) settings.goals[to] = goal; else delete settings.goals[to];
+  if ($('taskFocus').value === '') delete settings.focusGoals[to]; else settings.focusGoals[to] = +$('taskFocus').value;
   store('ft.settings', settings);
   $('taskDlg').close();
   render(); tick();
@@ -814,6 +824,8 @@ function renameTask(name, to) {
   if (merge && !confirm('"' + to + '" 할 일이 이미 있어요. 둘을 합칠까요?\n지난 기록의 시간도 합쳐져요.')) return false;
   if (settings.goals[name] && !settings.goals[to]) settings.goals[to] = settings.goals[name];
   delete settings.goals[name];
+  if (name in settings.focusGoals && !(to in settings.focusGoals)) settings.focusGoals[to] = settings.focusGoals[name];
+  delete settings.focusGoals[name];
   settings.acts = merge ? settings.acts.filter(a => a !== name) : settings.acts.map(a => a === name ? to : a);
   if (settings.act === name) settings.act = to;
   if (timer && timer.act === name) { timer.act = to; store('ft.timer', timer); }
@@ -1150,15 +1162,18 @@ function alertGoal() {
       });
     } catch (e) {}
   }
-  toast('목표 ' + settings.goal + '분 달성! 🎉 계속하거나 멈추세요');
+  toast('목표 ' + (timer ? focusGoal(timer.act) : settings.goal) + '분 달성! 🎉 계속하거나 멈추세요');
 }
+
+// A task's own focus goal if it has one (휴식 starts with none), otherwise the default.
+const focusGoal = name => { const g = (settings.focusGoals || {})[name]; return g === undefined ? +settings.goal : +g; };
 
 // Runs every second while a timer is on: updates the focus banner and the running row.
 function tick() {
   $('focus').hidden = !timer;
   if (!timer !== !wakeLock) syncWakeLock();
   if (!timer) return;
-  const m = elapsedMin(), goal = +settings.goal;
+  const m = elapsedMin(), goal = focusGoal(timer.act);
   $('fName').textContent = '● ' + timer.act;
   $('fTime').textContent = clock(m);
   $('fBarWrap').hidden = !goal;

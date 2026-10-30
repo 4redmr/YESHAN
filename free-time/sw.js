@@ -1,5 +1,5 @@
 // Bump VERSION whenever any cached file changes so installed copies pick up the update.
-const VERSION = 'v17';
+const VERSION = 'v18';
 const FILES = ['./', './index.html', './manifest.webmanifest',
   './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png'];
 
