@@ -1,5 +1,5 @@
 // Bump VERSION whenever any cached file changes so installed copies pick up the update.
-const VERSION = 'v20';
+const VERSION = 'v21';
 const FILES = ['./', './index.html', './manifest.webmanifest',
   './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png'];
 
@@ -25,10 +25,17 @@ self.addEventListener('fetch', e => {
     .catch(() => caches.match(e.request, { ignoreSearch: true })));
 });
 
+// The timer's status notification: "멈추기" tells the open app to stop (or opens it with
+// ?stop=1); tapping the notification itself just brings the app forward and keeps it shown.
 self.addEventListener('notificationclick', e => {
-  e.notification.close();
+  const timerNote = e.notification.tag === 'ft-timer';
+  if (!timerNote || e.action === 'stop') e.notification.close();
   e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
     const open = list.find(c => 'focus' in c);
+    if (timerNote && e.action === 'stop') {
+      if (open) { open.postMessage({ type: 'stop-timer' }); return open.focus(); }
+      return self.clients.openWindow('./?stop=1');
+    }
     return open ? open.focus() : self.clients.openWindow('./');
   }));
 });
