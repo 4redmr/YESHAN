@@ -141,6 +141,16 @@
   .erow input { width: 96px; margin: 0; text-align: right; }
   #install p { margin: 0; font-size: 14px; color: var(--muted); }
   #install .row { margin-top: 10px; }
+  #welcome[hidden], #customNames[hidden] { display: none; }
+  .modes { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+  .modes button { padding: 14px 8px; border-radius: 12px; font-weight: 600; line-height: 1.3; }
+  .modes button small { display: block; font-weight: 400; font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .modes button.on { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 16%, var(--card)); }
+  #dayBox > summary { list-style: none; margin: 0; }
+  #dayBox > summary::-webkit-details-marker { display: none; }
+  #dayBox > summary h2 { margin: 0 0 4px; }
+  #daySummary { font-size: 13px; color: var(--muted); }
+  #dayBox[open] #dayHint { display: none; }
   .sub a { color: var(--accent); text-decoration: none; margin-left: 8px; }
   #guide details { border-top: 1px solid var(--line); padding: 2px 0 10px; }
   #guide details:first-of-type { border-top: 0; }
@@ -170,6 +180,12 @@
     <div class="fgoal" id="fGoal"></div>
   </div>
 
+  <section class="card" id="welcome" hidden>
+    <h2>👋 반가워요! 나에게 맞는 모드를 골라 주세요</h2>
+    <p class="hint" style="margin:0">고르면 화면의 이름이 나에게 맞게 바뀌어요. 나중에 "나의 하루"에서 언제든 바꿀 수 있어요.</p>
+    <div class="modes" id="welcomeModes"></div>
+  </section>
+
   <section class="card" id="install" hidden>
     <h2>홈 화면에 설치하기</h2>
     <p id="installText">버튼을 누르면 홈 화면에 앱처럼 추가돼요. 인터넷이 없어도 열려요.</p>
@@ -187,8 +203,8 @@
     <div class="bar" id="bar"></div>
     <div class="legend">
       <span><i style="background:var(--sleep)"></i>잠 <b id="lgSleep"></b></span>
-      <span><i style="background:var(--work)"></i>근무 <b id="lgWork"></b></span>
-      <span><i style="background:var(--commute)"></i>출퇴근 <b id="lgCommute"></b></span>
+      <span><i style="background:var(--work)"></i><span data-l="busy">근무</span> <b id="lgWork"></b></span>
+      <span><i style="background:var(--commute)"></i><span data-l="go">출퇴근</span> <b id="lgCommute"></b></span>
       <span><i style="background:var(--free)"></i>자유 <b id="lgFree"></b></span>
     </div>
   </section>
@@ -222,7 +238,8 @@
         <button class="chip" data-alert="silent">무음</button><button class="chip" data-alert="vibrate">진동</button>
         <button class="chip" data-alert="sound">소리</button>
       </div>
-      <p class="hint" style="margin:0">알림은 앱이 열려 있을 때만 울려요. 진동은 아이폰에서는 되지 않아요. 앱을 닫아도 시간은 계속 재고 있어요.</p>
+      <label class="check"><input type="checkbox" id="keepAwake">재는 동안 화면 켜 두기 (알림을 놓치지 않아요)</label>
+      <p class="hint" style="margin:8px 0 0">알림은 앱이 열려 있을 때만 울려요. 진동은 아이폰에서는 되지 않아요. 앱을 닫아도 시간은 계속 재고 있어요.</p>
     </details>
     <ul class="used" id="used"></ul>
     <p class="srclegend" id="srcLegend"><span class="src src-timer">⏱</span>타이머로 잼 <span class="src src-manual">✋ 직접</span>직접 더함 <span class="src src-edit">✏️ 고침</span>고친 기록</p>
@@ -250,27 +267,35 @@
   </section>
 
   <section class="card">
-    <h2>나의 하루</h2>
-    <div class="grid">
-      <label>일어나는 시간<input type="time" id="wake"></label>
-      <label>잠드는 시간<input type="time" id="sleep"></label>
-      <label>출근 시간<input type="time" id="workStart"></label>
-      <label>퇴근 시간<input type="time" id="workEnd"></label>
-      <label>출근길 (분)<input type="number" id="commuteIn" min="0" step="5" inputmode="numeric"></label>
-      <label>퇴근길 (분)<input type="number" id="commuteOut" min="0" step="5" inputmode="numeric"></label>
-    </div>
+    <details id="dayBox">
+      <summary><h2>나의 하루 <span class="hint" id="dayHint" style="font-weight:400">· 눌러서 고치기</span></h2><div id="daySummary"></div></summary>
+      <p class="step" style="margin-top:12px">모드</p>
+      <div class="modes" id="dayModes"></div>
+      <div class="grid" id="customNames" style="margin-top:10px">
+        <label>바쁜 시간 이름<input type="text" id="customBusy" maxlength="8" placeholder="예: 알바, 육아"></label>
+        <label>오가는 시간 이름<input type="text" id="customGo" maxlength="8" placeholder="예: 이동"></label>
+      </div>
+      <div class="grid" style="margin-top:12px">
+        <label>일어나는 시간<input type="time" id="wake"></label>
+        <label>잠드는 시간<input type="time" id="sleep"></label>
+        <label><span data-l="start">출근</span> 시간<input type="time" id="workStart"></label>
+        <label><span data-l="end">퇴근</span> 시간<input type="time" id="workEnd"></label>
+        <label><span data-l="in">출근길</span> (분)<input type="number" id="commuteIn" min="0" step="5" inputmode="numeric"></label>
+        <label><span data-l="out">퇴근길</span> (분)<input type="number" id="commuteOut" min="0" step="5" inputmode="numeric"></label>
+      </div>
+    </details>
     <div class="row"><button id="ovBtn">오늘만 다르게</button></div>
     <div id="ovBox" hidden>
-      <p class="step" style="margin-top:14px">반차·연차·조퇴처럼 오늘 하루만 바뀌어요. 내일은 원래 시간으로 돌아가요.</p>
+      <p class="step" style="margin-top:14px"><span data-l="ovHint">반차·연차·조퇴처럼</span> 오늘 하루만 바뀌어요. 내일은 원래 시간으로 돌아가요.</p>
       <div class="chips" id="ovPresets">
-        <button class="chip" data-ov="am">오전 반차</button>
-        <button class="chip" data-ov="pm">오후 반차</button>
-        <button class="chip" data-ov="off">연차·쉬는 날</button>
+        <button class="chip" data-ov="am" data-l="am">오전 반차</button>
+        <button class="chip" data-ov="pm" data-l="pm">오후 반차</button>
+        <button class="chip" data-ov="off" data-l="off">연차·쉬는 날</button>
         <button class="chip ghost" data-ov="reset">원래대로</button>
       </div>
       <div class="grid" id="ovTimes">
-        <label>오늘 출근<input type="time" id="ovStart"></label>
-        <label>오늘 퇴근<input type="time" id="ovEnd"></label>
+        <label>오늘 <span data-l="start">출근</span><input type="time" id="ovStart"></label>
+        <label>오늘 <span data-l="end">퇴근</span><input type="time" id="ovEnd"></label>
       </div>
     </div>
   </section>
@@ -321,7 +346,8 @@
     <details>
       <summary>처음 시작하기</summary>
       <ol>
-        <li><b>나의 하루</b>에 일어나는 시간, 잠드는 시간, 출퇴근 시간을 넣어요. 한 번만 넣으면 기억해요.</li>
+        <li>처음 열면 <b>모드</b>를 골라요. 💼 직장인, 🎒 학생, 📚 수험생·공부, ✍️ 직접 정하기 중에서요. 고른 모드에 맞게 "근무·출퇴근" 같은 이름이 바뀌어요.</li>
+        <li><b>나의 하루</b>를 눌러 일어나는 시간, 잠드는 시간, 바쁜 시간(근무·수업 등), 오가는 시간을 넣어요. 한 번만 넣으면 기억해요. 모드도 여기서 바꿔요.</li>
         <li>맨 위 큰 숫자가 <b>지금부터 잠들 때까지 쓸 수 있는 자유 시간</b>이에요.</li>
         <li>휴대폰 홈 화면에 설치하면 앱처럼 쓸 수 있어요. 아이폰은 Safari의 공유(□↑) → "홈 화면에 추가"예요.</li>
       </ol>
@@ -353,6 +379,7 @@
       <ul>
         <li>할 일 아래 <b>집중 설정</b>에서 목표 시간(없음, 15분, 25분, 50분)을 골라요.</li>
         <li>목표 시간이 되면 <b>무음 / 진동 / 소리</b> 중 고른 방법으로 한 번 알려 줘요. 처음엔 진동이에요.</li>
+        <li><b>재는 동안 화면 켜 두기</b>를 켜 두면 화면이 꺼지지 않아서 알림을 놓치지 않아요. 배터리가 조금 더 쓰여요.</li>
         <li>버튼을 누르면 어떤 느낌인지 미리 한 번 울려 줘요.</li>
         <li>알림은 <b>앱이 열려 있을 때만</b> 울려요. 아이폰은 진동이 되지 않아요.</li>
       </ul>
@@ -381,9 +408,9 @@
     </details>
 
     <details>
-      <summary>🌴 반차 · 연차 · 조퇴 날</summary>
+      <summary>🌴 반차 · 연차 · 조퇴 · 수업 없는 날</summary>
       <ul>
-        <li><b>나의 하루 → 오늘만 다르게</b>를 눌러요.</li>
+        <li><b>오늘만 다르게</b>를 눌러요. (나의 하루 바로 아래에 있어요)</li>
         <li><b>오전 반차 / 오후 반차 / 연차·쉬는 날</b> 중 고르거나, 오늘 출근·퇴근 시간을 직접 고쳐요.</li>
         <li>다음 날이 되면 <b>저절로 원래 시간</b>으로 돌아와요. 바꾼 걸 취소하려면 <b>원래대로</b>를 눌러요.</li>
       </ul>
@@ -450,7 +477,7 @@
 <script>
 const $ = id => document.getElementById(id);
 const FIELDS = ['wake', 'sleep', 'workStart', 'workEnd', 'commuteIn', 'commuteOut'];
-const DEFAULTS = { goal: 25, alert: 'vibrate', acts: ['독서', '공부', '휴식', '기도', '운동'], act: '독서', notionUrl: '', remindAt: '21:30', notifyOn: false, wake: '06:30', sleep: '23:30', workStart: '09:00', workEnd: '18:00', commuteIn: 40, commuteOut: 40 };
+const DEFAULTS = { mode: '', customBusy: '', customGo: '', keepAwake: true, goal: 25, alert: 'vibrate', acts: ['독서', '공부', '휴식', '기도', '운동'], act: '독서', notionUrl: '', remindAt: '21:30', notifyOn: false, wake: '06:30', sleep: '23:30', workStart: '09:00', workEnd: '18:00', commuteIn: 40, commuteOut: 40 };
 
 function load(key, fallback) {
   try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; } catch (e) { return fallback; }
@@ -704,7 +731,7 @@ function toast(msg) {
 
 FIELDS.forEach(f => {
   $(f).value = settings[f];
-  $(f).addEventListener('input', () => { settings[f] = $(f).value; store('ft.settings', settings); render(); });
+  $(f).addEventListener('input', () => { settings[f] = $(f).value; store('ft.settings', settings); render(); renderDaySummary(); });
 });
 
 let editing = false;
@@ -768,9 +795,9 @@ $('ovPresets').onclick = e => {
   if (!kind) return;
   if (kind === 'reset') { setOverride(null); toast('오늘은 원래 시간으로 돌아왔어요'); return; }
   const presets = {
-    am: { kind, label: '오전 반차', workStart: '13:30', workEnd: settings.workEnd },
-    pm: { kind, label: '오후 반차', workStart: settings.workStart, workEnd: '12:30' },
-    off: { kind, label: '연차·쉬는 날', off: true }
+    am: { kind, label: L().am, workStart: '13:30', workEnd: settings.workEnd },
+    pm: { kind, label: L().pm, workStart: settings.workStart, workEnd: '12:30' },
+    off: { kind, label: L().off, off: true }
   };
   setOverride(presets[kind]);
   toast('오늘만 ' + presets[kind].label + '(으)로 바꿨어요');
@@ -868,6 +895,7 @@ function alertGoal() {
 // Runs every second while a timer is on: updates the focus banner and the running row.
 function tick() {
   $('focus').hidden = !timer;
+  if (!timer !== !wakeLock) syncWakeLock();
   if (!timer) return;
   const m = elapsedMin(), goal = +settings.goal;
   $('fName').textContent = '● ' + timer.act;
@@ -885,6 +913,88 @@ function tick() {
   }
 }
 setInterval(tick, 1000);
+
+// Modes only rename things: the arithmetic is the same busy block plus travel either side.
+const MODES = {
+  work: { icon: '💼', name: '직장인', sub: '근무 · 출퇴근', busy: '근무', go: '출퇴근', start: '출근', end: '퇴근', in: '출근길', out: '퇴근길',
+    am: '오전 반차', pm: '오후 반차', off: '연차·쉬는 날', ovHint: '반차·연차·조퇴처럼' },
+  student: { icon: '🎒', name: '학생', sub: '수업 · 등하교', busy: '수업', go: '등하교', start: '등교', end: '하교', in: '등굣길', out: '하굣길',
+    am: '오전 수업 없음', pm: '오후 수업 없음', off: '방학·쉬는 날', ovHint: '단축 수업·방학처럼',
+    acts: ['국어', '영어', '수학', '독서', '휴식'], times: { workStart: '08:30', workEnd: '16:30', commuteIn: 20, commuteOut: 20 } },
+  exam: { icon: '📚', name: '수험생·공부', sub: '학원·독서실', busy: '학원·독서실', go: '오가는 길', start: '시작', end: '끝', in: '가는 길', out: '오는 길',
+    am: '오전 쉼', pm: '오후 쉼', off: '쉬는 날', ovHint: '일찍 끝나는 날·쉬는 날처럼',
+    acts: ['문제 풀이', '암기', '복습', '운동', '휴식'], times: { workStart: '13:00', workEnd: '22:00', commuteIn: 20, commuteOut: 20 } },
+  custom: { icon: '✍️', name: '직접 정하기', sub: '이름을 내가 정해요' }
+};
+
+// Labels for the current mode; a custom mode builds them from the two names the user typed.
+function L() {
+  const m = MODES[settings.mode] || MODES.work;
+  if (settings.mode !== 'custom') return m;
+  const busy = settings.customBusy || '바쁜 시간', go = settings.customGo || '오가는 시간';
+  return { busy, go, start: busy + ' 시작', end: busy + ' 끝', in: '가는 길', out: '오는 길',
+    am: '오전만 쉼', pm: '오후만 쉼', off: '쉬는 날', ovHint: '평소와 다른 날처럼' };
+}
+
+function applyMode() {
+  const l = L();
+  for (const el of document.querySelectorAll('[data-l]')) if (l[el.dataset.l]) el.textContent = l[el.dataset.l];
+  $('customNames').hidden = settings.mode !== 'custom';
+  $('customBusy').value = settings.customBusy;
+  $('customGo').value = settings.customGo;
+  $('welcome').hidden = !!settings.mode;
+  for (const box of [$('welcomeModes'), $('dayModes')]) {
+    box.innerHTML = '';
+    for (const [key, m] of Object.entries(MODES)) {
+      const b = document.createElement('button');
+      b.className = key === settings.mode ? 'on' : '';
+      b.innerHTML = '<span></span><small></small>';
+      b.firstChild.textContent = m.icon + ' ' + m.name;
+      b.lastChild.textContent = m.sub;
+      b.onclick = () => chooseMode(key, box === $('welcomeModes'));
+      box.appendChild(b);
+    }
+  }
+  renderDaySummary();
+}
+
+function renderDaySummary() {
+  const l = L(), m = MODES[settings.mode] || MODES.work;
+  $('daySummary').textContent = m.icon + ' ' + m.name + ' · ' + l.busy + ' ' + settings.workStart + '~' + settings.workEnd +
+    ' · ' + l.go + ' ' + fmt((+settings.commuteIn || 0) + (+settings.commuteOut || 0)) + ' · 취침 ' + settings.sleep;
+}
+
+// On first run a mode also brings sensible starting tasks and times; later switches only rename.
+function chooseMode(key, firstRun) {
+  const fresh = firstRun && !Object.keys(records).length && !timer;
+  settings.mode = key;
+  const m = MODES[key];
+  if (fresh && m.acts) { settings.acts = m.acts.slice(); settings.act = m.acts[0]; }
+  if (fresh && m.times) {
+    Object.assign(settings, m.times);
+    FIELDS.forEach(f => { $(f).value = settings[f]; });
+  }
+  store('ft.settings', settings);
+  applyMode(); renderOverride(); render();
+  if (key === 'custom') { $('dayBox').open = true; $('customBusy').focus(); }
+  else if (fresh) { $('dayBox').open = true; }
+  toast(m.icon + ' ' + m.name + ' 모드로 바꿨어요');
+}
+
+for (const id of ['customBusy', 'customGo']) $(id).addEventListener('input', () => {
+  settings[id] = $(id).value.trim(); store('ft.settings', settings); applyMode();
+});
+
+// Keep the screen on while timing, if the browser allows it; released when the timer stops.
+let wakeLock = null;
+async function syncWakeLock() {
+  const want = !!timer && settings.keepAwake && !document.hidden && 'wakeLock' in navigator;
+  if (want && !wakeLock) {
+    try { wakeLock = await navigator.wakeLock.request('screen'); wakeLock.addEventListener('release', () => { wakeLock = null; }); } catch (e) {}
+  } else if (!want && wakeLock) { wakeLock.release().catch(() => {}); wakeLock = null; }
+}
+$('keepAwake').checked = settings.keepAwake;
+$('keepAwake').addEventListener('change', () => { settings.keepAwake = $('keepAwake').checked; store('ft.settings', settings); syncWakeLock(); });
 
 // A timer left on for hours is usually forgotten; ask once every 3 hours.
 function checkForgotten() {
@@ -1113,7 +1223,7 @@ $('restoreFile').onchange = async () => {
   $('remindAt').value = settings.remindAt;
   $('notionUrl').value = settings.notionUrl;
   $('note').value = (records[dateKey(new Date())] || {}).note || '';
-  render(); renderBackupInfo(); renderOverride();
+  render(); renderBackupInfo(); renderOverride(); applyMode(); $('keepAwake').checked = settings.keepAwake;
   toast(added + '일치 기록을 불러왔어요');
 };
 
@@ -1128,11 +1238,12 @@ $('csv').onclick = () => {
   shareOrDownload(new File([csv], 'namun-sigan-records.csv', { type: 'text/csv' }));
 };
 
+applyMode();
 render();
 setInterval(() => { if (!editing) render(); }, 30000);
 tick();
 setTimeout(checkForgotten, 500);
-document.addEventListener('visibilitychange', () => { if (!document.hidden) { render(); tick(); checkForgotten(); } });
+document.addEventListener('visibilitychange', () => { syncWakeLock(); if (!document.hidden) { render(); tick(); checkForgotten(); } });
 
 // Notion link. A static page can't call the Notion API (no CORS, and a token would be
 // exposed), so we copy today's line to the clipboard and open the user's own Notion page.
