@@ -3,14 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>남은 시간</title>
+<title>나의 시간</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <meta name="theme-color" content="#101114">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="남은 시간">
+<meta name="apple-mobile-web-app-title" content="나의 시간">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <style>
   :root {
@@ -196,7 +196,7 @@
 </head>
 <body>
 <main>
-  <h1>오늘 남은 시간</h1>
+  <h1>오늘 나의 시간</h1>
   <p class="sub"><span id="today"></span><a href="#guide" id="guideLink">📖 사용법</a></p>
 
   <div id="focus" hidden>
@@ -224,7 +224,7 @@
   </section>
 
   <section class="card">
-    <div class="label">지금부터 잠들 때까지 쓸 수 있는 자유 시간</div>
+    <div class="label">지금부터 잠들 때까지, 나의 시간</div>
     <div class="big" id="left">–</div>
     <div class="label" id="leftNote"></div>
     <div id="ovBadge" hidden></div>
@@ -233,7 +233,7 @@
       <span><i style="background:var(--sleep)"></i>잠 <b id="lgSleep"></b></span>
       <span><i style="background:var(--work)"></i><span data-l="busy">근무</span> <b id="lgWork"></b></span>
       <span><i style="background:var(--commute)"></i><span data-l="go">출퇴근</span> <b id="lgCommute"></b></span>
-      <span><i style="background:var(--free)"></i>자유 <b id="lgFree"></b></span>
+      <span><i style="background:var(--free)"></i>나의 시간 <b id="lgFree"></b></span>
     </div>
   </section>
 
@@ -271,7 +271,7 @@
     </details>
     <ul class="used" id="used"></ul>
     <p class="srclegend" id="srcLegend"><span class="src src-timer">⏱</span>타이머로 잼 <span class="src src-manual">✋ 직접</span>직접 더함 <span class="src src-edit">✏️ 고침</span>고친 기록</p>
-    <div class="sumline"><span>오늘 쓴 시간 <b id="usedSum">0분</b></span><span>자유 시간 <b id="freeSum">–</b></span></div>
+    <div class="sumline"><span>오늘 쓴 시간 <b id="usedSum">0분</b></span><span>나의 시간 <b id="freeSum">–</b></span></div>
     <div class="row">
       <button id="undo">되돌리기</button>
       <button id="editToday">기록 고치기</button>
@@ -282,7 +282,7 @@
     <details id="notionSetup">
       <summary class="hint">노션 연결 설정</summary>
       <label style="margin-top:8px">노션 기록 페이지 주소<input type="url" id="notionUrl" placeholder="https://www.notion.so/..."></label>
-      <p class="hint">노션에서 기록 데이터베이스를 열고 공유 → 링크 복사로 얻은 주소를 붙여넣으세요. "노션에 저장하기"를 누르면 오늘 기록이 복사되고 그 페이지가 열려요. 오늘 줄의 "남은 시간" 칸에 붙여넣으면 끝이에요.</p>
+      <p class="hint">노션에서 기록 데이터베이스를 열고 공유 → 링크 복사로 얻은 주소를 붙여넣으세요. "노션에 저장하기"를 누르면 오늘 기록이 복사되고 그 페이지가 열려요. 오늘 줄의 원하는 칸에 붙여넣으면 끝이에요.</p>
     </details>
   </section>
 
@@ -353,7 +353,7 @@
     <h2>기록 한눈에</h2>
     <p class="step" style="margin:0 0 8px">최근 7일</p>
     <div class="stats">
-      <div><b id="avg">–</b><span class="label">하루 평균 자유</span></div>
+      <div><b id="avg">–</b><span class="label">하루 평균 나의 시간</span></div>
       <div><b id="sum">–</b><span class="label">7일 합계</span></div>
       <div><b id="days">0</b><span class="label">기록한 날</span></div>
     </div>
@@ -391,7 +391,7 @@
       <ol>
         <li>처음 열면 <b>모드</b>를 골라요. 💼 직장인, 🎒 학생, 📚 수험생·공부, ✍️ 직접 정하기 중에서요. 고른 모드에 맞게 "근무·출퇴근" 같은 이름이 바뀌어요.</li>
         <li><b>나의 하루</b>를 눌러 일어나는 시간, 잠드는 시간, 바쁜 시간(근무·수업 등), 오가는 시간을 넣어요. 한 번만 넣으면 기억해요. 모드도 여기서 바꿔요.</li>
-        <li>맨 위 큰 숫자가 <b>지금부터 잠들 때까지 쓸 수 있는 자유 시간</b>이에요.</li>
+        <li>맨 위 큰 숫자가 <b>지금부터 잠들 때까지 남은 나의 시간</b>이에요. 회사·학교 일을 빼고, 쉬든 공부하든 내가 주인인 시간이에요.</li>
         <li>휴대폰 홈 화면에 설치하면 앱처럼 쓸 수 있어요. 아이폰은 Safari의 공유(□↑) → "홈 화면에 추가"예요.</li>
       </ol>
     </details>
@@ -652,7 +652,7 @@ function render() {
   $('ovBadge').hidden = !s.label;
   $('ovBadge').textContent = '오늘: ' + s.label + (s.off ? '' : ' · ' + s.workStart + '~' + s.workEnd);
   $('left').textContent = fmt(left);
-  $('leftNote').textContent = '오늘 하루 자유 시간은 모두 ' + fmt(p.free) + '이에요.';
+  $('leftNote').textContent = '오늘 하루 나의 시간은 모두 ' + fmt(p.free) + '이에요.';
 
   const sleepMin = 1440 - p.awake;
   const parts = [['sleep', sleepMin], ['work', p.work], ['commute', p.commute], ['free', p.free]];
@@ -1478,7 +1478,7 @@ $('restoreFile').onchange = async () => {
   let data;
   try { data = JSON.parse(await f.text()); } catch (e) {}
   if (!data || data.app !== 'namun-sigan' || typeof data.records !== 'object') {
-    toast('남은 시간 백업 파일이 아니에요'); return;
+    toast('이 앱의 백업 파일이 아니에요'); return;
   }
   const incoming = Object.keys(data.records);
   if (!confirm(incoming.length + '일치 기록을 불러올까요?\n같은 날짜가 이미 있으면 지금 휴대폰의 기록을 남겨요.')) return;
@@ -1504,7 +1504,7 @@ $('restoreFile').onchange = async () => {
 };
 
 $('csv').onclick = () => {
-  const rows = [['날짜', '자유(분)', '쓴 시간(분)', '활동', '근무(분)', '출퇴근(분)', '쉬는 날', '메모', '고친 기록']];
+  const rows = [['날짜', '나의 시간(분)', '쓴 시간(분)', '활동', '근무(분)', '출퇴근(분)', '쉬는 날', '메모', '고친 기록']];
   Object.keys(records).sort().forEach(k => {
     const r = records[k];
     const fixes = (r.log || []).filter(e => e.kind === 'edit').map(e => logLine(e, k).filter(Boolean).join(' ')).join(' / ');
@@ -1549,14 +1549,14 @@ function copyText(text) {
 function notionLine() {
   const p = plan(), note = $('note').value.trim(), acts = (records[dateKey(new Date())] || {}).acts;
   const used = usedTotal(acts) ? '쓴 시간 ' + fmt(usedTotal(acts)) + ' (' + actsText(acts) + ')' : '';
-  return ['자유 ' + fmt(p.free) + (p.off ? ' (쉬는 날)' : ''), used, note].filter(Boolean).join(' · ');
+  return ['나의 시간 ' + fmt(p.free) + (p.off ? ' (쉬는 날)' : ''), used, note].filter(Boolean).join(' · ');
 }
 
 // A friendlier multi-line version for KakaoTalk, memo apps, and so on.
 function shareText() {
   const now = new Date(), p = plan(), r = records[dateKey(now)] || {};
-  const lines = ['📅 ' + now.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' }) + ' 남은 시간',
-    '자유 시간 ' + fmt(p.free) + (p.off ? ' (쉬는 날)' : '') + ' 중 ' + fmt(usedTotal(r.acts)) + ' 사용'];
+  const lines = ['📅 ' + now.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' }) + ' 나의 시간',
+    '나의 시간 ' + fmt(p.free) + (p.off ? ' (쉬는 날)' : '') + ' 중 ' + fmt(usedTotal(r.acts)) + ' 사용'];
   Object.entries(r.acts || {}).sort((a, b) => b[1] - a[1]).forEach(([k, v]) => lines.push('· ' + k + ' ' + fmt(v)));
   if ($('note').value.trim()) lines.push('메모: ' + $('note').value.trim());
   return lines.join('\n');
@@ -1579,15 +1579,15 @@ $('toNotion').onclick = () => {
     return;
   }
   const ok = copyText(notionLine());
-  toast(ok ? '복사했어요. 오늘 줄의 "남은 시간" 칸에 붙여넣으세요' : '복사가 안 됐어요. 직접 적어 주세요');
+  toast(ok ? '복사했어요. 노션 오늘 줄에 붙여넣으세요' : '복사가 안 됐어요. 직접 적어 주세요');
   window.open(settings.notionUrl, '_blank');
 };
 
 // Daily reminder. Phone browsers can't wake a closed web app on a schedule without a push
 // server, so the dependable path is a repeating calendar alarm; the in-app notification
 // only fires while the app is still running.
-const REMIND_TITLE = '오늘 남은 시간 기록하기';
-const REMIND_TEXT = '남은 시간을 어디에 썼는지 한 줄 남겨요.';
+const REMIND_TITLE = '오늘 나의 시간 기록하기';
+const REMIND_TEXT = '나의 시간을 어디에 썼는지 한 줄 남겨요.';
 const appUrl = location.protocol.startsWith('http') ? location.href.split('#')[0] : '';
 const stamp = (d, t) => dateKey(d).replace(/-/g, '') + 'T' + t.replace(':', '') + '00';
 const plus10 = t => { const m = toMin(t) + 10; return String(Math.floor(m / 60) % 24).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0'); };
