@@ -147,6 +147,34 @@
   .modes button small { display: block; font-weight: 400; font-size: 12px; color: var(--muted); margin-top: 2px; }
   .modes button.on { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 16%, var(--card)); }
   #dayBox > summary { list-style: none; margin: 0; }
+  .wrow { display: grid; grid-template-columns: 28px 1fr; gap: 8px; align-items: center; margin-top: 8px; }
+  .wrow select { width: 100%; padding: 8px; font: inherit; color: var(--text); background: var(--bg); border: 1px solid var(--line); border-radius: 9px; }
+  .wrow .wt { grid-column: 2; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .wrow .wt input { margin: 0; }
+  .wrow .wt[hidden] { display: none; }
+  .task { position: relative; overflow: hidden; }
+  .task .tbar { position: absolute; left: 0; bottom: 0; height: 4px; background: var(--accent); opacity: .7; }
+  .task.done .ttime { color: var(--accent); }
+  #streak { margin: 12px 0 0; font-size: 15px; font-weight: 600; }
+  .calhead { display: flex; align-items: center; justify-content: space-between; margin-top: 16px; }
+  .calhead b { font-size: 15px; }
+  .calhead button { padding: 4px 12px; }
+  .cal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-top: 8px; }
+  .cal .dh { text-align: center; font-size: 12px; color: var(--muted); }
+  .cal button { aspect-ratio: 1; padding: 2px; border-radius: 8px; font-size: 13px; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; line-height: 1.1; font-variant-numeric: tabular-nums; }
+  .cal button small { font-size: 10px; color: var(--muted); }
+  .cal button.lv1 { background: color-mix(in srgb, var(--accent) 18%, var(--bg)); }
+  .cal button.lv2 { background: color-mix(in srgb, var(--accent) 38%, var(--bg)); }
+  .cal button.lv3 { background: color-mix(in srgb, var(--accent) 62%, var(--bg)); }
+  .cal button.lv3 small, .cal button.lv2 small { color: var(--text); }
+  .cal button.today { outline: 2px solid var(--accent); }
+  .cal .empty { visibility: hidden; }
+  #monthSum { margin: 8px 0 0; font-size: 13px; color: var(--muted); }
+  #taskDlg { width: min(92vw, 420px); padding: 18px; border: 1px solid var(--line); border-radius: 14px; background: var(--card); color: var(--text); }
+  #taskDlg::backdrop { background: rgba(0, 0, 0, .5); }
+  #ovList li { display: flex; align-items: center; gap: 8px; border-top: 1px solid var(--line); padding: 8px 0; font-size: 14px; }
+  #ovList li span { flex: 1; }
   #dayBox > summary::-webkit-details-marker { display: none; }
   #dayBox > summary h2 { margin: 0 0 4px; }
   #daySummary { font-size: 13px; color: var(--muted); }
@@ -283,20 +311,30 @@
         <label><span data-l="in">출근길</span> (분)<input type="number" id="commuteIn" min="0" step="5" inputmode="numeric"></label>
         <label><span data-l="out">퇴근길</span> (분)<input type="number" id="commuteOut" min="0" step="5" inputmode="numeric"></label>
       </div>
+      <details id="weeklyBox">
+        <summary class="hint">📆 요일마다 시간이 달라요 (선택)</summary>
+        <p class="hint" style="margin:6px 0 0">예: 토요일은 9시~1시, 일요일은 쉬는 날. 위의 시간이 "평소대로"예요.</p>
+        <div id="weeklyRows"></div>
+      </details>
     </details>
     <div class="row"><button id="ovBtn">오늘만 다르게</button></div>
     <div id="ovBox" hidden>
-      <p class="step" style="margin-top:14px"><span data-l="ovHint">반차·연차·조퇴처럼</span> 오늘 하루만 바뀌어요. 내일은 원래 시간으로 돌아가요.</p>
+      <label style="margin-top:14px">날짜 <span class="hint">(여행처럼 다른 날도 미리 정할 수 있어요)</span><input type="date" id="ovDate"></label>
+      <p class="step" style="margin-top:12px">이 날의 모드</p>
+      <div class="modes" id="ovModes"></div>
+      <p class="step" style="margin-top:12px"><span id="ovHintText"></span> 그날 하루만 바뀌어요. 다음 날은 원래대로 돌아가요.</p>
       <div class="chips" id="ovPresets">
-        <button class="chip" data-ov="am" data-l="am">오전 반차</button>
-        <button class="chip" data-ov="pm" data-l="pm">오후 반차</button>
-        <button class="chip" data-ov="off" data-l="off">연차·쉬는 날</button>
+        <button class="chip" data-ov="am">오전</button>
+        <button class="chip" data-ov="pm">오후</button>
+        <button class="chip" data-ov="off">쉬는 날</button>
         <button class="chip ghost" data-ov="reset">원래대로</button>
       </div>
       <div class="grid" id="ovTimes">
-        <label>오늘 <span data-l="start">출근</span><input type="time" id="ovStart"></label>
-        <label>오늘 <span data-l="end">퇴근</span><input type="time" id="ovEnd"></label>
+        <label><span id="ovStartLabel">시작</span><input type="time" id="ovStart"></label>
+        <label><span id="ovEndLabel">끝</span><input type="time" id="ovEnd"></label>
       </div>
+      <p class="step" id="ovListTitle" style="margin-top:14px">미리 정해 둔 날</p>
+      <ul id="ovList"></ul>
     </div>
   </section>
 
@@ -312,13 +350,18 @@
   </section>
 
   <section class="card">
-    <h2>최근 7일</h2>
+    <h2>기록 한눈에</h2>
+    <p class="step" style="margin:0 0 8px">최근 7일</p>
     <div class="stats">
       <div><b id="avg">–</b><span class="label">하루 평균 자유</span></div>
       <div><b id="sum">–</b><span class="label">7일 합계</span></div>
       <div><b id="days">0</b><span class="label">기록한 날</span></div>
     </div>
     <ul class="used" id="weekActs"></ul>
+    <p id="streak"></p>
+    <div class="calhead"><button id="calPrev" aria-label="지난 달">‹</button><b id="calTitle"></b><button id="calNext" aria-label="다음 달">›</button></div>
+    <div class="cal" id="cal"></div>
+    <p id="monthSum"></p>
   </section>
 
   <section class="card">
@@ -386,6 +429,31 @@
     </details>
 
     <details>
+      <summary>✅ 할 일마다 하루 목표 정하기</summary>
+      <ul>
+        <li><b>편집</b> → 할 일을 누르면 <b>하루 목표(분)</b>를 정할 수 있어요. (예: 영어 30분)</li>
+        <li>할 일 아래 막대가 차오르고, 다 채우면 <b>✅</b>가 붙어요. 목표를 없애려면 0으로 하면 돼요.</li>
+      </ul>
+    </details>
+
+    <details>
+      <summary>🔥 연속 기록 · 달력</summary>
+      <ul>
+        <li><b>기록 한눈에</b>에서 며칠째 이어서 기록하고 있는지 보여 줘요.</li>
+        <li>달력은 그날 쓴 시간이 많을수록 <b>진한 색</b>이에요. ‹ › 로 지난 달도 볼 수 있어요.</li>
+        <li>날짜를 누르면 그날 기록을 고칠 수 있어요.</li>
+      </ul>
+    </details>
+
+    <details>
+      <summary>📆 요일마다 시간이 다를 때</summary>
+      <ul>
+        <li><b>나의 하루</b>를 펼치고 아래 <b>"요일마다 시간이 달라요"</b>를 눌러요.</li>
+        <li>요일마다 <b>평소대로 / 시간이 달라요 / 쉬는 날</b>을 골라요. (예: 토요일 9시~1시, 일요일 쉬는 날)</li>
+      </ul>
+    </details>
+
+    <details>
       <summary>😴 타이머를 켜 둔 채 잠들었을 때</summary>
       <ul>
         <li>잠드는 시간이 지나도록 타이머가 켜져 있으면, 다음에 앱을 열 때 <b>"실제로 몇 분 했나요?"</b>라고 물어봐요. 숫자만 적으면 돼요.</li>
@@ -408,9 +476,11 @@
     </details>
 
     <details>
-      <summary>🌴 반차 · 연차 · 조퇴 · 수업 없는 날</summary>
+      <summary>🌴 반차 · 연차 · 여행 · 다른 날 미리 정하기</summary>
       <ul>
         <li><b>오늘만 다르게</b>를 눌러요. (나의 하루 바로 아래에 있어요)</li>
+        <li><b>날짜</b>를 바꾸면 다른 날도 미리 정할 수 있어요. (예: 다음 주 토요일 여행)</li>
+        <li><b>이 날의 모드</b>를 고르면 그날만 다른 모드가 돼요. (예: 오늘은 🎒 학생, 🧳 여행·특별한 날) 모드마다 시간을 따로 기억해요.</li>
         <li><b>오전 반차 / 오후 반차 / 연차·쉬는 날</b> 중 고르거나, 오늘 출근·퇴근 시간을 직접 고쳐요.</li>
         <li>다음 날이 되면 <b>저절로 원래 시간</b>으로 돌아와요. 바꾼 걸 취소하려면 <b>원래대로</b>를 눌러요.</li>
       </ul>
@@ -452,6 +522,16 @@
     </details>
   </section>
 </main>
+<dialog id="taskDlg">
+  <h2>할 일 고치기</h2>
+  <label>이름<input type="text" id="taskName" maxlength="15"></label>
+  <label style="margin-top:10px">하루 목표 (분, 없으면 0)<input type="number" id="taskGoal" min="0" step="5" inputmode="numeric"></label>
+  <p class="hint" style="margin:6px 0 0">목표를 정하면 할 일 아래에 막대가 차오르고, 다 채우면 ✅가 붙어요. 이름을 바꾸면 지난 기록의 이름도 같이 바뀌어요.</p>
+  <div class="row">
+    <button id="taskCancel">취소</button>
+    <button class="primary" id="taskSave">저장</button>
+  </div>
+</dialog>
 <dialog id="editDlg">
   <h2 id="editTitle"></h2>
   <p class="hint" style="margin:0">분 단위로 고쳐 주세요. 0으로 하면 지워져요.</p>
@@ -477,7 +557,7 @@
 <script>
 const $ = id => document.getElementById(id);
 const FIELDS = ['wake', 'sleep', 'workStart', 'workEnd', 'commuteIn', 'commuteOut'];
-const DEFAULTS = { mode: '', customBusy: '', customGo: '', keepAwake: true, goal: 25, alert: 'vibrate', acts: ['독서', '공부', '휴식', '기도', '운동'], act: '독서', notionUrl: '', remindAt: '21:30', notifyOn: false, wake: '06:30', sleep: '23:30', workStart: '09:00', workEnd: '18:00', commuteIn: 40, commuteOut: 40 };
+const DEFAULTS = { modeTimes: {}, weekly: {}, goals: {}, mode: '', customBusy: '', customGo: '', keepAwake: true, goal: 25, alert: 'vibrate', acts: ['독서', '공부', '휴식', '기도', '운동'], act: '독서', notionUrl: '', remindAt: '21:30', notifyOn: false, wake: '06:30', sleep: '23:30', workStart: '09:00', workEnd: '18:00', commuteIn: 40, commuteOut: 40 };
 
 function load(key, fallback) {
   try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; } catch (e) { return fallback; }
@@ -502,13 +582,37 @@ const fmt = min => {
 // Length of a span from a to b on the clock, wrapping past midnight.
 const span = (a, b) => ((b - a) % 1440 + 1440) % 1440;
 
-// Today's schedule: the usual settings with any one-day change for today laid on top.
-function sched() {
-  const o = overrides[dateKey(new Date())] || {};
-  return Object.assign({}, settings, {
-    workStart: o.workStart || settings.workStart, workEnd: o.workEnd || settings.workEnd, off: !!o.off, label: o.label || ''
-  });
+const TIME_FIELDS = ['workStart', 'workEnd', 'commuteIn', 'commuteOut'];
+const DAYS = '일월화수목금토';
+
+// Times a mode uses: the main mode's live settings, or what another mode last used.
+function timesFor(mode) {
+  if (!mode || mode === settings.mode) return pick(settings);
+  return Object.assign(pick(settings), (MODES[mode] || {}).times, (settings.modeTimes || {})[mode]);
 }
+const pick = o => Object.fromEntries(TIME_FIELDS.map(f => [f, o[f]]));
+
+// One date's schedule. Order: a change made for that date, then the weekday rule (main
+// mode only), then the usual settings.
+function dayPlan(key) {
+  const o = overrides[key] || {}, mode = o.mode || settings.mode, dow = new Date(key + 'T00:00').getDay();
+  const t = timesFor(mode);
+  let off = false, label = '';
+  if (mode !== settings.mode) label = MODES[mode].icon + ' ' + MODES[mode].name;
+  else {
+    const w = (settings.weekly || {})[dow];
+    if (w && w.type === 'off') { off = true; label = DAYS[dow] + '요일 · 쉬는 날'; }
+    if (w && w.type === 'custom') { t.workStart = w.workStart; t.workEnd = w.workEnd; label = DAYS[dow] + '요일 시간'; }
+  }
+  if (o.workStart) t.workStart = o.workStart;
+  if (o.workEnd) t.workEnd = o.workEnd;
+  if (o.off !== undefined) off = !!o.off;
+  if (o.label) label = o.label;
+  return Object.assign({}, settings, t, { off, label, mode });
+}
+
+// Today's schedule.
+const sched = () => dayPlan(dateKey(new Date()));
 
 function plan() {
   const s = sched(), off = s.off;
@@ -546,7 +650,7 @@ function render() {
 
   const left = freeLeft(p, nowMin), s = sched();
   $('ovBadge').hidden = !s.label;
-  $('ovBadge').textContent = '오늘만: ' + s.label + (s.off ? '' : ' · ' + s.workStart + '~' + s.workEnd);
+  $('ovBadge').textContent = '오늘: ' + s.label + (s.off ? '' : ' · ' + s.workStart + '~' + s.workEnd);
   $('left').textContent = fmt(left);
   $('leftNote').textContent = '오늘 하루 자유 시간은 모두 ' + fmt(p.free) + '이에요.';
 
@@ -642,11 +746,17 @@ function renderTasks() {
     b.dataset.name = name;
     b.innerHTML = '<span class="tname"></span><span class="ttime"></span><span class="ticon"></span>';
     b.children[0].textContent = name;
-    const m = taskMinutes(name);
-    b.children[1].textContent = running ? clock(elapsedMin()) : (m ? fmt(m) : '');
+    const m = taskMinutes(name), goal = +(settings.goals || {})[name] || 0;
+    b.children[1].textContent = taskTime(name, m, running);
+    if (goal) {
+      const bar = document.createElement('span');
+      bar.className = 'tbar'; bar.style.width = Math.min(100, m / goal * 100) + '%';
+      b.appendChild(bar);
+      b.classList.toggle('done', m >= goal);
+    }
     b.children[2].textContent = editing ? '✏️' : running ? '⏸' : '▶';
     b.onclick = () => {
-      if (editing) renameTask(name);
+      if (editing) openTaskDlg(name);
       else if (running) stopTimer();
       else startTimer(name);
     };
@@ -668,16 +778,42 @@ function renderTasks() {
     ul.appendChild(li);
   }
   $('taskEdit').textContent = editing ? '완료' : '편집';
-  $('taskHint').textContent = editing ? '✏️ 이름을 누르면 고칠 수 있어요. ✕는 목록에서 빼기예요.' : '누르면 시간 재기 시작, 한 번 더 누르면 멈춰요.';
+  $('taskHint').textContent = editing ? '✏️ 누르면 이름과 하루 목표를 고칠 수 있어요. ✕는 목록에서 빼기예요.' : '누르면 시간 재기 시작, 한 번 더 누르면 멈춰요.';
 }
 
 // Renames a task everywhere: the list, a running timer, and every day's records, so the
 // weekly totals keep adding up. Renaming onto an existing task merges the two.
-function renameTask(name) {
-  const to = (prompt('새 이름 (지난 기록의 이름도 함께 바뀌어요)', name) || '').trim().slice(0, 15);
-  if (!to || to === name) return;
+// "12분 / 30분 ✅" when a goal is set; the running task shows its clock instead of minutes.
+function taskTime(name, m, running) {
+  const goal = +(settings.goals || {})[name] || 0, now = running ? clock(elapsedMin()) : (m ? fmt(m) : '');
+  if (!goal) return now;
+  return (now || '0분') + ' / ' + goal + '분' + (m >= goal ? ' ✅' : '');
+}
+
+let taskDlgName = null;
+function openTaskDlg(name) {
+  taskDlgName = name;
+  $('taskName').value = name;
+  $('taskGoal').value = (settings.goals || {})[name] || 0;
+  $('taskDlg').showModal();
+}
+$('taskCancel').onclick = () => $('taskDlg').close();
+$('taskSave').onclick = () => {
+  const name = taskDlgName, to = $('taskName').value.trim().slice(0, 15) || name, goal = Math.max(0, parseInt($('taskGoal').value) || 0);
+  if (to !== name && !renameTask(name, to)) return;
+  if (goal) settings.goals[to] = goal; else delete settings.goals[to];
+  store('ft.settings', settings);
+  $('taskDlg').close();
+  render(); tick();
+};
+
+// Returns false if the user backs out of a merge.
+function renameTask(name, to) {
+  if (!to || to === name) return true;
   const merge = settings.acts.includes(to);
-  if (merge && !confirm('"' + to + '" 할 일이 이미 있어요. 둘을 합칠까요?\n지난 기록의 시간도 합쳐져요.')) return;
+  if (merge && !confirm('"' + to + '" 할 일이 이미 있어요. 둘을 합칠까요?\n지난 기록의 시간도 합쳐져요.')) return false;
+  if (settings.goals[name] && !settings.goals[to]) settings.goals[to] = settings.goals[name];
+  delete settings.goals[name];
   settings.acts = merge ? settings.acts.filter(a => a !== name) : settings.acts.map(a => a === name ? to : a);
   if (settings.act === name) settings.act = to;
   if (timer && timer.act === name) { timer.act = to; store('ft.timer', timer); }
@@ -691,6 +827,7 @@ function renameTask(name) {
   store('ft.settings', settings); store('ft.records', records);
   render(); tick();
   toast('"' + to + '"(으)로 바꿨어요');
+  return true;
 }
 
 function renderHistory() {
@@ -722,7 +859,49 @@ function renderHistory() {
   $('days').textContent = recent.length;
   $('sum').textContent = recent.length ? fmt(total) : '–';
   $('avg').textContent = recent.length ? fmt(total / recent.length) : '–';
+  renderStreak();
+  renderCalendar();
 }
+
+const usedOn = k => usedTotal((records[k] || {}).acts);
+
+// Days in a row with any time spent, counting back from today (or yesterday, so an
+// unrecorded morning doesn't break it).
+function renderStreak() {
+  const d = new Date();
+  if (!usedOn(dateKey(d))) d.setDate(d.getDate() - 1);
+  let n = 0;
+  while (usedOn(dateKey(d))) { n++; d.setDate(d.getDate() - 1); }
+  $('streak').textContent = n ? '🔥 ' + n + '일째 이어서 기록하고 있어요' : '🌱 오늘 첫 기록을 남기면 연속 기록이 시작돼요';
+}
+
+let calMonth = null;
+function renderCalendar() {
+  const now = new Date();
+  if (!calMonth) calMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const y = calMonth.getFullYear(), mo = calMonth.getMonth(), days = new Date(y, mo + 1, 0).getDate();
+  $('calTitle').textContent = y + '년 ' + (mo + 1) + '월';
+  $('calNext').disabled = y === now.getFullYear() && mo === now.getMonth();
+  const cal = $('cal');
+  cal.innerHTML = '';
+  for (const c of DAYS) { const h = document.createElement('div'); h.className = 'dh'; h.textContent = c; cal.appendChild(h); }
+  for (let i = 0; i < new Date(y, mo, 1).getDay(); i++) { const e = document.createElement('div'); e.className = 'empty'; cal.appendChild(e); }
+  let monthTotal = 0, active = 0;
+  for (let d = 1; d <= days; d++) {
+    const k = dateKey(new Date(y, mo, d)), m = usedOn(k), b = document.createElement('button');
+    monthTotal += m; if (m) active++;
+    b.className = (m >= 120 ? 'lv3' : m >= 45 ? 'lv2' : m > 0 ? 'lv1' : '') + (k === dateKey(now) ? ' today' : '');
+    b.innerHTML = '<span></span><small></small>';
+    b.firstChild.textContent = d;
+    b.lastChild.textContent = m ? (m >= 60 ? Math.floor(m / 60) + 'h' + (Math.round(m % 60) ? Math.round(m % 60) : '') : Math.round(m) + 'm') : '';
+    b.setAttribute('aria-label', (mo + 1) + '월 ' + d + '일 ' + (m ? fmt(m) : '기록 없음'));
+    if (k <= dateKey(now)) b.onclick = () => openEditor(k); else b.disabled = true;
+    cal.appendChild(b);
+  }
+  $('monthSum').textContent = active ? '이번 달 ' + active + '일 기록 · 모두 ' + fmt(monthTotal) + ' · 날짜를 누르면 그날 기록을 고칠 수 있어요' : '이 달은 아직 기록이 없어요';
+}
+$('calPrev').onclick = () => { calMonth.setMonth(calMonth.getMonth() - 1); renderCalendar(); };
+$('calNext').onclick = () => { calMonth.setMonth(calMonth.getMonth() + 1); renderCalendar(); };
 
 function toast(msg) {
   const t = $('toast'); t.textContent = msg; t.classList.add('on');
@@ -769,45 +948,127 @@ function saveToday(acts, entries) {
   render();
 }
 
+// The date the "오늘만 다르게" panel is editing; today unless the user picks another day.
+let ovKey = dateKey(new Date());
+const dayName = key => { const d = new Date(key + 'T00:00'); return (d.getMonth() + 1) + '/' + d.getDate() + '(' + DAYS[d.getDay()] + ')'; };
+const dayWord = key => key === dateKey(new Date()) ? '오늘' : dayName(key);
+
 function setOverride(o) {
-  const key = dateKey(new Date());
-  if (o) overrides[key] = o; else delete overrides[key];
+  if (o) overrides[ovKey] = o; else delete overrides[ovKey];
   store('ft.overrides', overrides);
-  renderOverride();
-  if (records[key]) saveToday(); else render();
+  renderOverride(); applyMode();
+  if (ovKey === dateKey(new Date()) && records[ovKey]) saveToday(); else render();
 }
 
 function renderOverride() {
-  const o = overrides[dateKey(new Date())], s = sched();
-  $('ovBtn').textContent = o ? '오늘만 다르게 · ' + o.label : '오늘만 다르게';
-  $('ovBtn').classList.toggle('primary', !!o);
+  const today = dateKey(new Date());
+  if (ovKey < today) ovKey = today;
+  const o = overrides[ovKey], s = dayPlan(ovKey), l = L(s.mode), tOv = overrides[today];
+  const ahead = Object.keys(overrides).filter(k => k > today).length;
+  $('ovBtn').textContent = (tOv ? '오늘만 다르게 · ' + tOv.label : '오늘만 다르게') + (ahead ? ' · 예정 ' + ahead : '');
+  $('ovBtn').classList.toggle('primary', !!tOv);
+  $('ovDate').value = ovKey;
+  $('ovDate').min = today;
+  $('ovHintText').textContent = l.ovHint;
+  const names = { am: l.am, pm: l.pm, off: l.off };
+  for (const b of $('ovPresets').children) {
+    if (names[b.dataset.ov]) b.textContent = names[b.dataset.ov];
+    b.classList.toggle('on', !!o && b.dataset.ov === o.kind);
+  }
+  $('ovStartLabel').textContent = dayWord(ovKey) + ' ' + l.start;
+  $('ovEndLabel').textContent = dayWord(ovKey) + ' ' + l.end;
   $('ovTimes').hidden = s.off;
   $('ovStart').value = s.workStart;
   $('ovEnd').value = s.workEnd;
-  for (const b of $('ovPresets').children) b.classList.toggle('on', !!o && b.dataset.ov === o.kind);
+
+  $('ovModes').innerHTML = '';
+  for (const [key, m] of Object.entries(MODES)) {
+    const b = document.createElement('button');
+    b.className = key === s.mode ? 'on' : '';
+    b.innerHTML = '<span></span><small></small>';
+    b.firstChild.textContent = m.icon + ' ' + m.name;
+    b.lastChild.textContent = key === settings.mode ? '평소 모드' : m.sub;
+    b.onclick = () => {
+      if (key === settings.mode) setOverride(null);
+      else setOverride({ kind: 'mode', mode: key, label: m.icon + ' ' + m.name });
+      toast(dayWord(ovKey) + '은 ' + m.icon + ' ' + m.name + (key === settings.mode ? '(평소)' : '') + '로 정했어요');
+    };
+    $('ovModes').appendChild(b);
+  }
+
+  const upcoming = Object.keys(overrides).filter(k => k >= today).sort();
+  $('ovListTitle').hidden = !upcoming.length;
+  $('ovList').innerHTML = '';
+  for (const k of upcoming) {
+    const li = document.createElement('li'), p = dayPlan(k);
+    li.innerHTML = '<span></span><button>고치기</button><button>✕</button>';
+    li.firstChild.textContent = dayWord(k) + ' · ' + p.label + (p.off ? '' : ' ' + p.workStart + '~' + p.workEnd);
+    li.children[1].onclick = () => { ovKey = k; renderOverride(); };
+    li.children[2].onclick = () => { const keep = ovKey; ovKey = k; setOverride(null); ovKey = keep; renderOverride(); };
+    $('ovList').appendChild(li);
+  }
 }
 
-$('ovBtn').onclick = () => { $('ovBox').hidden = !$('ovBox').hidden; renderOverride(); };
+$('ovBtn').onclick = () => { $('ovBox').hidden = !$('ovBox').hidden; ovKey = dateKey(new Date()); renderOverride(); };
+$('ovDate').addEventListener('change', () => { ovKey = $('ovDate').value || dateKey(new Date()); renderOverride(); });
 
-// Half days assume a 12:30 to 13:30 lunch; the times stay editable below.
+// Presets work inside whichever mode that day uses. Half days assume a 12:30 to 13:30 lunch;
+// the times stay editable below.
 $('ovPresets').onclick = e => {
   const kind = e.target.dataset.ov;
   if (!kind) return;
-  if (kind === 'reset') { setOverride(null); toast('오늘은 원래 시간으로 돌아왔어요'); return; }
+  if (kind === 'reset') { setOverride(null); toast(dayWord(ovKey) + '은 원래대로 돌아왔어요'); return; }
+  const cur = overrides[ovKey] || {}, mode = cur.mode, t = timesFor(mode || settings.mode), l = L(mode || settings.mode);
+  const tag = mode ? MODES[mode].icon + ' ' : '';
   const presets = {
-    am: { kind, label: L().am, workStart: '13:30', workEnd: settings.workEnd },
-    pm: { kind, label: L().pm, workStart: settings.workStart, workEnd: '12:30' },
-    off: { kind, label: L().off, off: true }
+    am: { kind, mode, label: tag + l.am, workStart: '13:30', workEnd: t.workEnd },
+    pm: { kind, mode, label: tag + l.pm, workStart: t.workStart, workEnd: '12:30' },
+    off: { kind, mode, label: tag + l.off, off: true }
   };
+  if (!mode) for (const v of Object.values(presets)) delete v.mode;
   setOverride(presets[kind]);
-  toast('오늘만 ' + presets[kind].label + '(으)로 바꿨어요');
+  toast(dayWord(ovKey) + '은 ' + presets[kind].label + '(으)로 바꿨어요');
 };
 
 for (const id of ['ovStart', 'ovEnd']) $(id).addEventListener('change', () => {
-  const o = overrides[dateKey(new Date())] || { kind: 'custom', label: '시간 변경' };
-  setOverride(Object.assign({}, o, { workStart: $('ovStart').value || settings.workStart, workEnd: $('ovEnd').value || settings.workEnd }));
+  const cur = overrides[ovKey] || { kind: 'custom', label: '시간 변경' };
+  const o = Object.assign({}, cur, { off: false, workStart: $('ovStart').value, workEnd: $('ovEnd').value });
+  if (!o.workStart) delete o.workStart;
+  if (!o.workEnd) delete o.workEnd;
+  // Another mode remembers the hours it was last used with.
+  if (o.mode) {
+    settings.modeTimes[o.mode] = Object.assign({}, settings.modeTimes[o.mode], { workStart: o.workStart, workEnd: o.workEnd });
+    store('ft.settings', settings);
+  }
+  setOverride(o);
 });
-renderOverride();
+
+// Weekday rules for the main mode: same as usual, a day off, or different hours.
+function renderWeekly() {
+  const box = $('weeklyRows');
+  box.innerHTML = '';
+  for (const dow of [1, 2, 3, 4, 5, 6, 0]) {
+    const w = settings.weekly[dow] || { type: 'same' };
+    const row = document.createElement('div');
+    row.className = 'wrow';
+    row.innerHTML = '<b></b><select><option value="same">평소대로</option><option value="custom">시간이 달라요</option><option value="off">쉬는 날</option></select>' +
+      '<div class="wt"><input type="time"><input type="time"></div>';
+    row.firstChild.textContent = DAYS[dow];
+    const sel = row.children[1], [a, b] = row.children[2].children;
+    sel.value = w.type;
+    a.value = w.workStart || settings.workStart; b.value = w.workEnd || settings.workEnd;
+    row.children[2].hidden = w.type !== 'custom';
+    const save = () => {
+      if (sel.value === 'same') delete settings.weekly[dow];
+      else settings.weekly[dow] = { type: sel.value, workStart: a.value || settings.workStart, workEnd: b.value || settings.workEnd };
+      store('ft.settings', settings);
+      row.children[2].hidden = sel.value !== 'custom';
+      render(); renderOverride(); renderDaySummary();
+    };
+    sel.onchange = save; a.onchange = save; b.onchange = save;
+    box.appendChild(row);
+  }
+}
 $('note').addEventListener('input', () => saveToday());
 
 $('mins').onclick = e => {
@@ -905,8 +1166,13 @@ function tick() {
   $('fGoal').textContent = !goal ? '' : m < goal ? '목표 ' + goal + '분까지 ' + Math.ceil(goal - m) + '분' : '목표 ' + goal + '분 달성 🎉';
   const today = (records[dateKey(new Date())] || {}).acts;
   $('usedSum').textContent = fmt(usedTotal(today) + (timer.date === dateKey(new Date()) ? m : 0));
-  const row = document.querySelector('.task.running .ttime');
-  if (row) row.textContent = clock(m);
+  const row = document.querySelector('.task.running');
+  if (row) {
+    const name = row.dataset.name, total = taskMinutes(name), goal2 = +(settings.goals || {})[name] || 0;
+    row.querySelector('.ttime').textContent = taskTime(name, total, true);
+    const bar = row.querySelector('.tbar');
+    if (bar && goal2) bar.style.width = Math.min(100, total / goal2 * 100) + '%';
+  }
   if (goal && m >= goal && !timer.alerted) {
     timer.alerted = true; store('ft.timer', timer);
     if (!document.hidden) alertGoal();
@@ -924,13 +1190,17 @@ const MODES = {
   exam: { icon: '📚', name: '수험생·공부', sub: '학원·독서실', busy: '학원·독서실', go: '오가는 길', start: '시작', end: '끝', in: '가는 길', out: '오는 길',
     am: '오전 쉼', pm: '오후 쉼', off: '쉬는 날', ovHint: '일찍 끝나는 날·쉬는 날처럼',
     acts: ['문제 풀이', '암기', '복습', '운동', '휴식'], times: { workStart: '13:00', workEnd: '22:00', commuteIn: 20, commuteOut: 20 } },
+  trip: { icon: '🧳', name: '여행·특별한 날', sub: '일정 · 이동', busy: '일정', go: '이동', start: '일정 시작', end: '일정 끝', in: '가는 길', out: '오는 길',
+    am: '오전 자유', pm: '오후 자유', off: '하루 종일 자유', ovHint: '여행·행사처럼',
+    times: { workStart: '10:00', workEnd: '18:00', commuteIn: 0, commuteOut: 0 } },
   custom: { icon: '✍️', name: '직접 정하기', sub: '이름을 내가 정해요' }
 };
 
 // Labels for the current mode; a custom mode builds them from the two names the user typed.
-function L() {
-  const m = MODES[settings.mode] || MODES.work;
-  if (settings.mode !== 'custom') return m;
+function L(mode) {
+  mode = mode || (overrides[dateKey(new Date())] || {}).mode || settings.mode;
+  const m = MODES[mode] || MODES.work;
+  if (mode !== 'custom') return m;
   const busy = settings.customBusy || '바쁜 시간', go = settings.customGo || '오가는 시간';
   return { busy, go, start: busy + ' 시작', end: busy + ' 끝', in: '가는 길', out: '오는 길',
     am: '오전만 쉼', pm: '오후만 쉼', off: '쉬는 날', ovHint: '평소와 다른 날처럼' };
@@ -946,6 +1216,7 @@ function applyMode() {
   for (const box of [$('welcomeModes'), $('dayModes')]) {
     box.innerHTML = '';
     for (const [key, m] of Object.entries(MODES)) {
+      if (key === 'trip') continue;
       const b = document.createElement('button');
       b.className = key === settings.mode ? 'on' : '';
       b.innerHTML = '<span></span><small></small>';
@@ -959,21 +1230,26 @@ function applyMode() {
 }
 
 function renderDaySummary() {
-  const l = L(), m = MODES[settings.mode] || MODES.work;
+  const l = L(settings.mode || 'work'), m = MODES[settings.mode] || MODES.work;
+  const wk = Object.entries(settings.weekly || {}).map(([d, w]) => DAYS[d] + (w.type === 'off' ? ' 쉼' : ' ' + w.workStart + '~' + w.workEnd));
   $('daySummary').textContent = m.icon + ' ' + m.name + ' · ' + l.busy + ' ' + settings.workStart + '~' + settings.workEnd +
-    ' · ' + l.go + ' ' + fmt((+settings.commuteIn || 0) + (+settings.commuteOut || 0)) + ' · 취침 ' + settings.sleep;
+    ' · ' + l.go + ' ' + fmt((+settings.commuteIn || 0) + (+settings.commuteOut || 0)) + ' · 취침 ' + settings.sleep +
+    (wk.length ? ' · ' + wk.join(', ') : '');
 }
 
 // On first run a mode also brings sensible starting tasks and times; later switches only rename.
 function chooseMode(key, firstRun) {
   const fresh = firstRun && !Object.keys(records).length && !timer;
-  settings.mode = key;
   const m = MODES[key];
-  if (fresh && m.acts) { settings.acts = m.acts.slice(); settings.act = m.acts[0]; }
-  if (fresh && m.times) {
-    Object.assign(settings, m.times);
-    FIELDS.forEach(f => { $(f).value = settings[f]; });
+  // Each mode keeps its own hours: park the old mode's, bring back (or default) the new one's.
+  if (settings.mode && settings.mode !== key) {
+    settings.modeTimes[settings.mode] = pick(settings);
+    Object.assign(settings, timesFor(key));
   }
+  settings.mode = key;
+  if (fresh && m.acts) { settings.acts = m.acts.slice(); settings.act = m.acts[0]; }
+  if (fresh && m.times) Object.assign(settings, m.times);
+  FIELDS.forEach(f => { $(f).value = settings[f]; });
   store('ft.settings', settings);
   applyMode(); renderOverride(); render();
   if (key === 'custom') { $('dayBox').open = true; $('customBusy').focus(); }
@@ -1239,6 +1515,8 @@ $('csv').onclick = () => {
 };
 
 applyMode();
+renderOverride();
+renderWeekly();
 render();
 setInterval(() => { if (!editing) render(); }, 30000);
 tick();
