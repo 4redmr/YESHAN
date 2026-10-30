@@ -141,7 +141,13 @@
   .erow input { width: 96px; margin: 0; text-align: right; }
   #install p { margin: 0; font-size: 14px; color: var(--muted); }
   #install .row { margin-top: 10px; }
-  #welcome[hidden], #customNames[hidden] { display: none; }
+  #welcome[hidden] { display: none; }
+  .modes .mwrap { position: relative; display: grid; }
+  .modes .mdel { position: absolute; top: 4px; right: 4px; padding: 0 7px; border-radius: 50%; font-size: 12px; line-height: 20px; color: var(--muted); }
+  .modes .madd { border-style: dashed; color: var(--muted); }
+  #modeDlg { width: min(92vw, 420px); padding: 18px; border: 1px solid var(--line); border-radius: 14px; background: var(--card); color: var(--text); }
+  #modeDlg::backdrop { background: rgba(0, 0, 0, .5); }
+  #modeIcons .chip { font-size: 20px; padding: 4px 10px; }
   .modes { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
   .modes button { padding: 14px 8px; border-radius: 12px; font-weight: 600; line-height: 1.3; }
   .modes button small { display: block; font-weight: 400; font-size: 12px; color: var(--muted); margin-top: 2px; }
@@ -299,10 +305,6 @@
       <summary><h2>나의 하루 <span class="hint" id="dayHint" style="font-weight:400">· 눌러서 모드 고치기</span></h2><div id="daySummary"></div></summary>
       <p class="step" style="margin-top:12px">모드</p>
       <div class="modes" id="dayModes"></div>
-      <div class="grid" id="customNames" style="margin-top:10px">
-        <label>바쁜 시간 이름<input type="text" id="customBusy" maxlength="8" placeholder="예: 알바, 육아"></label>
-        <label>오가는 시간 이름<input type="text" id="customGo" maxlength="8" placeholder="예: 이동"></label>
-      </div>
       <div class="grid" style="margin-top:12px">
         <label>일어나는 시간<input type="time" id="wake"></label>
         <label>잠드는 시간<input type="time" id="sleep"></label>
@@ -389,7 +391,8 @@
     <details>
       <summary>처음 시작하기</summary>
       <ol>
-        <li>처음 열면 <b>모드</b>를 골라요. 💼 직장인, 🎒 학생, 📚 수험생·공부, ✍️ 직접 정하기 중에서요. 고른 모드에 맞게 "근무·출퇴근" 같은 이름이 바뀌어요.</li>
+        <li>처음 열면 <b>모드</b>를 골라요. 💼 직장인, 🎒 학생, 📚 수험생·공부 중에서 고르거나, <b>+ 모드 추가</b>로 나만의 모드(예: 🍼 육아, 💪 알바)를 만들어요. 고른 모드에 맞게 "근무·출퇴근" 같은 이름이 바뀌어요.</li>
+        <li>내가 만든 모드는 <b>나의 하루</b>에서 ✕를 눌러 지울 수 있어요. 여러 개 만들어도 돼요.</li>
         <li><b>나의 하루</b>를 눌러 일어나는 시간, 잠드는 시간, 바쁜 시간(근무·수업 등), 오가는 시간을 넣어요. 한 번만 넣으면 기억해요. 모드도 여기서 바꿔요.</li>
         <li>맨 위 큰 숫자가 <b>지금부터 잠들 때까지 남은 나의 시간</b>이에요. 회사·학교 일을 빼고, 쉬든 공부하든 내가 주인인 시간이에요.</li>
         <li>휴대폰 홈 화면에 설치하면 앱처럼 쓸 수 있어요. 아이폰은 Safari의 공유(□↑) → "홈 화면에 추가"예요.</li>
@@ -523,6 +526,21 @@
     </details>
   </section>
 </main>
+<dialog id="modeDlg">
+  <h2>나만의 모드 만들기</h2>
+  <label>모드 이름<input type="text" id="modeName" maxlength="10" placeholder="예: 육아, 알바, 교회 봉사"></label>
+  <div class="grid" style="margin-top:10px">
+    <label>바쁜 시간 이름<input type="text" id="modeBusy" maxlength="8" placeholder="예: 육아, 알바"></label>
+    <label>오가는 시간 이름<input type="text" id="modeGo" maxlength="8" placeholder="예: 이동"></label>
+  </div>
+  <p class="step" style="margin-top:12px">아이콘</p>
+  <div class="chips" id="modeIcons"></div>
+  <p class="hint" style="margin:0">만든 모드는 "나의 하루"와 "오늘만 다르게"에서 고를 수 있어요. 시간은 모드마다 따로 기억해요.</p>
+  <div class="row">
+    <button id="modeCancel">취소</button>
+    <button class="primary" id="modeSave">만들기</button>
+  </div>
+</dialog>
 <dialog id="taskDlg">
   <h2>할 일 고치기</h2>
   <label>이름<input type="text" id="taskName" maxlength="15"></label>
@@ -563,7 +581,7 @@
 <script>
 const $ = id => document.getElementById(id);
 const FIELDS = ['wake', 'sleep', 'workStart', 'workEnd', 'commuteIn', 'commuteOut'];
-const DEFAULTS = { modeTimes: {}, weekly: {}, goals: {}, mode: '', customBusy: '', customGo: '', keepAwake: true, goal: 25, focusGoals: { '휴식': 0 }, alert: 'vibrate', acts: ['독서', '공부', '휴식', '기도', '운동'], act: '독서', notionUrl: '', remindAt: '21:30', notifyOn: false, wake: '06:30', sleep: '23:30', workStart: '09:00', workEnd: '18:00', commuteIn: 40, commuteOut: 40 };
+const DEFAULTS = { modeTimes: {}, weekly: {}, goals: {}, mode: '', customModes: [], keepAwake: true, goal: 25, focusGoals: { '휴식': 0 }, alert: 'vibrate', acts: ['독서', '공부', '휴식', '기도', '운동'], act: '독서', notionUrl: '', remindAt: '21:30', notifyOn: false, wake: '06:30', sleep: '23:30', workStart: '09:00', workEnd: '18:00', commuteIn: 40, commuteOut: 40 };
 
 function load(key, fallback) {
   try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; } catch (e) { return fallback; }
@@ -594,7 +612,7 @@ const DAYS = '일월화수목금토';
 // Times a mode uses: the main mode's live settings, or what another mode last used.
 function timesFor(mode) {
   if (!mode || mode === settings.mode) return pick(settings);
-  return Object.assign(pick(settings), (MODES[mode] || {}).times, (settings.modeTimes || {})[mode]);
+  return Object.assign(pick(settings), getMode(mode).times, (settings.modeTimes || {})[mode]);
 }
 const pick = o => Object.fromEntries(TIME_FIELDS.map(f => [f, o[f]]));
 
@@ -604,7 +622,7 @@ function dayPlan(key) {
   const o = overrides[key] || {}, mode = o.mode || settings.mode, dow = new Date(key + 'T00:00').getDay();
   const t = timesFor(mode);
   let off = false, label = '';
-  if (mode !== settings.mode) label = MODES[mode].icon + ' ' + MODES[mode].name;
+  if (mode !== settings.mode) label = getMode(mode).icon + ' ' + getMode(mode).name;
   else {
     const w = (settings.weekly || {})[dow];
     if (w && w.type === 'off') { off = true; label = DAYS[dow] + '요일 · 쉬는 날'; }
@@ -994,7 +1012,7 @@ function renderOverride() {
   $('ovEnd').value = s.workEnd;
 
   $('ovModes').innerHTML = '';
-  for (const [key, m] of Object.entries(MODES)) {
+  for (const [key, m] of allModes()) {
     const b = document.createElement('button');
     b.className = key === s.mode ? 'on' : '';
     b.innerHTML = '<span></span><small></small>';
@@ -1031,7 +1049,7 @@ $('ovPresets').onclick = e => {
   if (!kind) return;
   if (kind === 'reset') { setOverride(null); toast(dayWord(ovKey) + '은 원래대로 돌아왔어요'); return; }
   const cur = overrides[ovKey] || {}, mode = cur.mode, t = timesFor(mode || settings.mode), l = L(mode || settings.mode);
-  const tag = mode ? MODES[mode].icon + ' ' : '';
+  const tag = mode ? getMode(mode).icon + ' ' : '';
   const presets = {
     am: { kind, mode, label: tag + l.am, workStart: '13:30', workEnd: t.workEnd },
     pm: { kind, mode, label: tag + l.pm, workStart: t.workStart, workEnd: '12:30' },
@@ -1207,45 +1225,71 @@ const MODES = {
     acts: ['문제 풀이', '암기', '복습', '운동', '휴식'], times: { workStart: '13:00', workEnd: '22:00', commuteIn: 20, commuteOut: 20 } },
   trip: { icon: '🧳', name: '여행·특별한 날', sub: '일정 · 이동', busy: '일정', go: '이동', start: '일정 시작', end: '일정 끝', in: '가는 길', out: '오는 길',
     am: '오전 자유', pm: '오후 자유', off: '하루 종일 자유', ovHint: '여행·행사처럼',
-    times: { workStart: '10:00', workEnd: '18:00', commuteIn: 0, commuteOut: 0 } },
-  custom: { icon: '✍️', name: '직접 정하기', sub: '이름을 내가 정해요' }
+    times: { workStart: '10:00', workEnd: '18:00', commuteIn: 0, commuteOut: 0 } }
 };
+const MODE_ICONS = ['✍️', '🍼', '💪', '⛪', '🏥', '🎨', '💻', '🛒', '🚗', '🌿'];
 
-// Labels for the current mode; a custom mode builds them from the two names the user typed.
+// The user's own modes are kept as { id, icon, name, busy, go } and keyed "c-<id>".
+function customMode(c) {
+  const busy = c.busy || c.name, go = c.go || '이동';
+  return { icon: c.icon, name: c.name, sub: busy + ' · ' + go, custom: true, busy, go, start: busy + ' 시작', end: busy + ' 끝',
+    in: '가는 길', out: '오는 길', am: '오전만 쉼', pm: '오후만 쉼', off: '쉬는 날', ovHint: '평소와 다른 날처럼' };
+}
+const allModes = () => Object.entries(MODES).concat((settings.customModes || []).map(c => ['c-' + c.id, customMode(c)]));
+const getMode = key => (allModes().find(([k]) => k === key) || [null, MODES.work])[1];
+
+// Labels for a mode (today's mode when none is given).
 function L(mode) {
-  mode = mode || (overrides[dateKey(new Date())] || {}).mode || settings.mode;
-  const m = MODES[mode] || MODES.work;
-  if (mode !== 'custom') return m;
-  const busy = settings.customBusy || '바쁜 시간', go = settings.customGo || '오가는 시간';
-  return { busy, go, start: busy + ' 시작', end: busy + ' 끝', in: '가는 길', out: '오는 길',
-    am: '오전만 쉼', pm: '오후만 쉼', off: '쉬는 날', ovHint: '평소와 다른 날처럼' };
+  return getMode(mode || (overrides[dateKey(new Date())] || {}).mode || settings.mode);
+}
+
+// Before modes could be added, "직접 정하기" was a single mode named by two fields; carry it over.
+if (settings.mode === 'custom' || Object.values(overrides).some(o => o.mode === 'custom')) {
+  const c = { id: 'old', icon: '✍️', name: settings.customBusy || '직접 정하기', busy: settings.customBusy || '', go: settings.customGo || '' };
+  settings.customModes = (settings.customModes || []).concat(c);
+  if (settings.mode === 'custom') settings.mode = 'c-old';
+  if (settings.modeTimes.custom) { settings.modeTimes['c-old'] = settings.modeTimes.custom; delete settings.modeTimes.custom; }
+  for (const o of Object.values(overrides)) if (o.mode === 'custom') o.mode = 'c-old';
+  store('ft.settings', settings); store('ft.overrides', overrides);
 }
 
 function applyMode() {
   const l = L();
   for (const el of document.querySelectorAll('[data-l]')) if (l[el.dataset.l]) el.textContent = l[el.dataset.l];
-  $('customNames').hidden = settings.mode !== 'custom';
-  $('customBusy').value = settings.customBusy;
-  $('customGo').value = settings.customGo;
   $('welcome').hidden = !!settings.mode;
   for (const box of [$('welcomeModes'), $('dayModes')]) {
+    const welcome = box === $('welcomeModes');
     box.innerHTML = '';
-    for (const [key, m] of Object.entries(MODES)) {
+    for (const [key, m] of allModes()) {
       if (key === 'trip') continue;
-      const b = document.createElement('button');
+      const wrap = document.createElement('div'), b = document.createElement('button');
+      wrap.className = 'mwrap';
       b.className = key === settings.mode ? 'on' : '';
       b.innerHTML = '<span></span><small></small>';
       b.firstChild.textContent = m.icon + ' ' + m.name;
       b.lastChild.textContent = m.sub;
-      b.onclick = () => chooseMode(key, box === $('welcomeModes'));
-      box.appendChild(b);
+      b.onclick = () => chooseMode(key, welcome);
+      wrap.appendChild(b);
+      if (m.custom && !welcome) {
+        const del = document.createElement('button');
+        del.className = 'mdel'; del.textContent = '✕';
+        del.setAttribute('aria-label', m.name + ' 모드 지우기');
+        del.onclick = e => { e.stopPropagation(); deleteMode(key); };
+        wrap.appendChild(del);
+      }
+      box.appendChild(wrap);
     }
+    const add = document.createElement('button');
+    add.className = 'madd';
+    add.innerHTML = '<span>+ 모드 추가</span><small>나만의 모드 만들기</small>';
+    add.onclick = () => openModeDlg(welcome);
+    box.appendChild(add);
   }
   renderDaySummary();
 }
 
 function renderDaySummary() {
-  const l = L(settings.mode || 'work'), m = MODES[settings.mode] || MODES.work;
+  const l = L(settings.mode || 'work'), m = getMode(settings.mode || 'work');
   const wk = Object.entries(settings.weekly || {}).map(([d, w]) => DAYS[d] + (w.type === 'off' ? ' 쉼' : ' ' + w.workStart + '~' + w.workEnd));
   $('daySummary').textContent = m.icon + ' ' + m.name + ' · ' + l.busy + ' ' + settings.workStart + '~' + settings.workEnd +
     ' · ' + l.go + ' ' + fmt((+settings.commuteIn || 0) + (+settings.commuteOut || 0)) + ' · 취침 ' + settings.sleep +
@@ -1255,7 +1299,7 @@ function renderDaySummary() {
 // On first run a mode also brings sensible starting tasks and times; later switches only rename.
 function chooseMode(key, firstRun) {
   const fresh = firstRun && !Object.keys(records).length && !timer;
-  const m = MODES[key];
+  const m = getMode(key);
   // Each mode keeps its own hours: park the old mode's, bring back (or default) the new one's.
   if (settings.mode && settings.mode !== key) {
     settings.modeTimes[settings.mode] = pick(settings);
@@ -1267,14 +1311,56 @@ function chooseMode(key, firstRun) {
   FIELDS.forEach(f => { $(f).value = settings[f]; });
   store('ft.settings', settings);
   applyMode(); renderOverride(); render();
-  if (key === 'custom') { $('dayBox').open = true; $('customBusy').focus(); }
-  else if (fresh) { $('dayBox').open = true; }
+  if (fresh) $('dayBox').open = true;
   toast(m.icon + ' ' + m.name + ' 모드로 바꿨어요');
 }
 
-for (const id of ['customBusy', 'customGo']) $(id).addEventListener('input', () => {
-  settings[id] = $(id).value.trim(); store('ft.settings', settings); applyMode();
-});
+// Adding and removing the user's own modes.
+let modeDlgFirstRun = false, modeIcon = MODE_ICONS[0];
+function openModeDlg(firstRun) {
+  modeDlgFirstRun = firstRun;
+  modeIcon = MODE_ICONS[0];
+  for (const id of ['modeName', 'modeBusy', 'modeGo']) $(id).value = '';
+  renderModeIcons();
+  $('modeDlg').showModal();
+}
+function renderModeIcons() {
+  $('modeIcons').innerHTML = '';
+  for (const ic of MODE_ICONS) {
+    const b = document.createElement('button');
+    b.className = 'chip' + (ic === modeIcon ? ' on' : '');
+    b.textContent = ic;
+    b.onclick = () => { modeIcon = ic; renderModeIcons(); };
+    $('modeIcons').appendChild(b);
+  }
+}
+$('modeCancel').onclick = () => $('modeDlg').close();
+$('modeSave').onclick = () => {
+  const name = $('modeName').value.trim();
+  if (!name) { toast('모드 이름을 적어 주세요'); $('modeName').focus(); return; }
+  const c = { id: Date.now().toString(36), icon: modeIcon, name, busy: $('modeBusy').value.trim(), go: $('modeGo').value.trim() };
+  settings.customModes = (settings.customModes || []).concat(c);
+  store('ft.settings', settings);
+  $('modeDlg').close();
+  chooseMode('c-' + c.id, modeDlgFirstRun);
+};
+
+function deleteMode(key) {
+  const m = getMode(key);
+  if (!confirm('"' + m.name + '" 모드를 지울까요?\n지금까지의 기록은 그대로 남아요.')) return;
+  if (settings.mode === key) chooseMode('work');
+  settings.customModes = settings.customModes.filter(c => 'c-' + c.id !== key);
+  delete settings.modeTimes[key];
+  // Days planned with this mode go back to the usual mode, keeping any times set for them.
+  for (const [k, o] of Object.entries(overrides)) {
+    if (o.mode !== key) continue;
+    delete o.mode;
+    if (o.kind === 'mode') delete overrides[k];
+  }
+  store('ft.settings', settings); store('ft.overrides', overrides);
+  applyMode(); renderOverride(); render();
+  toast(m.icon + ' ' + m.name + ' 모드를 지웠어요');
+}
 
 // Keep the screen on while timing, if the browser allows it; released when the timer stops.
 let wakeLock = null;
