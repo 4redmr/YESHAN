@@ -167,47 +167,58 @@
   .wt { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
   .wt input { margin: 0; }
   .wrow .chips.wbi { margin: 8px 0 0; align-items: center; font-size: 13px; color: var(--muted); }
-  /* Wobbly "drawn with a pen" corners for the friend card. */
-  .sketch { border: 2px solid color-mix(in srgb, var(--text) 55%, transparent); border-radius: 255px 18px 225px 18px / 18px 225px 18px 255px; }
-  .room { position: relative; padding: 14px 12px 4px; text-align: center; background: color-mix(in srgb, var(--accent) 12%, var(--bg)); }
-  .bubble { position: relative; display: inline-block; max-width: 92%; background: var(--card); padding: 6px 14px; font-size: 19px; line-height: 1.3; margin-bottom: 12px; }
-  .bubble::after { content: ""; position: absolute; left: 50%; bottom: -9px; width: 14px; height: 14px; background: var(--card);
-    border-right: 2px solid color-mix(in srgb, var(--text) 55%, transparent); border-bottom: 2px solid color-mix(in srgb, var(--text) 55%, transparent);
-    transform: translateX(-50%) rotate(45deg); }
-  .pet { position: relative; display: inline-block; width: 140px; height: 140px; padding: 0; border: 0; background: none; }
-  .pet svg { width: 100%; height: 100%; animation: bob 2.6s ease-in-out infinite; overflow: visible; }
-  .pet .eyes { transform-box: fill-box; transform-origin: center; animation: blink 4.5s infinite; }
-  .pet .wear { position: absolute; top: 2px; left: 50%; transform: translateX(-50%) rotate(-8deg); font-size: 34px; z-index: 1; }
-  .pet .wear.neck { top: 92px; transform: translateX(-50%); }
-  .pet .wear.eyes { top: 44px; transform: translateX(-50%); font-size: 40px; }
-  .deco { position: absolute; inset: 0; pointer-events: none; }
-  .deco span { position: absolute; transform: translate(-50%, -50%); line-height: 1; filter: drop-shadow(0 2px 0 rgba(74, 59, 47, .25)); }
-  .shop h3 { grid-column: 1 / -1; margin: 10px 0 0; font: 700 19px "Gaegu", "Gowun Dodum", sans-serif; }
-  .shop p { grid-column: 1 / -1; margin: 0; font-size: 13px; color: var(--muted); }
-  .pet.hop { animation: hop .5s; }
-  @keyframes hop { 50% { transform: translateY(-14px) rotate(-4deg); } }
-  @keyframes bob { 50% { transform: translateY(-4px) scale(1.02, .98); } }
-  @keyframes blink { 0%, 93%, 100% { transform: scaleY(1); } 96% { transform: scaleY(.1); } }
-  @media (prefers-reduced-motion: reduce) { .pet svg, .pet .eyes { animation: none; } }
-  .room { overflow: hidden; min-height: 320px; }
-  .room > :not(.scene):not(.deco) { position: relative; z-index: 1; }
+  /* The friend's room: one hand-drawn picture with the friend walking across it. Its colours
+     are the picture's own, so it looks the same in the dark theme. */
+  .room { position: relative; height: 330px; border-radius: 22px; overflow: hidden; border: 2.5px solid #333; background: #fffaf2; }
   .scene { position: absolute; inset: 0; }
   .scene svg { width: 100%; height: 100%; display: block; }
+  .bubble { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); z-index: 2; width: max-content; max-width: 86%;
+    background: #fff; color: #333; border: 2.5px solid #333; border-radius: 16px; padding: 3px 14px; font-size: 19px; line-height: 1.3; text-align: center; }
+  .walker { position: absolute; left: 50%; bottom: 26px; width: 124px; height: 93px; margin-left: -62px; z-index: 1; animation: walk 20s ease-in-out infinite; }
+  .pet { width: 100%; height: 100%; padding: 0; border: 0; background: none; }
+  .pet svg { width: 100%; height: 100%; overflow: visible; }
+  .pet.hop { animation: hop .5s; }
+  @keyframes walk {
+    0% { transform: translateX(-80px); } 36% { transform: translateX(80px); } 44% { transform: translateX(80px); }
+    46% { transform: translateX(80px) scaleX(-1); } 82% { transform: translateX(-80px) scaleX(-1); } 90% { transform: translateX(-80px) scaleX(-1); }
+    92%, 100% { transform: translateX(-80px); } }
+  @keyframes hop { 50% { transform: translateY(-16px); } }
+  .walker .leg { transform-box: fill-box; transform-origin: 50% 0; animation: swing .7s ease-in-out infinite alternate; }
+  .walker .leg.b { animation-delay: -.7s; }
+  @keyframes swing { from { transform: rotate(20deg); } to { transform: rotate(-20deg); } }
+  .walker .body { animation: bob .35s ease-in-out infinite alternate; }
+  @keyframes bob { to { transform: translateY(-2px); } }
+  .walker .tail { transform-box: fill-box; transform-origin: 100% 100%; animation: tail 1.4s ease-in-out infinite alternate; }
+  .walker .tail.wag { animation-duration: .25s; }
+  @keyframes tail { from { transform: rotate(-8deg); } to { transform: rotate(10deg); } }
+  .walker .eyes { transform-box: fill-box; transform-origin: center; animation: blink 3.5s infinite; }
+  @keyframes blink { 0%, 92%, 100% { transform: scaleY(1); } 96% { transform: scaleY(.1); } }
+  .walker .walk-rabbit .body { animation: rhop .7s ease-in-out infinite; }
+  .walker .walk-rabbit .leg { animation: none; }
+  @keyframes rhop { 0%, 100% { transform: translateY(0); } 45% { transform: translateY(-14px) rotate(-4deg); } }
+  .walker .walk-chick .body { transform-box: fill-box; transform-origin: 50% 100%; animation: waddle .5s ease-in-out infinite alternate; }
+  .walker .walk-chick .leg { animation-duration: .5s; }
+  @keyframes waddle { from { transform: rotate(-5deg); } to { transform: rotate(5deg); } }
+  .walker .wing { transform-box: fill-box; transform-origin: 20% 30%; animation: flap .5s ease-in-out infinite alternate; }
+  @keyframes flap { to { transform: rotate(-14deg); } }
+  @media (prefers-reduced-motion: reduce) { .walker, .walker * { animation: none !important; } }
+  #probe { position: absolute; width: 0; height: 0; visibility: hidden; }
   .homes { display: grid; gap: 8px; margin-top: 10px; }
   .homes button { display: flex; align-items: center; justify-content: space-between; gap: 8px; text-align: left; font-family: "Gaegu", "Gowun Dodum", sans-serif; font-size: 19px; padding: 8px 14px; }
   .homes button small { color: var(--muted); font-size: 16px; white-space: nowrap; }
   .homes button.here { border: 2px solid var(--accent); background: color-mix(in srgb, var(--accent) 16%, var(--card)); }
   .homes button.next small { color: var(--accent); font-weight: 700; }
   .homes button.locked { opacity: .55; }
-  .floor { height: 64px; }
   #friendCard .sumline, #friendCard summary, .shop button { font-family: "Gaegu", "Gowun Dodum", sans-serif; font-size: 18px; }
   #friendCard .sumline { font-size: 17px; gap: 8px; }
   #friendCard .sumline span { white-space: nowrap; }
-  #petKinds .chip { display: inline-flex; align-items: center; gap: 4px; font-family: "Gaegu", sans-serif; font-size: 17px; padding: 3px 12px 3px 6px; }
-  #petKinds svg { width: 30px; height: 30px; }
+  #petKinds .chip { display: inline-flex; align-items: center; gap: 4px; font-family: "Gaegu", sans-serif; font-size: 17px; padding: 3px 12px 3px 4px; }
+  #petKinds svg { width: 44px; height: 33px; }
   .shop { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 10px; }
-  .shop button { padding: 10px 4px; line-height: 1.15; }
-  .shop button b { display: block; font-size: 26px; font-weight: 400; }
+  .shop h3 { grid-column: 1 / -1; margin: 10px 0 0; font: 700 19px "Gaegu", "Gowun Dodum", sans-serif; }
+  .shop p { grid-column: 1 / -1; margin: 0; font-size: 13px; color: var(--muted); }
+  .shop button { padding: 8px 4px; line-height: 1.15; }
+  .shop button svg { display: block; width: 54px; height: 44px; margin: 0 auto 4px; padding: 4px; border-radius: 10px; background: #fffaf2; }
   .shop button small { display: block; color: var(--muted); }
   .shop button.owned { border-color: var(--accent); border-width: 2px; }
   .shop button.on { background: color-mix(in srgb, var(--accent) 16%, var(--card)); }
@@ -389,13 +400,12 @@
         <li>기록을 지우거나 줄이면 별도 같이 줄어요.</li>
       </ul>
     </div>
-    <div class="room sketch">
+    <div class="room" id="room">
       <div class="scene" id="scene"></div>
-      <div class="deco" id="deco"></div>
-      <div class="bubble sketch hand" id="friendSay"></div><br>
-      <button class="pet" id="pet" aria-label="친구 쓰다듬기"><span class="wear" id="petWear"></span><span id="petFace"></span></button>
-      <div class="floor" id="floor"></div>
+      <div class="bubble hand" id="friendSay"></div>
+      <div class="walker"><button class="pet" id="pet" aria-label="친구 쓰다듬기"><span id="petFace"></span></button></div>
     </div>
+    <svg id="probe" aria-hidden="true"></svg>
     <div class="sumline"><span>내 별 <b id="stars">⭐ 0</b></span><span id="friendDays"></span></div>
     <details id="shopBox">
       <summary class="hint">⭐ 별 상점</summary>
@@ -1304,124 +1314,255 @@ function stopTimer(minutes, quiet, reason) {
   if (m >= 1) hop();
 }
 
-// 나의 시간 친구: every recorded minute is a star, and stars buy clothes and room things. Stars
-// come from the records, so fixing or deleting minutes changes them; spent stars are kept.
+// 나의 시간 친구: every recorded minute is a star, and stars buy clothes, things for the room,
+// and bigger homes. Stars come from the records, so fixing or deleting minutes changes them.
 const PETS = { cat: ['🐱', '고양이'], rabbit: ['🐰', '토끼'], bear: ['🐻', '곰'], chick: ['🐥', '병아리'], sheep: ['🐑', '양'], dog: ['🐶', '강아지'] };
 
-// Hand-drawn friends: simple shapes in a dark pen line, roughened by a displacement filter.
-const INK = '#4a3b2f';
-const PET_ART = {
-  cat: { fill: '#f4c58f', ears: '<path d="M34 42 L38 14 L58 32Z M86 42 L82 14 L62 32Z"/><path d="M40 34 L41 22 L50 31Z M80 34 L79 22 L70 31Z" fill="#f6a6a6" stroke="none"/>',
-    extra: '<path d="M22 62 h14 M22 70 l14 -3 M98 62 h-14 M98 70 l-14 -3" fill="none" stroke-width="2"/>' },
-  rabbit: { fill: '#fbf7f0', ears: '<ellipse cx="46" cy="18" rx="9" ry="22"/><ellipse cx="74" cy="18" rx="9" ry="22"/><ellipse cx="46" cy="20" rx="4" ry="14" fill="#f6a6a6" stroke="none"/><ellipse cx="74" cy="20" rx="4" ry="14" fill="#f6a6a6" stroke="none"/>' },
-  bear: { fill: '#c8936a', ears: '<circle cx="34" cy="32" r="11"/><circle cx="86" cy="32" r="11"/><circle cx="34" cy="32" r="5" fill="#a6714d" stroke="none"/><circle cx="86" cy="32" r="5" fill="#a6714d" stroke="none"/>',
-    extra: '<ellipse cx="60" cy="70" rx="13" ry="9" fill="#ead2b8" stroke-width="2"/>' },
-  chick: { fill: '#ffd95a', ears: '<path d="M56 26 q4 -14 6 0 q4 -12 6 2" fill="none"/>',
-    extra: '<path d="M54 66 l6 7 l6 -7z" fill="#f29b38" stroke-width="2"/>', mouth: '' },
-  sheep: { fill: '#fbf7f0', ears: '<ellipse cx="26" cy="56" rx="12" ry="6" fill="#d9c7b5" transform="rotate(-20 26 56)"/><ellipse cx="94" cy="56" rx="12" ry="6" fill="#d9c7b5" transform="rotate(20 94 56)"/>',
-    head: '<circle cx="60" cy="30" r="12"/><circle cx="44" cy="36" r="11"/><circle cx="76" cy="36" r="11"/><ellipse cx="60" cy="60" rx="26" ry="26" fill="#ead9c6"/>',
-    body: '<path d="M30 100 q-6 -16 10 -20 q6 -10 20 -6 q14 -4 20 6 q16 4 10 20 q-4 14 -30 14 q-26 0 -30 -14z"/>' },
-  dog: { fill: '#e8c9a0', ears: '<path d="M32 36 q-14 2 -12 30 q10 2 16 -14z M88 36 q14 2 12 30 q-10 2 -16 -14z" fill="#a6714d"/>',
-    extra: '<ellipse cx="60" cy="66" rx="5" ry="3.5" fill="' + INK + '"/>' }
+// Everything is drawn in one style: a dark pen line with soft pastel fills, roughened a little
+// by a displacement filter so it looks hand-drawn.
+const INK = '#333';
+const C = { pink: '#f7c6c0', rose: '#f4a3a3', mint: '#c8e6c9', green: '#a8d5a2', sky: '#cfe6f7', blue: '#b9d8f2', butter: '#fde9a8',
+  gold: '#f6d36b', lilac: '#ddd0f0', peach: '#fbd8b5', wood: '#e2c19d', brown: '#c9a27a', white: '#fff', gray: '#e4e0d8', orange: '#f7b980' };
+const WOB = id => '<filter id="' + id + '"><feTurbulence type="fractalNoise" baseFrequency=".05" numOctaves="2" seed="3"/><feDisplacementMap in="SourceGraphic" scale="1.5"/></filter>';
+const PEN = 'stroke="' + INK + '" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"';
+
+// Friends, seen from the side and facing right (viewBox 0 0 150 112, feet at y=106). Tails and
+// legs are drawn before the body, so the body covers where they join.
+const leg = (x, y, h, w, fill, cls) => '<path class="leg ' + cls + '" d="M' + x + ' ' + y + 'h' + w + 'v' + (h - w / 2) + 'a' + w / 2 + ' ' + w / 2 + ' 0 0 1 ' + -w + ' 0Z" fill="' + fill + '"/>';
+const thick = (d, fill, w) => '<path d="' + d + '" fill="none" stroke="' + INK + '" stroke-width="' + (w + 5) + '"/><path d="' + d + '" fill="none" stroke="' + fill + '" stroke-width="' + w + '"/>';
+const eyes = (x1, x2, y) => '<g class="eyes"><ellipse cx="' + x1 + '" cy="' + y + '" rx="2.8" ry="3.6" fill="' + INK + '" stroke="none"/><ellipse cx="' + x2 + '" cy="' + y + '" rx="2.8" ry="3.6" fill="' + INK + '" stroke="none"/>' +
+  '<circle cx="' + (x1 + .9) + '" cy="' + (y - 1.3) + '" r="1" fill="#fff" stroke="none"/><circle cx="' + (x2 + .9) + '" cy="' + (y - 1.3) + '" r="1" fill="#fff" stroke="none"/></g>';
+const cheek = (x, y) => '<ellipse cx="' + x + '" cy="' + y + '" rx="5" ry="3" fill="#f6a6a6" opacity=".7" stroke="none"/>';
+const ANIMALS = {
+  cat: { top: [106, 27], eye: [109.5, 45], neck: [90, 64], draw: () => {
+    const f = '#f4c58f', d = '#e3ac72';
+    return leg(40, 62, 44, 11, d, 'b') + leg(84, 62, 44, 11, d, 'a') + leg(48, 64, 42, 11, f, 'a') + leg(92, 64, 42, 11, f, 'b') +
+      '<g class="tail">' + thick('M36 62 C14 58 8 36 18 24', f, 7) + '</g>' +
+      '<ellipse cx="64" cy="66" rx="38" ry="21" fill="' + f + '"/><path d="M56 47 q4 6 0 11 M68 46 q4 6 0 11 M44 50 q4 5 1 10" fill="none" stroke="' + d + '" stroke-width="3"/>' +
+      '<path d="M89 38 L92 15 L106 28Z M106 27 L120 12 L124 36Z" fill="' + f + '"/><path d="M93 30 L94 21 L101 28Z M110 27 L118 18 L120 31Z" fill="#f6a6a6" stroke="none"/>' +
+      '<circle cx="106" cy="46" r="21" fill="' + f + '"/>' + eyes(103, 116, 45) + cheek(98, 53) + cheek(124, 52) +
+      '<path d="M108 53 l3 3 l3 -3z" fill="#f6a6a6" stroke-width="1.5"/><path d="M106 57 q2.5 3 5 0 q2.5 3 5 0" fill="none" stroke-width="2"/>' +
+      '<path d="M124 51 h13 M124 56 l12 3" fill="none" stroke-width="1.6"/>';
+  } },
+  dog: { top: [104, 25], eye: [110, 41], neck: [88, 61], draw: () => {
+    const f = '#e8c9a0', d = '#d6b283';
+    return leg(40, 62, 44, 12, d, 'b') + leg(86, 62, 44, 12, d, 'a') + leg(48, 64, 42, 12, f, 'a') + leg(94, 64, 42, 12, f, 'b') +
+      '<g class="tail wag">' + thick('M34 60 q-14 -6 -12 -22', f, 7) + '</g>' +
+      '<ellipse cx="64" cy="66" rx="38" ry="21" fill="' + f + '"/><ellipse cx="56" cy="58" rx="12" ry="8" fill="#fff4e4" stroke="none"/>' +
+      '<circle cx="104" cy="44" r="20" fill="' + f + '"/><ellipse cx="124" cy="52" rx="11" ry="8" fill="#fff4e4"/><ellipse cx="133" cy="48" rx="4" ry="3" fill="' + INK + '"/>' +
+      '<path d="M92 28 q-12 4 -9 24 q9 2 13 -10z" fill="#a6714d"/>' + eyes(104, 116, 41) + cheek(110, 52) +
+      '<path d="M124 57 q3 3 6 0" fill="none" stroke-width="2"/><path d="M127 59 q2 6 5 0" fill="#f6a6a6" stroke-width="1.5"/>';
+  } },
+  bear: { top: [105, 25], eye: [107.5, 42], neck: [88, 63], draw: () => {
+    const f = '#c8936a', d = '#b17d55';
+    return leg(38, 62, 44, 14, d, 'b') + leg(86, 62, 44, 14, d, 'a') + leg(46, 64, 42, 14, f, 'a') + leg(94, 64, 42, 14, f, 'b') +
+      '<circle cx="26" cy="60" r="7" fill="' + f + '"/><ellipse cx="62" cy="64" rx="40" ry="25" fill="' + f + '"/>' +
+      '<circle cx="93" cy="27" r="8" fill="' + f + '"/><circle cx="116" cy="25" r="8" fill="' + f + '"/><circle cx="93" cy="27" r="3.5" fill="#a6714d" stroke="none"/><circle cx="116" cy="25" r="3.5" fill="#a6714d" stroke="none"/>' +
+      '<circle cx="105" cy="45" r="21" fill="' + f + '"/><ellipse cx="121" cy="52" rx="10" ry="8" fill="#ead2b8"/><ellipse cx="127" cy="48" rx="3.6" ry="2.8" fill="' + INK + '"/>' +
+      eyes(101, 114, 42) + cheek(96, 52) + '<path d="M120 56 q3 3 6 0" fill="none" stroke-width="2"/>';
+  } },
+  rabbit: { top: [101, 37], eye: [104, 52], neck: [88, 70], draw: () => {
+    const f = '#fbf7f0';
+    return '<ellipse cx="88" cy="22" rx="6" ry="20" fill="' + f + '" transform="rotate(-25 88 40)"/>' +
+      '<ellipse class="leg a" cx="52" cy="99" rx="17" ry="7" fill="' + f + '"/>' + leg(80, 74, 32, 10, f, 'b') +
+      '<circle cx="33" cy="70" r="8" fill="#fff"/><ellipse cx="62" cy="74" rx="32" ry="24" fill="' + f + '"/>' +
+      '<ellipse cx="99" cy="22" rx="6.5" ry="21" fill="' + f + '" transform="rotate(-8 99 42)"/><ellipse cx="99" cy="24" rx="3" ry="14" fill="#f6a6a6" stroke="none" transform="rotate(-8 99 42)"/>' +
+      '<circle cx="100" cy="54" r="19" fill="' + f + '"/>' + eyes(98, 110, 52) + cheek(94, 60) + cheek(117, 60) +
+      '<path d="M108 58 l2.5 2.5 l2.5 -2.5z" fill="#f6a6a6" stroke-width="1.4"/><path d="M106 62 q2 2.5 4.5 0 q2 2.5 4.5 0" fill="none" stroke-width="1.8"/>';
+  } },
+  sheep: { top: [110, 33], eye: [112.5, 50], neck: [98, 68], draw: () => {
+    const w = '#fbf7f0', k = '#7a6a60';
+    const wool = [[40, 58], [54, 48], [70, 46], [86, 52], [92, 66], [80, 80], [62, 82], [44, 78], [34, 68]].map(([x, y]) => '<circle cx="' + x + '" cy="' + y + '" r="13" fill="' + w + '"/>').join('');
+    return leg(42, 70, 36, 8, '#5f5149', 'b') + leg(80, 70, 36, 8, '#5f5149', 'a') + leg(50, 72, 34, 8, k, 'a') + leg(88, 72, 34, 8, k, 'b') +
+      wool + '<ellipse cx="63" cy="64" rx="30" ry="18" fill="' + w + '" stroke="none"/>' +
+      '<ellipse cx="96" cy="50" rx="10" ry="5" fill="' + k + '" transform="rotate(-25 96 50)"/><ellipse cx="110" cy="53" rx="16" ry="19" fill="#ead9c6"/>' +
+      '<circle cx="103" cy="36" r="7" fill="' + w + '"/><circle cx="113" cy="34" r="7" fill="' + w + '"/>' + eyes(107, 118, 51) + cheek(104, 61) +
+      '<path d="M112 63 q2.5 2.5 5 0" fill="none" stroke-width="1.8"/>';
+  } },
+  chick: { top: [80, 36], eye: [93, 54], neck: [84, 84], draw: () => {
+    const f = '#ffd95a';
+    return '<path class="leg a" d="M64 90 v16 l-5 3 M64 106 l5 3" fill="none" stroke="#f29b38" stroke-width="3"/><path class="leg b" d="M80 90 v16 l-5 3 M80 106 l5 3" fill="none" stroke="#f29b38" stroke-width="3"/>' +
+      '<path d="M44 62 q-18 -10 -18 4 q4 6 20 4z" fill="' + f + '"/><circle cx="74" cy="66" r="31" fill="' + f + '"/>' +
+      '<path class="wing" d="M56 66 q8 20 26 8 q-10 -12 -26 -8z" fill="#ffcb2e"/><path d="M76 36 q2 -12 6 -2 q4 -10 5 2" fill="none"/>' +
+      '<path d="M101 58 l12 4 l-12 5z" fill="#f29b38"/>' + eyes(88, 98, 54) + cheek(92, 64);
+  } }
 };
-function petSVG(kind, mini) {
-  const a = PET_ART[kind] || PET_ART.cat, f = a.fill;
-  const head = a.head || '<circle cx="60" cy="58" r="32"/>';
-  const body = a.body || '<ellipse cx="60" cy="100" rx="30" ry="18"/>';
-  const mouth = a.mouth !== undefined ? a.mouth : '<path d="M53 72 q3.5 4 7 0 q3.5 4 7 0" fill="none" stroke-width="2.5"/>';
-  const face = '<g class="eyes"><ellipse cx="48" cy="58" rx="3.6" ry="4.6" fill="' + INK + '" stroke="none"/><ellipse cx="72" cy="58" rx="3.6" ry="4.6" fill="' + INK + '" stroke="none"/>' +
-    '<circle cx="49.2" cy="56.4" r="1.3" fill="#fff" stroke="none"/><circle cx="73.2" cy="56.4" r="1.3" fill="#fff" stroke="none"/></g>' +
-    '<ellipse cx="39" cy="68" rx="6" ry="3.6" fill="#f6a6a6" opacity=".75" stroke="none"/><ellipse cx="81" cy="68" rx="6" ry="3.6" fill="#f6a6a6" opacity=".75" stroke="none"/>';
-  return '<svg viewBox="0 0 120 124" aria-hidden="true"><defs><filter id="wob' + (mini ? 'm' : '') + '"><feTurbulence type="fractalNoise" baseFrequency=".045" numOctaves="2" seed="4"/>' +
-    '<feDisplacementMap in="SourceGraphic" scale="' + (mini ? 2 : 3.5) + '"/></filter></defs>' +
-    '<g filter="url(#wob' + (mini ? 'm' : '') + ')" fill="' + f + '" stroke="' + INK + '" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">' +
-    (mini ? '' : body) + a.ears + head + (a.extra || '') + mouth + face + '</g></svg>';
+
+// Clothes, drawn around the point they attach to: the top of the head, the eyes or the neck.
+const WEAR = {
+  ribbon: ['top', '<g transform="translate(-10 4) rotate(-20)"><path d="M0 0 l-12 -8 v16z M0 0 l12 -8 v16z" fill="' + C.rose + '"/><circle r="3.5" fill="' + C.pink + '"/></g>'],
+  cap: ['top', '<path d="M-15 4 q0 -18 15 -18 q15 0 15 18z" fill="' + C.sky + '"/><path d="M12 2 h16 q3 4 -3 5 h-13z" fill="' + C.blue + '"/><circle cy="-14" r="2.5" fill="' + C.blue + '"/>'],
+  flower: ['top', '<g transform="translate(-8 0)">' + [0, 72, 144, 216, 288].map(a => '<ellipse cy="-6" rx="4" ry="6" fill="' + C.pink + '" transform="rotate(' + a + ')"/>').join('') + '<circle r="3.5" fill="' + C.butter + '"/></g>'],
+  scarf: ['neck', '<path d="M-14 -6 q14 8 28 0 v9 q-14 8 -28 0z" fill="' + C.rose + '"/><path d="M-10 2 l-4 16 h8 l2 -14z" fill="' + C.rose + '"/><path d="M-12 14 h6" fill="none" stroke-width="1.6"/>'],
+  glasses: ['eye', '<circle cx="-6.5" r="6.5" fill="#fff" fill-opacity=".25"/><circle cx="6.5" r="6.5" fill="#fff" fill-opacity=".25"/><path d="M-13 -1 l-8 -3" fill="none" stroke-width="2"/>'],
+  phones: ['top', '<path d="M-17 16 q0 -30 17 -30 q17 0 17 30" fill="none" stroke-width="4"/><rect x="-22" y="10" width="10" height="16" rx="5" fill="' + C.lilac + '"/>'],
+  shades: ['eye', '<path d="M-14 -5 h11 q0 9 -6 9 q-5 0 -5 -9z M2 -5 h12 q0 9 -6 9 q-6 0 -6 -9z" fill="#555"/><path d="M-3 -4 h5 M-14 -4 l-7 -2" fill="none" stroke-width="2"/>'],
+  tophat: ['top', '<rect x="-12" y="-26" width="24" height="24" rx="2" fill="' + C.lilac + '"/><path d="M-20 -2 h40" fill="none" stroke-width="4"/><path d="M-12 -8 h24" fill="none" stroke="' + C.rose + '" stroke-width="4"/>'],
+  crown: ['top', '<path d="M-14 0 l-2 -18 l8 8 l8 -12 l8 12 l8 -8 l-2 18z" fill="' + C.gold + '"/><circle cy="-6" r="2.5" fill="' + C.rose + '"/>'],
+  grad: ['top', '<path d="M-12 0 v-8 h24 v8z" fill="#666"/><path d="M-22 -10 l22 -9 l22 9 l-22 9z" fill="#666"/><path d="M16 -8 v12" fill="none" stroke="' + C.gold + '" stroke-width="2.4"/><circle cx="16" cy="6" r="2.5" fill="' + C.gold + '" stroke="none"/>']
+};
+
+function sideSVG(kind, wear) {
+  const a = ANIMALS[kind] || ANIMALS.cat, w = WEAR[wear];
+  const on = w ? '<g transform="translate(' + a[w[0]].join(' ') + ')">' + w[1] + '</g>' : '';
+  return '<svg viewBox="0 0 150 112" aria-hidden="true" class="walk-' + kind + '"><defs>' + WOB('wp') + '</defs>' +
+    '<ellipse cx="72" cy="107" rx="44" ry="4" fill="#000" opacity=".08"/><g class="body" filter="url(#wp)" ' + PEN + '>' + a.draw() + on + '</g></svg>';
 }
-// Where things sit in the room, as [left %, top %, size px]: wall, middle and floor spots.
-const SPOT = {
-  W1: [10, 40, 30], W2: [27, 36, 28], W3: [74, 38, 28], W4: [90, 42, 28],
-  M1: [10, 63, 34], M2: [25, 64, 32], M3: [76, 63, 32], M4: [91, 62, 42],
-  F1: [9, 87, 36], F2: [21, 91, 28], F3: [33, 93, 26], F4: [44, 94, 22], F5: [57, 94, 24], F6: [68, 92, 28], F7: [79, 91, 24], F8: [91, 86, 40]
+
+// Things for the room, drawn around (0, 0) = the middle of where they stand.
+const T = {
+  tea: '<ellipse cy="0" rx="14" ry="3" fill="' + C.white + '"/><path d="M-9 -2 h18 l2 -14 h-22z" fill="' + C.white + '"/><path d="M11 -13 q8 0 5 7 q-2 3 -6 2" fill="none"/><path d="M-3 -20 q-3 -4 0 -8 M3 -20 q-3 -4 0 -8" fill="none" stroke-width="1.6"/>',
+  plant: '<path d="M-13 0 L-16 -22 H16 L13 0Z" fill="' + C.pink + '"/><path d="M0 -22 C-4 -34 -18 -38 -22 -46 C-8 -46 -2 -36 0 -22 M0 -22 C2 -38 10 -48 20 -52 C18 -38 8 -30 0 -22 M0 -22 C0 -36 -2 -48 2 -60 C8 -48 4 -34 0 -22" fill="' + C.mint + '"/>',
+  books: '<rect x="-16" y="-8" width="32" height="8" rx="2" fill="' + C.pink + '"/><rect x="-13" y="-16" width="27" height="8" rx="2" fill="' + C.mint + '"/><rect x="-15" y="-24" width="24" height="8" rx="2" fill="' + C.butter + '"/>',
+  candle: '<ellipse rx="11" ry="3" fill="' + C.gold + '"/><rect x="-5" y="-20" width="10" height="20" rx="1" fill="' + C.white + '"/><path d="M0 -20 v-3" fill="none"/><path d="M0 -24 q-5 -6 0 -12 q5 6 0 12z" fill="' + C.butter + '"/>',
+  picture: '<path d="M-20 0 l6 -30 M20 0 l-6 -30 M0 -30 v30" fill="none"/><rect x="-22" y="-62" width="44" height="34" rx="2" fill="' + C.white + '"/><path d="M-16 -32 L-6 -46 L2 -38 L8 -44 L16 -32Z" fill="' + C.mint + '"/><circle cx="10" cy="-54" r="4" fill="' + C.butter + '"/>',
+  teddy: '<circle cx="-11" cy="-40" r="6" fill="' + C.brown + '"/><circle cx="11" cy="-40" r="6" fill="' + C.brown + '"/><ellipse cy="-12" rx="15" ry="12" fill="' + C.brown + '"/><circle cy="-30" r="13" fill="' + C.brown + '"/>' +
+    '<ellipse cy="-26" rx="5" ry="4" fill="' + C.peach + '"/><circle cx="-4.5" cy="-32" r="1.5" fill="' + INK + '"/><circle cx="4.5" cy="-32" r="1.5" fill="' + INK + '"/><path d="M-14 0 h8 M6 0 h8" fill="none"/><path d="M-6 -14 l3 4 l3 -4 l3 4 l3 -4" fill="none" stroke="' + C.rose + '" stroke-width="2"/>',
+  sofa: '<rect x="-40" y="-40" width="80" height="24" rx="11" fill="' + C.sky + '"/><rect x="-44" y="-24" width="88" height="20" rx="8" fill="' + C.sky + '"/><rect x="-50" y="-32" width="14" height="28" rx="6" fill="' + C.blue + '"/><rect x="36" y="-32" width="14" height="28" rx="6" fill="' + C.blue + '"/><path d="M-40 -4 v4 M40 -4 v4"/>',
+  moon: '<path d="M8 -18 a18 18 0 1 1 -14 -24 a14 14 0 1 0 14 24z" fill="' + C.butter + '"/><path d="M18 -48 l2 4 l4 1 l-4 2 l-1 4 l-2 -4 l-4 -1 l4 -2z" fill="' + C.butter + '" stroke-width="1.6"/>',
+  piano: '<rect x="-30" y="-52" width="60" height="52" rx="5" fill="' + C.lilac + '"/><rect x="-25" y="-28" width="50" height="9" fill="' + C.white + '"/><path d="M-17 -28 v5 M-9 -28 v5 M-1 -28 v5 M7 -28 v5 M15 -28 v5" fill="none" stroke-width="2"/><rect x="-11" y="-45" width="22" height="11" rx="2" fill="' + C.white + '"/><path d="M-23 0 v-6 M23 0 v-6"/>',
+  tree: '<path d="M-14 0 L-17 -20 H17 L14 0Z" fill="' + C.wood + '"/><path d="M-3 -20 v-26 h6 v26" fill="' + C.wood + '"/><circle cy="-62" r="20" fill="' + C.green + '"/><circle cx="-14" cy="-50" r="12" fill="' + C.green + '"/><circle cx="14" cy="-50" r="12" fill="' + C.green + '"/><circle cx="-5" cy="-66" r="3" fill="' + C.rose + '"/><circle cx="8" cy="-52" r="3" fill="' + C.rose + '"/>',
+  // 단칸방
+  calendar: '<rect x="-17" y="-34" width="34" height="34" rx="2" fill="' + C.white + '"/><rect x="-17" y="-34" width="34" height="9" fill="' + C.rose + '"/><path d="M-9 -38 v7 M9 -38 v7" fill="none"/><path d="M-10 -18 h20 M-10 -10 h20 M-3 -22 v18 M5 -22 v18" fill="none" stroke-width="1.4"/>',
+  socks: '<path d="M-30 -30 q30 6 60 0" fill="none" stroke-width="1.8"/><path d="M-16 -29 v14 q0 6 7 6 h5 v-5 h-5 v-15z" fill="' + C.mint + '"/><path d="M8 -28 v14 q0 6 7 6 h5 v-5 h-5 v-15z" fill="' + C.pink + '"/>',
+  radio: '<rect x="-22" y="-26" width="44" height="26" rx="6" fill="' + C.orange + '"/><circle cx="-8" cy="-13" r="7" fill="' + C.white + '"/><path d="M6 -18 h10 M6 -12 h10 M6 -6 h10" fill="none" stroke-width="1.6"/><path d="M14 -26 l8 -18" fill="none"/>',
+  basket: '<path d="M-20 -22 h40 l-4 22 h-32z" fill="' + C.wood + '"/><path d="M-14 -22 l2 22 M-4 -22 v22 M6 -22 l-1 22 M16 -22 l-3 22" fill="none" stroke-width="1.4"/><path d="M-14 -22 q4 -10 12 -4 q6 -8 14 0" fill="' + C.sky + '"/>',
+  quilt: '<rect x="-34" y="-16" width="68" height="16" rx="6" fill="' + C.pink + '"/><rect x="-30" y="-28" width="26" height="14" rx="6" fill="' + C.white + '"/><circle cx="8" cy="-8" r="2" fill="' + C.rose + '" stroke="none"/><circle cx="20" cy="-8" r="2" fill="' + C.rose + '" stroke="none"/><circle cx="-4" cy="-8" r="2" fill="' + C.rose + '" stroke="none"/>',
+  ramen: '<path d="M-12 0 l-3 -22 h30 l-3 22z" fill="' + C.white + '"/><path d="M-14 -14 h28" fill="none" stroke="' + C.rose + '" stroke-width="3"/><path d="M-4 -24 l10 -16 M2 -24 l12 -14" fill="none"/><path d="M-8 -30 q2 -4 0 -8" fill="none" stroke-width="1.4"/>',
+  // 원룸
+  mirror: '<ellipse cy="-24" rx="15" ry="22" fill="' + C.sky + '"/><ellipse cy="-24" rx="19" ry="26" fill="none" stroke="' + C.gold + '" stroke-width="4"/><path d="M-6 -36 l-4 8 M-1 -38 l-6 12" fill="none" stroke="#fff" stroke-width="2"/>',
+  vase: '<path d="M-26 0 h52" fill="none" stroke-width="3"/><path d="M-7 0 q-6 -10 0 -18 h14 q6 8 0 18z" fill="' + C.sky + '"/><path d="M0 -18 v-12 M-6 -18 l-6 -10 M6 -18 l6 -10" fill="none"/><path d="M0 -38 q-5 0 -5 -6 l5 4 l5 -4 q0 6 -5 6z M-12 -34 q-5 0 -5 -6 l5 4 l5 -4 q0 6 -5 6z M12 -34 q-5 0 -5 -6 l5 4 l5 -4 q0 6 -5 6z" fill="' + C.rose + '"/>',
+  computer: '<rect x="-24" y="-44" width="48" height="32" rx="3" fill="' + C.gray + '"/><rect x="-19" y="-39" width="38" height="22" rx="2" fill="' + C.sky + '"/><path d="M0 -12 v8 M-12 0 h24 l-4 -4 h-16z" fill="' + C.gray + '"/><path d="M-12 -32 h14 M-12 -26 h22" fill="none" stroke-width="1.6"/>',
+  fish: '<path d="M-18 0 h36 q6 -26 -8 -40 h-20 q-14 14 -8 40z" fill="' + C.sky + '" fill-opacity=".8"/><path d="M-14 -40 h28" fill="none"/><path d="M-6 -20 q6 -8 12 0 q-6 8 -12 0z M6 -20 l6 -5 v10z" fill="' + C.orange + '" stroke-width="1.6"/><circle cx="-8" cy="-32" r="2" fill="none" stroke-width="1.4"/>',
+  bed: '<rect x="-40" y="-20" width="80" height="16" rx="4" fill="' + C.wood + '"/><rect x="-40" y="-40" width="10" height="40" rx="3" fill="' + C.wood + '"/><rect x="-28" y="-30" width="66" height="12" rx="6" fill="' + C.lilac + '"/><rect x="-28" y="-34" width="20" height="10" rx="5" fill="' + C.white + '"/><path d="M36 -4 v4" fill="none"/>',
+  cupcake: '<path d="M-10 0 l-3 -14 h26 l-3 14z" fill="' + C.pink + '"/><path d="M-14 -14 q0 -14 14 -16 q14 2 14 16z" fill="' + C.white + '"/><circle cy="-32" r="4" fill="' + C.rose + '"/><path d="M-6 -12 v10 M0 -12 v10 M6 -12 v10" fill="none" stroke-width="1.4"/>',
+  // 작은 내 집
+  bird: '<path d="M-12 -10 q0 -14 14 -14 q12 0 12 12 q0 8 -10 10 h-12z" fill="' + C.sky + '"/><path d="M14 -16 l7 2 l-7 3z" fill="' + C.orange + '"/><circle cx="6" cy="-15" r="1.6" fill="' + INK + '"/><path d="M-4 -12 q6 6 12 0" fill="none"/><path d="M-12 -6 l-8 -6 v10z" fill="' + C.sky + '"/>',
+  chime: '<path d="M0 -60 v10" fill="none"/><path d="M-12 -50 h24 l-4 -6 h-16z" fill="' + C.white + '"/><path d="M-8 -50 v18 M0 -50 v24 M8 -50 v16" fill="none" stroke-width="3" stroke="' + C.sky + '"/><path d="M0 -26 v6" fill="none"/><path d="M-5 -20 h10 v14 h-10z" fill="' + C.pink + '"/>',
+  sunflower: '<path d="M0 0 v-54" fill="none" stroke-width="3"/><path d="M0 -24 q-12 -2 -14 -12 q10 0 14 12 M0 -32 q12 -2 14 -12 q-10 0 -14 12" fill="' + C.green + '"/>' +
+    [0, 40, 80, 120, 160, 200, 240, 280, 320].map(a => '<ellipse cy="-11" rx="4" ry="7" fill="' + C.gold + '" transform="translate(0 -60) rotate(' + a + ')"/>').join('') + '<circle cy="-60" r="7" fill="' + C.brown + '"/>',
+  mailbox: '<path d="M0 0 v-26" fill="none" stroke-width="3"/><rect x="-14" y="-44" width="28" height="18" rx="8" fill="' + C.rose + '"/><path d="M10 -42 v-10 h8 v5 h-8" fill="' + C.butter + '"/>',
+  bike: '<circle cx="-18" cy="-12" r="12" fill="none"/><circle cx="18" cy="-12" r="12" fill="none"/><path d="M-18 -12 l10 -16 h18 l8 16 M-8 -28 l8 16 l10 -16 M-10 -32 h6 M18 -12 l-6 -20 l6 -2" fill="none" stroke="' + C.rose + '" stroke-width="3"/><path d="M-18 -12 l10 -16 h18 l8 16" fill="none" stroke-width="1"/>',
+  tulip: '<path d="M0 0 v-22 M-8 0 v-16 M8 0 v-18" fill="none" stroke-width="2"/><path d="M-6 -22 q0 -10 6 -12 q6 2 6 12 q-6 4 -12 0z" fill="' + C.rose + '"/><path d="M-14 -16 q0 -8 6 -10 q6 2 6 10 q-6 4 -12 0z" fill="' + C.butter + '"/><path d="M2 -18 q0 -8 6 -10 q6 2 6 10 q-6 4 -12 0z" fill="' + C.lilac + '"/>',
+  // 아파트
+  balloon: '<path d="M0 -20 q-4 10 2 20" fill="none" stroke-width="1.6"/><ellipse cy="-36" rx="13" ry="16" fill="' + C.rose + '"/><path d="M-2 -20 h4 l-2 -3z" fill="' + C.rose + '"/><path d="M-6 -44 q2 -4 6 -4" fill="none" stroke="#fff" stroke-width="2"/>',
+  plane: '<path d="M-26 -20 q0 -6 8 -6 h34 q10 0 12 6 q-2 6 -12 6 h-34 q-8 0 -8 -6z" fill="' + C.white + '"/><path d="M-4 -24 l-8 -14 h8 l12 14z M-4 -16 l-6 12 h8 l10 -12z M-24 -22 l-6 -10 h6 l6 8z" fill="' + C.sky + '"/><path d="M14 -22 h6 M6 -22 h4" fill="none" stroke-width="1.6"/>',
+  slide: '<path d="M-30 0 v-44 M-16 0 v-44 M-30 -12 h14 M-30 -24 h14 M-30 -36 h14" fill="none" stroke-width="3"/><path d="M-16 -44 q20 0 30 30 q4 14 16 14 h4 v-6 q-12 0 -16 -14 q-10 -30 -34 -30z" fill="' + C.butter + '"/>',
+  car: '<path d="M-34 -10 v-12 q0 -6 8 -6 l10 -12 h26 l12 12 q12 0 12 8 v10z" fill="' + C.rose + '"/><path d="M-12 -28 l6 -8 h10 v8z M8 -28 v-8 h6 l6 8z" fill="' + C.sky + '"/><circle cx="-20" cy="-8" r="8" fill="' + C.gray + '"/><circle cx="20" cy="-8" r="8" fill="' + C.gray + '"/>',
+  ball: '<circle cy="-12" r="12" fill="' + C.orange + '"/><path d="M-12 -12 h24 M0 -24 v24 M-8 -22 q6 10 0 20 M8 -22 q-6 10 0 20" fill="none" stroke-width="1.6"/>',
+  kitty: '<path d="M10 -4 q14 -2 12 -16" fill="none" stroke-width="5" stroke="' + INK + '"/><path d="M10 -4 q14 -2 12 -16" fill="none" stroke-width="2" stroke="' + C.gray + '"/><path d="M-12 0 q-4 -20 4 -26 h12 q8 6 4 26z" fill="' + C.gray + '"/><circle cy="-32" r="11" fill="' + C.gray + '"/><path d="M-10 -38 l1 -10 l7 6z M10 -38 l-1 -10 l-7 6z" fill="' + C.gray + '"/><circle cx="-4" cy="-32" r="1.5" fill="' + INK + '"/><circle cx="4" cy="-32" r="1.5" fill="' + INK + '"/>',
+  // 마당 있는 땅
+  butterfly: '<path d="M0 -20 q-16 -16 -18 0 q2 8 18 0 q-14 10 -10 16 q6 2 10 -16 q16 -16 18 0 q-2 8 -18 0 q14 10 10 16 q-6 2 -10 -16z" fill="' + C.lilac + '"/><path d="M0 -26 v14 M0 -26 l-4 -6 M0 -26 l4 -6" fill="none" stroke-width="1.6"/>',
+  kite: '<path d="M0 -60 l16 20 l-16 24 l-16 -24z" fill="' + C.butter + '"/><path d="M0 -60 v44 M-16 -40 h32" fill="none" stroke-width="1.4"/><path d="M0 -16 q6 8 0 14 q-6 6 2 14" fill="none" stroke-width="1.4"/><path d="M-4 -6 l8 -2 M-2 6 l8 -2" fill="none" stroke="' + C.rose + '" stroke-width="3"/>',
+  carrot: '<ellipse rx="30" ry="6" fill="' + C.brown + '"/>' + [-18, 0, 18].map(x => '<path d="M' + x + ' -4 q-6 -12 -2 -16 M' + x + ' -4 q0 -14 4 -18 M' + x + ' -4 q6 -10 8 -14" fill="none" stroke="' + INK + '" stroke-width="2"/><path d="M' + (x - 4) + ' -3 h8 l-4 4z" fill="' + C.orange + '"/>').join(''),
+  hen: '<path d="M-18 -18 q-4 -14 6 -12 q-2 -8 6 -6" fill="' + C.white + '"/><ellipse cy="-16" rx="18" ry="14" fill="' + C.white + '"/><circle cx="14" cy="-30" r="9" fill="' + C.white + '"/><path d="M12 -40 q2 -6 6 -2 q4 -2 2 4z" fill="' + C.rose + '"/><path d="M22 -30 l6 2 l-6 2z" fill="' + C.orange + '"/><path d="M20 -24 q2 4 -2 4" fill="' + C.rose + '" stroke-width="1.4"/><circle cx="16" cy="-32" r="1.5" fill="' + INK + '"/><path d="M-4 -2 v4 M4 -2 v4" fill="none" stroke="' + C.orange + '"/>',
+  apple: '<path d="M-20 -18 h40 l-4 18 h-32z" fill="' + C.wood + '"/><path d="M-16 -18 q16 -18 32 0" fill="none" stroke-width="3"/>' + [-10, 0, 10].map(x => '<circle cx="' + x + '" cy="-20" r="6" fill="' + C.rose + '"/>').join(''),
+  daisy: [-22, -8, 6, 20].map((x, k) => '<path d="M' + x + ' 0 v-' + (12 + k % 2 * 6) + '" fill="none" stroke-width="2"/>' + [0, 60, 120, 180, 240, 300].map(a => '<ellipse cy="-5" rx="2.6" ry="4.5" fill="#fff" transform="translate(' + x + ' -' + (14 + k % 2 * 6) + ') rotate(' + a + ')"/>').join('') + '<circle cx="' + x + '" cy="-' + (14 + k % 2 * 6) + '" r="2.6" fill="' + C.gold + '"/>').join(''),
+  // 뒷산
+  rainbow: '<path d="M-46 0 a46 46 0 0 1 92 0" fill="none" stroke="' + C.rose + '" stroke-width="7"/><path d="M-38 0 a38 38 0 0 1 76 0" fill="none" stroke="' + C.butter + '" stroke-width="7"/><path d="M-30 0 a30 30 0 0 1 60 0" fill="none" stroke="' + C.mint + '" stroke-width="7"/><path d="M-22 0 a22 22 0 0 1 44 0" fill="none" stroke="' + C.sky + '" stroke-width="7"/>',
+  cloud: '<path d="M-26 0 q-12 0 -10 -12 q2 -10 12 -8 q4 -14 20 -10 q12 -6 18 6 q14 0 12 14z" fill="' + C.white + '"/>',
+  tent: '<path d="M-34 0 L0 -46 L34 0z" fill="' + C.orange + '"/><path d="M0 -46 L-10 0 h20z" fill="' + C.butter + '"/><path d="M0 -46 l-4 -8 M0 -46 l4 -8" fill="none"/>',
+  deer: '<path d="M-14 -22 v22 M-6 -22 v22 M10 -22 v22 M16 -22 v22" fill="none" stroke-width="3"/><ellipse cy="-26" rx="20" ry="11" fill="' + C.wood + '"/><circle cx="-8" cy="-28" r="2" fill="#fff" stroke="none"/><circle cx="2" cy="-30" r="2" fill="#fff" stroke="none"/>' +
+    '<path d="M14 -30 l6 -16" fill="none" stroke-width="7" stroke="' + INK + '"/><path d="M14 -30 l6 -16" fill="none" stroke-width="3" stroke="' + C.wood + '"/><ellipse cx="24" cy="-48" rx="8" ry="7" fill="' + C.wood + '"/><path d="M20 -54 l-4 -10 l-4 2 M20 -56 l2 -10 M28 -54 l4 -10 l4 2" fill="none" stroke-width="2"/><circle cx="26" cy="-49" r="1.5" fill="' + INK + '"/>',
+  fire: '<path d="M-18 0 l36 -8 M-18 -8 l36 8" fill="none" stroke="' + INK + '" stroke-width="8"/><path d="M-18 0 l36 -8 M-18 -8 l36 8" fill="none" stroke="' + C.brown + '" stroke-width="4"/><path d="M0 -8 q-14 -8 -6 -22 q2 8 6 6 q-2 -10 6 -16 q0 10 6 14 q4 12 -12 18z" fill="' + C.orange + '"/><path d="M0 -10 q-6 -4 -2 -10 q2 4 4 2 q4 4 -2 8z" fill="' + C.butter + '" stroke-width="1.6"/>',
+  mushroom: '<path d="M-6 0 v-12 h12 v12z" fill="' + C.white + '"/><path d="M-18 -12 q0 -18 18 -18 q18 0 18 18z" fill="' + C.rose + '"/><circle cx="-8" cy="-20" r="3" fill="#fff" stroke="none"/><circle cx="6" cy="-24" r="2.5" fill="#fff" stroke="none"/><circle cx="10" cy="-16" r="2" fill="#fff" stroke="none"/>',
+  // 우리 마을
+  fireworks: [[-20, -30, C.rose], [16, -40, C.gold], [0, -14, C.lilac]].map(([x, y, c]) => '<g transform="translate(' + x + ' ' + y + ')">' + [0, 45, 90, 135, 180, 225, 270, 315].map(a => '<path d="M0 -5 v-8" transform="rotate(' + a + ')" fill="none" stroke="' + c + '" stroke-width="3"/>').join('') + '<circle r="2.5" fill="' + c + '" stroke="none"/></g>').join(''),
+  dove: '<path d="M-16 -16 q4 -10 16 -8 q10 -8 14 0 l6 2 l-6 2 q-4 10 -18 10 h-14 l-6 4 l2 -8z" fill="' + C.white + '"/><path d="M-2 -20 q4 -16 18 -18 q-6 12 -10 18" fill="' + C.white + '"/><circle cx="12" cy="-22" r="1.4" fill="' + INK + '"/><path d="M-8 -10 q-6 4 -2 8 M-4 -10 q-2 6 2 8" fill="none" stroke="' + C.green + '" stroke-width="2"/>',
+  fountain: '<ellipse rx="34" ry="7" fill="' + C.gray + '"/><path d="M-34 0 v-8 h68 v8" fill="' + C.gray + '"/><ellipse cy="-8" rx="34" ry="6" fill="' + C.sky + '"/><path d="M-4 -8 v-20 h8 v20z" fill="' + C.gray + '"/><ellipse cy="-30" rx="14" ry="4" fill="' + C.gray + '"/><path d="M0 -32 q-4 -16 0 -20 q4 4 0 20 M-4 -32 q-16 -6 -18 18 M4 -32 q16 -6 18 18" fill="none" stroke="' + C.blue + '" stroke-width="2.4"/>',
+  carousel: '<path d="M-30 -52 L0 -70 L30 -52z" fill="' + C.rose + '"/><path d="M-30 -52 q5 6 10 0 q5 6 10 0 q5 6 10 0 q5 6 10 0 q5 6 10 0 q5 6 10 0" fill="' + C.butter + '"/><path d="M-22 -50 v44 M0 -50 v44 M22 -50 v44" fill="none" stroke-width="2"/><rect x="-32" y="-6" width="64" height="6" rx="2" fill="' + C.lilac + '"/><path d="M-8 -26 q2 -8 10 -6 h6 l4 -4 v8 q-2 8 -10 8 h-8z" fill="' + C.white + '"/><path d="M0 -70 v-6" fill="none"/><path d="M0 -76 l6 2 l-6 2" fill="' + C.rose + '" stroke-width="1.4"/>',
+  bread: '<path d="M-22 0 q-4 -14 10 -18 q4 -8 12 -8 q8 0 12 8 q14 4 10 18z" fill="' + C.gold + '"/><path d="M-10 -16 q2 8 -2 14 M0 -22 q2 10 0 20 M10 -16 q-2 8 2 14" fill="none" stroke-width="1.6"/>',
+  gift: '<rect x="-16" y="-24" width="32" height="24" rx="2" fill="' + C.sky + '"/><rect x="-18" y="-30" width="36" height="8" rx="2" fill="' + C.sky + '"/><path d="M0 -30 v30" fill="none" stroke="' + C.rose + '" stroke-width="5"/><path d="M0 -30 q-12 -12 -12 -2 q0 4 12 2 q12 2 12 -2 q0 -10 -12 2z" fill="' + C.rose + '"/>'
 };
-const NECK = ['scarf'], EYES = ['glasses', 'shades'];
-// Clothes are worn one at a time. Room things (spot) show in every home; a home's own things
+
+// Where things stand, in the room's 340 × 330 picture: a back row against the wall at y=252,
+// a front row near the bottom, and two high spots for things on the wall or in the sky.
+const SPOT = { A: [52, 140], B: [292, 128], C: [164, 252], D: [210, 252], E: [116, 316], F: [228, 318] };
+// Clothes are worn one at a time. Room things (at) show in every home; a home's own things
 // (home: index) show only there and can be bought once the friend has lived there.
 const SHOP = [
-  { id: 'ribbon', e: '🎀', n: '리본', p: 80 },
-  { id: 'cap', e: '🧢', n: '모자', p: 120 },
-  { id: 'flower', e: '🌸', n: '꽃핀', p: 150 },
-  { id: 'scarf', e: '🧣', n: '목도리', p: 200 },
-  { id: 'glasses', e: '👓', n: '안경', p: 250 },
-  { id: 'phones', e: '🎧', n: '헤드폰', p: 300 },
-  { id: 'shades', e: '🕶️', n: '선글라스', p: 400 },
-  { id: 'tophat', e: '🎩', n: '신사 모자', p: 500 },
-  { id: 'crown', e: '👑', n: '왕관', p: 600 },
-  { id: 'grad', e: '🎓', n: '학사모', p: 700 },
-  { id: 'tea', e: '☕', n: '따뜻한 차', p: 60, spot: 'F4' },
-  { id: 'plant', e: '🪴', n: '화분', p: 100, spot: 'M1' },
-  { id: 'books', e: '📚', n: '책', p: 150, spot: 'F3' },
-  { id: 'candle', e: '🕯️', n: '촛불', p: 200, spot: 'F7' },
-  { id: 'picture', e: '🖼️', n: '그림', p: 250, spot: 'W1' },
-  { id: 'teddy', e: '🧸', n: '곰 인형', p: 300, spot: 'F6' },
-  { id: 'sofa', e: '🛋️', n: '소파', p: 400, spot: 'F8' },
-  { id: 'moon', e: '🌙', n: '달 조명', p: 500, spot: 'W4' },
-  { id: 'piano', e: '🎹', n: '피아노', p: 800, spot: 'F1' },
-  { id: 'tree', e: '🌳', n: '나무', p: 1000, spot: 'M4' },
+  { id: 'ribbon', n: '리본', p: 80 }, { id: 'cap', n: '모자', p: 120 }, { id: 'flower', n: '꽃핀', p: 150 }, { id: 'scarf', n: '목도리', p: 200 },
+  { id: 'glasses', n: '안경', p: 250 }, { id: 'phones', n: '헤드폰', p: 300 }, { id: 'shades', n: '선글라스', p: 400 }, { id: 'tophat', n: '신사 모자', p: 500 },
+  { id: 'crown', n: '왕관', p: 600 }, { id: 'grad', n: '학사모', p: 700 },
+  { id: 'tea', n: '따뜻한 차', p: 60, at: [62, 312] }, { id: 'plant', n: '화분', p: 100, at: [14, 254] }, { id: 'books', n: '책', p: 150, at: [30, 310] },
+  { id: 'candle', n: '촛불', p: 200, at: [270, 316] }, { id: 'picture', n: '그림', p: 250, at: [118, 254] }, { id: 'teddy', n: '곰 인형', p: 300, at: [306, 314] },
+  { id: 'sofa', n: '소파', p: 400, at: [274, 256] }, { id: 'moon', n: '달 조명', p: 500, at: [178, 112] }, { id: 'piano', n: '피아노', p: 800, at: [64, 254] },
+  { id: 'tree', n: '나무', p: 1000, at: [328, 252] },
   ...[
-    [['calendar', '🗓️', '달력', 50], ['socks', '🧦', '양말 빨래', 60], ['radio', '📻', '라디오', 80], ['basket', '🧺', '빨래 바구니', 90], ['quilt', '🛏️', '이불', 120], ['ramen', '🍜', '컵라면', 40]],
-    [['mirror', '🪞', '거울', 150], ['vase', '🌷', '꽃병', 120], ['computer', '🖥️', '컴퓨터', 250], ['fish', '🐟', '어항', 200], ['bed', '🛏️', '침대', 300], ['cupcake', '🧁', '컵케이크', 100]],
-    [['bird', '🐦', '작은 새', 150], ['chime', '🎐', '풍경', 200], ['sunflower', '🌻', '해바라기', 250], ['mailbox', '📬', '우체통', 300], ['bike', '🚲', '자전거', 400], ['tulip', '🌷', '튤립', 150]],
-    [['balloon', '🎈', '풍선', 200], ['plane', '✈️', '비행기', 300], ['slide', '🛝', '미끄럼틀', 500], ['car', '🚗', '자동차', 600], ['ball', '🏀', '농구공', 250], ['kitty', '🐈', '길고양이', 300]],
-    [['butterfly', '🦋', '나비', 250], ['kite', '🪁', '연', 400], ['carrot', '🥕', '텃밭', 500], ['hen', '🐔', '닭', 600], ['apple', '🍎', '사과', 450], ['daisy', '🌼', '꽃밭', 300]],
-    [['rainbow', '🌈', '무지개', 600], ['cloud', '☁️', '구름', 300], ['tent', '⛺', '텐트', 800], ['deer', '🦌', '사슴', 900], ['fire', '🔥', '모닥불', 500], ['mushroom', '🍄', '버섯', 400]],
-    [['fireworks', '🎆', '불꽃놀이', 1200], ['dove', '🕊️', '비둘기', 600], ['fountain', '⛲', '분수', 1500], ['carousel', '🎠', '회전목마', 1800], ['bread', '🥐', '빵', 700], ['gift', '🎁', '선물', 900]]
-  ].flatMap((set, home) => set.map(([id, e, n, p], k) => ({ id, e, n, p, home, spot: ['W2', 'W3', 'M2', 'M3', 'F2', 'F5'][k] })))
+    [['calendar', '달력', 50], ['socks', '양말 빨래', 60], ['radio', '라디오', 80], ['basket', '빨래 바구니', 90], ['quilt', '이불', 120], ['ramen', '컵라면', 40]],
+    [['mirror', '거울', 150], ['vase', '꽃병', 120], ['computer', '컴퓨터', 250], ['fish', '어항', 200], ['bed', '침대', 300], ['cupcake', '컵케이크', 100]],
+    [['bird', '작은 새', 150], ['chime', '풍경', 200], ['sunflower', '해바라기', 250], ['mailbox', '우체통', 300], ['bike', '자전거', 400], ['tulip', '튤립', 150]],
+    [['balloon', '풍선', 200], ['plane', '비행기', 300], ['slide', '미끄럼틀', 500], ['car', '자동차', 600], ['ball', '농구공', 250], ['kitty', '길고양이', 300]],
+    [['butterfly', '나비', 250], ['kite', '연', 400], ['carrot', '텃밭', 500], ['hen', '닭', 600], ['apple', '사과', 450], ['daisy', '꽃밭', 300]],
+    [['rainbow', '무지개', 600], ['cloud', '구름', 300], ['tent', '텐트', 800], ['deer', '사슴', 900], ['fire', '모닥불', 500], ['mushroom', '버섯', 400]],
+    [['fireworks', '불꽃놀이', 1200], ['dove', '비둘기', 600], ['fountain', '분수', 1500], ['carousel', '회전목마', 1800], ['bread', '빵', 700], ['gift', '선물', 900]]
+  ].flatMap((set, home) => set.map(([id, n, p], k) => ({ id, n, p, home, at: SPOT['ABCDEF'[k]] })))
 ];
-const isThing = it => !!it.spot;
-// Homes the friend moves through, bought in order with stars. Each draws its own scene
-// behind the friend: three rooms indoors, then ever wider places outdoors.
+const isThing = it => !!it.at;
+
+// Homes the friend moves through, bought in order with stars. Each is a background picture;
+// the floor or grass starts at y=252.
 const HOMES = [
   { n: '단칸방 (월세)', to: '단칸방으로', p: 0 }, { n: '원룸 (전세)', to: '원룸 전세로', p: 400 }, { n: '작은 내 집', to: '작은 내 집으로', p: 1200 },
   { n: '아파트', to: '아파트로', p: 2500 }, { n: '마당 있는 땅', to: '마당 있는 땅으로', p: 4000 }, { n: '뒷산', to: '뒷산으로', p: 6500 },
   { n: '우리 마을', to: '우리 마을로', p: 10000 }
 ];
-const SKY = '<rect width="320" height="260" fill="#cfe8f5" stroke="none"/><circle cx="46" cy="40" r="16" fill="#ffd95a"/>';
-const GROUND = y => '<rect x="-10" y="' + y + '" width="340" height="80" fill="#b9dc8f"/>';
-const HOUSE = (x, y, w, wall, roof) => '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + w * .8 + '" fill="' + wall + '"/>' +
-  '<path d="M' + (x - 8) + ' ' + (y + 2) + ' L' + (x + w / 2) + ' ' + (y - w * .45) + ' L' + (x + w + 8) + ' ' + (y + 2) + 'Z" fill="' + roof + '"/>' +
-  '<rect x="' + (x + w * .38) + '" y="' + (y + w * .4) + '" width="' + w * .24 + '" height="' + w * .4 + '" fill="#a6714d"/>';
-const TREE = (x, y) => '<rect x="' + (x - 3) + '" y="' + y + '" width="6" height="18" fill="#a6714d"/><circle cx="' + x + '" cy="' + (y - 6) + '" r="14" fill="#7fb36f"/>';
+const FLOOR = fill => '<rect x="-5" y="250" width="350" height="90" fill="' + fill + '"/><path d="M-5 250 q85 -3 175 0 t175 0" fill="none"/>';
+const OUT = (sky) => '<rect x="-5" y="-5" width="350" height="350" fill="' + (sky || '#eef7fc') + '" stroke="none"/><g transform="translate(300 64)"><circle r="15" fill="' + C.butter + '"/>' +
+  [0, 45, 90, 135, 180, 225, 270, 315].map(a => '<path d="M0 -21 v-6" transform="rotate(' + a + ')" fill="none"/>').join('') + '</g>';
+const HOUSE = (x, y, s, wall, roof) => '<g transform="translate(' + x + ' ' + y + ') scale(' + s + ')"><rect x="-40" y="-56" width="80" height="56" fill="' + wall + '"/><path d="M-50 -54 L0 -92 L50 -54Z" fill="' + roof + '"/>' +
+  '<rect x="-10" y="-30" width="20" height="30" rx="3" fill="' + C.wood + '"/><rect x="18" y="-44" width="14" height="14" fill="' + C.sky + '"/><rect x="-32" y="-44" width="14" height="14" fill="' + C.sky + '"/></g>';
+const BUSH = (x, y, s) => '<g transform="translate(' + x + ' ' + y + ') scale(' + (s || 1) + ')"><path d="M-20 0 q-6 -16 8 -18 q4 -12 16 -6 q12 -4 14 10 q8 4 2 14z" fill="' + C.green + '"/></g>';
 const SCENES = [
-  // 단칸방: bare wall, a small window, a hanging bulb, a crack.
-  '<rect width="320" height="260" fill="#e3d8c6" stroke="none"/><rect x="-10" y="215" width="340" height="60" fill="#c9ad86"/>' +
-    '<rect x="236" y="70" width="46" height="38" fill="#bfe0f0"/><path d="M259 70 v38 M236 89 h46" fill="none"/>' +
-    '<path d="M70 0 v52" fill="none" stroke-width="2"/><circle cx="70" cy="60" r="8" fill="#fff3b0"/><path d="M28 120 l10 12 l-6 10 l9 14" fill="none" stroke-width="2"/>',
-  // 원룸 전세: warm wallpaper, a bigger window with curtains, a clock.
-  '<rect width="320" height="260" fill="#f4e4d0" stroke="none"/><g fill="#ecc9a8" stroke="none"><circle cx="40" cy="40" r="3"/><circle cx="90" cy="90" r="3"/><circle cx="40" cy="150" r="3"/><circle cx="290" cy="170" r="3"/><circle cx="140" cy="30" r="3"/></g>' +
-    '<rect x="-10" y="215" width="340" height="60" fill="#d9b98c"/><rect x="222" y="58" width="74" height="60" fill="#bfe0f0"/><path d="M259 58 v60 M222 88 h74" fill="none"/>' +
-    '<path d="M216 52 q10 40 0 74 h18 q-6 -40 0 -74z M302 52 q-10 40 0 74 h-18 q6 -40 0 -74z" fill="#f6a6a6"/><circle cx="58" cy="78" r="17" fill="#fff"/><path d="M58 66 v12 l8 5" fill="none" stroke-width="2"/>',
-  // 작은 내 집: outdoors in front of our own little house.
-  SKY + GROUND(205) + HOUSE(220, 130, 80, '#f6d7a7', '#e07a5f') + TREE(30, 186),
-  // 아파트: a tall building with rows of windows.
-  SKY + GROUND(205) + '<rect x="16" y="110" width="52" height="98" fill="#ded6c8"/><rect x="226" y="34" width="80" height="174" fill="#ece6dc"/>' +
-    [60, 90, 120, 150].map(y => '<rect x="238" y="' + y + '" width="16" height="14" fill="#bfe0f0"/><rect x="278" y="' + y + '" width="16" height="14" fill="#bfe0f0"/>').join('') +
-    '<rect x="26" y="130" width="12" height="12" fill="#bfe0f0"/><rect x="46" y="130" width="12" height="12" fill="#bfe0f0"/><rect x="26" y="160" width="12" height="12" fill="#bfe0f0"/>',
-  // 마당 있는 땅: a house with a fenced garden and flowers.
-  SKY + GROUND(190) + HOUSE(226, 120, 72, '#f6d7a7', '#e07a5f') + TREE(34, 170) +
-    '<path d="M0 200 h320" fill="none"/>' + [10, 40, 70, 250, 280, 310].map(x => '<path d="M' + x + ' 210 v-22 l5 -6 l5 6 v22" fill="#fbf7f0" stroke-width="2"/>').join('') +
-    '<g stroke="none"><circle cx="120" cy="232" r="5" fill="#f6a6a6"/><circle cx="200" cy="238" r="5" fill="#ffd95a"/><circle cx="96" cy="244" r="5" fill="#c9a7e8"/></g>',
+  // 단칸방: a bare wall, a small window, a hanging bulb, a crack and floorboards.
+  '<rect x="-5" y="-5" width="350" height="350" fill="#f6efe2" stroke="none"/>' + FLOOR('#e9d6b8') + '<path d="M40 290 h60 M180 300 h70 M90 316 h50" fill="none" stroke-width="1.6"/>' +
+    '<rect x="214" y="110" width="56" height="48" rx="3" fill="' + C.sky + '"/><path d="M242 110 v48 M214 134 h56" fill="none"/><path d="M118 -5 v70" fill="none" stroke-width="1.6"/><circle cx="118" cy="74" r="8" fill="' + C.butter + '"/>' +
+    '<path d="M26 170 l8 10 l-5 8 l8 12" fill="none" stroke-width="1.8"/>',
+  // 원룸 전세: striped wallpaper, a big window with curtains, a clock.
+  '<rect x="-5" y="-5" width="350" height="350" fill="#fdf3ea" stroke="none"/>' + [20, 60, 100, 140, 180, 220, 260, 300].map(x => '<path d="M' + x + ' 0 v250" stroke="#f4e1d2" stroke-width="10"/>').join('') + FLOOR('#ecd3b2') +
+    '<rect x="196" y="98" width="80" height="66" rx="5" fill="' + C.sky + '"/><path d="M236 98 v66 M196 131 h80" fill="none"/><path d="M188 92 q10 36 0 76 h14 q-6 -40 0 -76z M284 92 q-10 36 0 76 h-14 q6 -40 0 -76z" fill="' + C.pink + '"/><path d="M184 92 h104" fill="none"/>' +
+    '<circle cx="128" cy="116" r="15" fill="#fff"/><path d="M128 116 v-9 M128 116 l6 4" fill="none"/>',
+  // 작은 내 집: outdoors, in front of our own little house.
+  OUT() + '<path d="M-5 250 h350 v90 h-350z" fill="#e3f2d9"/><path d="M-5 250 q85 -4 175 0 t175 0" fill="none"/>' + HOUSE(232, 250, 1, C.peach, C.pink) + BUSH(320, 252) + BUSH(150, 252, .8) +
+    '<path d="M60 90 q-10 0 -8 -10 q2 -8 10 -6 q4 -10 16 -6 q10 -4 14 6 q10 0 8 10z" fill="#fff"/>',
+  // 아파트: tall buildings with rows of windows.
+  OUT() + '<rect x="196" y="70" width="90" height="182" fill="' + C.gray + '"/><rect x="86" y="140" width="60" height="112" fill="#efe9df"/>' +
+    [92, 124, 156, 188, 220].map(y => '<rect x="208" y="' + y + '" width="16" height="14" fill="' + C.sky + '"/><rect x="234" y="' + y + '" width="16" height="14" fill="' + C.sky + '"/><rect x="260" y="' + y + '" width="16" height="14" fill="' + C.butter + '"/>').join('') +
+    [158, 188, 218].map(y => '<rect x="96" y="' + y + '" width="14" height="12" fill="' + C.sky + '"/><rect x="122" y="' + y + '" width="14" height="12" fill="' + C.sky + '"/>').join('') +
+    '<path d="M-5 250 h350 v90 h-350z" fill="#e8ece6"/><path d="M-5 250 q85 -4 175 0 t175 0" fill="none"/><path d="M-5 286 h350" fill="none" stroke-dasharray="14 10" stroke-width="1.6"/>',
+  // 마당 있는 땅: a house with a fenced garden.
+  OUT() + '<path d="M-5 236 h350 v100 h-350z" fill="#e3f2d9"/><path d="M-5 236 q85 -4 175 0 t175 0" fill="none"/>' + HOUSE(250, 236, .9, C.peach, C.pink) +
+    '<path d="M-5 226 h190 M-5 238 h190" fill="none"/>' + [6, 26, 46, 66, 86, 106, 126, 146, 166].map(x => '<path d="M' + x + ' 246 v-30 l4 -5 l4 5 v30z" fill="#fff"/>').join('') + BUSH(320, 240),
   // 뒷산: mountains behind the house, trees around.
-  SKY + '<path d="M-20 200 L70 70 L150 200Z" fill="#9cc58a"/><path d="M90 200 L200 50 L340 200Z" fill="#7fb36f"/><path d="M180 78 L200 50 L220 78 q-10 8 -20 0 q-10 8 -20 0z" fill="#fbf7f0" stroke-width="2"/>' +
-    GROUND(200) + HOUSE(238, 146, 62, '#f6d7a7', '#e07a5f') + TREE(26, 186) + TREE(60, 192) + TREE(214, 190),
+  OUT() + '<path d="M-20 252 L80 110 L170 252Z" fill="#d6ebc8"/><path d="M110 252 L230 80 L360 252Z" fill="' + C.mint + '"/><path d="M210 108 L230 80 L250 108 q-10 8 -20 0 q-10 8 -20 0z" fill="#fff"/>' +
+    '<path d="M-5 250 h350 v90 h-350z" fill="#e3f2d9"/><path d="M-5 250 q85 -4 175 0 t175 0" fill="none"/>' + HOUSE(270, 250, .7, C.peach, C.pink) +
+    [[24, 250], [320, 252]].map(([x, y]) => '<g transform="translate(' + x + ' ' + y + ')"><path d="M-3 0 v-16 h6 v16" fill="' + C.wood + '"/><path d="M0 -60 l16 30 h-8 l12 16 h-40 l12 -16 h-8z" fill="' + C.green + '"/></g>').join(''),
   // 우리 마을: mountains, a few houses and a little church.
-  SKY + '<path d="M-20 190 L80 80 L180 190Z" fill="#9cc58a"/><path d="M120 190 L230 70 L340 190Z" fill="#7fb36f"/>' + GROUND(190) +
-    HOUSE(10, 160, 44, '#f6d7a7', '#e07a5f') + HOUSE(70, 170, 36, '#fbe3e3', '#8aa9d6') + HOUSE(270, 160, 44, '#e6f0d0', '#c58a5a') +
-    '<rect x="218" y="140" width="40" height="52" fill="#fbf7f0"/><path d="M212 142 L238 112 L264 142Z" fill="#8aa9d6"/><path d="M238 90 v20 M231 97 h14" fill="none"/><rect x="232" y="168" width="12" height="24" fill="#a6714d"/>'
+  OUT() + '<path d="M-20 252 L70 130 L160 252Z" fill="#d6ebc8"/><path d="M120 252 L240 100 L360 252Z" fill="' + C.mint + '"/>' +
+    '<path d="M-5 250 h350 v90 h-350z" fill="#e3f2d9"/><path d="M-5 250 q85 -4 175 0 t175 0" fill="none"/>' +
+    HOUSE(28, 250, .55, C.peach, C.pink) + HOUSE(320, 250, .55, '#e6f0d0', C.orange) +
+    '<g transform="translate(240 250)"><rect x="-24" y="-60" width="48" height="60" fill="#fff"/><path d="M-30 -58 L0 -90 L30 -58Z" fill="' + C.sky + '"/><path d="M0 -90 v-20 M-7 -102 h14" fill="none" stroke-width="3"/>' +
+    '<path d="M-8 0 v-20 q8 -10 16 0 v20z" fill="' + C.wood + '"/><circle cy="-42" r="7" fill="' + C.butter + '"/></g>'
 ];
-function sceneSVG(i) {
-  return '<svg viewBox="0 0 320 260" preserveAspectRatio="xMidYMax slice" aria-hidden="true"><defs><filter id="wobh"><feTurbulence type="fractalNoise" baseFrequency=".03" numOctaves="2" seed="7"/>' +
-    '<feDisplacementMap in="SourceGraphic" scale="3"/></filter></defs><g filter="url(#wobh)" stroke="' + INK + '" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" opacity=".9">' +
-    SCENES[i] + '</g></svg>';
+
+const put = (id, [x, y]) => '<g transform="translate(' + x + ' ' + y + ')">' + T[id] + '</g>';
+function sceneSVG(home, owned) {
+  const things = SHOP.filter(it => isThing(it) && owned.includes(it.id) && (it.home === undefined || it.home === home)).sort((a, b) => a.at[1] - b.at[1]);
+  return '<svg viewBox="0 0 340 330" preserveAspectRatio="xMidYMax slice" aria-hidden="true"><defs>' + WOB('wh') + '</defs><g filter="url(#wh)" ' + PEN + '>' +
+    SCENES[home] + things.map(it => put(it.id, it.at)).join('') + '</g></svg>';
+}
+
+// Shop pictures: each thing or piece of clothing on its own, framed to its drawn size.
+const thumbBox = {};
+function thumbSVG(it) {
+  const inner = isThing(it) ? T[it.id] : WEAR[it.id][1];
+  if (!thumbBox[it.id]) {
+    const probe = $('probe');
+    probe.innerHTML = '<g ' + PEN + '>' + inner + '</g>';
+    const b = probe.firstChild.getBBox(), pad = 4;
+    if (b.width) thumbBox[it.id] = [b.x - pad, b.y - pad, b.width + pad * 2, b.height + pad * 2].join(' ');
+  }
+  return '<svg viewBox="' + (thumbBox[it.id] || '-30 -60 60 64') + '" aria-hidden="true"><g ' + PEN + '>' + inner + '</g></svg>';
 }
 
 const STAGES = [[0, '🥚 아기 친구'], [7, '🌱 꼬마 친구'], [30, '🌿 좋은 친구'], [100, '🌳 단짝 친구']];
@@ -1439,26 +1580,22 @@ function friendLine() {
 }
 
 function renderFriend() {
-  const f = friend(), [face, kind] = PETS[f.pet] || PETS.cat, name = f.name || kind;
+  const f = friend(), name = f.name || (PETS[f.pet] || PETS.cat)[1];
   const days = Object.values(records).filter(r => usedTotal(r.acts) > 0).length;
   const stage = STAGES.reduce((a, [d], i) => days >= d ? i : a, 0);
-  if ($('petFace').dataset.kind !== f.pet) { $('petFace').innerHTML = petSVG(f.pet); $('petFace').dataset.kind = f.pet; }
-  $('petWear').textContent = (SHOP.find(i => i.id === f.wear) || {}).e || '';
-  $('petWear').classList.toggle('neck', NECK.includes(f.wear));
-  $('petWear').classList.toggle('eyes', EYES.includes(f.wear));
+  const home = f.home || 0, maxHome = Math.max(f.maxHome || 0, home);
+  // Redraw the pictures only when something in them changed.
+  const petKey = f.pet + '|' + f.wear, sceneKey = home + '|' + f.owned.join();
+  if ($('petFace').dataset.key !== petKey) { $('petFace').innerHTML = sideSVG(f.pet, f.wear); $('petFace').dataset.key = petKey; }
+  if ($('scene').dataset.key !== sceneKey) { $('scene').innerHTML = sceneSVG(home, f.owned); $('scene').dataset.key = sceneKey; }
   $('stars').textContent = '⭐ ' + starsLeft();
   $('friendDays').textContent = STAGES[stage][1] + ' · 함께한 날 ' + days + '일';
-  const home = f.home || 0, maxHome = Math.max(f.maxHome || 0, home);
-  $('deco').innerHTML = '';
-  for (const it of SHOP) {
-    if (!isThing(it) || !f.owned.includes(it.id) || (it.home !== undefined && it.home !== home)) continue;
-    const [x, y, size] = SPOT[it.spot], el = document.createElement('span');
-    el.textContent = it.e;
-    el.style.cssText = 'left:' + x + '%;top:' + y + '%;font-size:' + size + 'px';
-    $('deco').appendChild(el);
-  }
-  if ($('scene').dataset.home !== String(home)) { $('scene').innerHTML = sceneSVG(home); $('scene').dataset.home = home; }
   $('friendTitle').textContent = name + ' · 🏠 ' + HOMES[home].n;
+  $('friendSay').textContent = friendLine();
+  if (stage > (f.stage || 0)) {
+    f.stage = stage; store('ft.settings', settings);
+    toast('🎉 이제 ' + STAGES[stage][1] + '예요!'); hop();
+  }
   const homes = $('homes');
   homes.innerHTML = '';
   HOMES.forEach((h, i) => {
@@ -1471,12 +1608,13 @@ function renderFriend() {
     if (i === maxHome + 1) b.onclick = () => moveHome(i);
     homes.appendChild(b);
   });
-  $('friendSay').textContent = friendLine();
-  if (stage > (f.stage || 0)) {
-    f.stage = stage; store('ft.settings', settings);
-    toast('🎉 이제 ' + STAGES[stage][1] + '예요!'); hop();
-  }
-  const shop = $('shop');
+  if ($('shopBox').open) renderShop();
+  for (const c of $('petKinds').children) c.classList.toggle('on', c.dataset.pet === (f.pet || 'cat'));
+}
+
+// The shop is drawn only while it is open, since its pictures are measured on screen.
+function renderShop() {
+  const f = friend(), home = f.home || 0, maxHome = Math.max(f.maxHome || 0, home), shop = $('shop');
   shop.innerHTML = '';
   const section = (title, items, note) => {
     const h = document.createElement('h3');
@@ -1486,8 +1624,7 @@ function renderFriend() {
     for (const it of items) {
       const b = document.createElement('button'), own = f.owned.includes(it.id);
       b.className = own ? 'owned' + (f.wear === it.id ? ' on' : '') : '';
-      b.innerHTML = '<b></b><span></span><small></small>';
-      b.children[0].textContent = it.e;
+      b.innerHTML = thumbSVG(it) + '<span></span><small></small>';
       b.children[1].textContent = it.n;
       b.children[2].textContent = !own ? '⭐ ' + it.p.toLocaleString() : isThing(it) ? '놓여 있어요' : f.wear === it.id ? '입는 중' : '입히기';
       b.onclick = () => shopTap(it);
@@ -1497,8 +1634,8 @@ function renderFriend() {
   section('🏡 ' + HOMES[home].n + ' 꾸미기', SHOP.filter(i => i.home === home), '이 집에만 놓여요.' + (maxHome < HOMES.length - 1 ? ' 다음 집으로 이사하면 새 물건이 나와요.' : ''));
   section('🧸 어느 집에서나', SHOP.filter(i => isThing(i) && i.home === undefined));
   section('👕 옷', SHOP.filter(i => !isThing(i)));
-  for (const c of $('petKinds').children) c.classList.toggle('on', c.dataset.pet === (f.pet || 'cat'));
 }
+$('shopBox').addEventListener('toggle', () => { if ($('shopBox').open) renderShop(); });
 
 function moveHome(i) {
   const f = friend(), h = HOMES[i], left = starsLeft();
@@ -1519,10 +1656,10 @@ function shopTap(it) {
   } else {
     const left = starsLeft();
     if (left < it.p) { toast('별이 ' + (it.p - left) + '개 더 필요해요'); return; }
-    if (!confirm('⭐ ' + it.p + '개로 ' + it.e + ' ' + it.n + '을(를) 살까요?')) return;
+    if (!confirm('⭐ ' + it.p + '개로 ' + it.n + '을(를) 살까요?')) return;
     f.spent += it.p; f.owned.push(it.id);
     if (!isThing(it)) f.wear = it.id;
-    toast(it.e + ' ' + it.n + ' 샀어요!');
+    toast(it.n + ' 샀어요!');
   }
   store('ft.settings', settings);
   renderFriend(); hop();
@@ -1535,9 +1672,9 @@ function hop() {
 
 const PET_CHEERS = ['헤헤, 간지러워!', '오늘도 같이 있어 줘서 좋아.', '천천히 해도 괜찮아.', '너는 생각보다 잘하고 있어.'];
 $('pet').onclick = () => { hop(); $('friendSay').textContent = PET_CHEERS[Math.floor(Math.random() * PET_CHEERS.length)]; };
-for (const [key, [face, kind]] of Object.entries(PETS)) {
+for (const [key, [, kind]] of Object.entries(PETS)) {
   const c = document.createElement('button');
-  c.className = 'chip'; c.dataset.pet = key; c.innerHTML = petSVG(key, true) + '<span></span>';
+  c.className = 'chip'; c.dataset.pet = key; c.innerHTML = sideSVG(key) + '<span></span>';
   c.lastChild.textContent = kind;
   c.onclick = () => { friend().pet = key; store('ft.settings', settings); renderFriend(); hop(); };
   $('petKinds').appendChild(c);
