@@ -162,6 +162,19 @@
   .wt { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
   .wt input { margin: 0; }
   .wrow .chips.wbi { margin: 8px 0 0; align-items: center; font-size: 13px; color: var(--muted); }
+  .room { border-radius: 14px; padding: 14px 12px 10px; text-align: center; background: color-mix(in srgb, var(--accent) 10%, var(--bg)); }
+  .bubble { display: inline-block; max-width: 92%; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 8px 12px; font-size: 14px; margin-bottom: 18px; }
+  .pet { position: relative; display: inline-block; font-size: 64px; line-height: 1; padding: 0; border: 0; background: none; }
+  .pet .wear { position: absolute; top: -20px; left: 50%; transform: translateX(-50%); font-size: 30px; }
+  .pet.hop { animation: hop .5s; }
+  @keyframes hop { 50% { transform: translateY(-12px); } }
+  .floor { font-size: 26px; letter-spacing: 4px; min-height: 32px; margin-top: 8px; }
+  .shop { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 10px; }
+  .shop button { padding: 10px 4px; border-radius: 12px; line-height: 1.3; font-size: 13px; }
+  .shop button b { display: block; font-size: 26px; font-weight: 400; }
+  .shop button small { display: block; color: var(--muted); }
+  .shop button.owned { border-color: var(--accent); }
+  .shop button.on { background: color-mix(in srgb, var(--accent) 16%, var(--card)); }
   .task { position: relative; overflow: hidden; }
   .task .tbar { position: absolute; left: 0; bottom: 0; height: 4px; background: var(--accent); opacity: .7; }
   .task.done .ttime { color: var(--accent); }
@@ -324,6 +337,34 @@
       <summary class="hint">노션 연결 설정</summary>
       <label style="margin-top:8px">노션 기록 페이지 주소<input type="url" id="notionUrl" placeholder="https://www.notion.so/..."></label>
       <p class="hint">노션에서 기록 데이터베이스를 열고 공유 → 링크 복사로 얻은 주소를 붙여넣으세요. "노션에 저장하기"를 누르면 오늘 기록이 복사되고 그 페이지가 열려요. 오늘 줄의 원하는 칸에 붙여넣으면 끝이에요.</p>
+    </details>
+  </section>
+
+  <section class="card">
+    <h2><span id="friendTitle">🐱 나의 시간 친구</span> <button class="helpbtn" data-help="friend" aria-label="사용법 보기">?</button></h2>
+    <div class="helpbox" id="help-friend" hidden>
+      <ul>
+        <li>할 일 시간을 재거나 기록하면 <b>1분에 별 ⭐ 1개</b>가 쌓여요.</li>
+        <li>모은 별로 <b>별 상점</b>에서 친구 옷과 방 물건을 사요. 산 옷은 눌러서 입히고 벗겨요.</li>
+        <li>기록한 날이 쌓일수록 친구와 더 친해져요. 목표는 없어요. 5분만 기록해도 별을 받아요.</li>
+        <li><b>친구 바꾸기</b>에서 동물과 이름을 바꿔요. 바꿔도 별과 물건은 그대로예요.</li>
+        <li>기록을 지우거나 줄이면 별도 같이 줄어요.</li>
+      </ul>
+    </div>
+    <div class="room">
+      <div class="bubble" id="friendSay"></div><br>
+      <button class="pet" id="pet" aria-label="친구 쓰다듬기"><span class="wear" id="petWear"></span><span id="petFace">🐱</span></button>
+      <div class="floor" id="floor"></div>
+    </div>
+    <div class="sumline"><span>내 별 <b id="stars">⭐ 0</b></span><span id="friendDays"></span></div>
+    <details id="shopBox">
+      <summary class="hint">⭐ 별 상점</summary>
+      <div class="shop" id="shop"></div>
+    </details>
+    <details id="friendSet">
+      <summary class="hint">친구 바꾸기</summary>
+      <div class="chips" id="petKinds" style="margin:10px 0 0"></div>
+      <label>이름<input id="petName" maxlength="10" placeholder="예: 나비"></label>
     </details>
   </section>
 
@@ -671,6 +712,7 @@ function render() {
   $('freeSum').textContent = fmt(p.free);
   renderToday();
   renderHistory();
+  renderFriend();
   $('nudge').hidden = !!records[dateKey(now)] || nowMin < toMin(settings.remindAt);
 }
 
@@ -1213,8 +1255,106 @@ function stopTimer(minutes, quiet, reason) {
     else addMinutes(t.date, t.act, m, 'edit', { from: Math.round(measured), to: Math.round(m * 10) / 10, reason });
   } else render();
   tick();
-  if (!quiet) toast(t.act + ' ' + (m >= 1 ? fmt(m) : '1분 미만') + ' 기록했어요');
+  if (!quiet) toast(t.act + ' ' + (m >= 1 ? fmt(m) + ' 기록했어요 · ⭐+' + Math.floor(m) : '1분 미만 기록했어요'));
+  if (m >= 1) hop();
 }
+
+// 나의 시간 친구: every recorded minute is a star, and stars buy clothes and room things. Stars
+// come from the records, so fixing or deleting minutes changes them; spent stars are kept.
+const PETS = { cat: ['🐱', '고양이'], rabbit: ['🐰', '토끼'], bear: ['🐻', '곰'], chick: ['🐥', '병아리'], sheep: ['🐑', '양'], dog: ['🐶', '강아지'] };
+const SHOP = [
+  { id: 'tea', e: '☕', n: '따뜻한 차', p: 60, room: true },
+  { id: 'ribbon', e: '🎀', n: '리본', p: 80 },
+  { id: 'plant', e: '🪴', n: '화분', p: 100, room: true },
+  { id: 'cap', e: '🧢', n: '모자', p: 120 },
+  { id: 'books', e: '📚', n: '책', p: 150, room: true },
+  { id: 'scarf', e: '🧣', n: '목도리', p: 200 },
+  { id: 'candle', e: '🕯️', n: '촛불', p: 200, room: true },
+  { id: 'picture', e: '🖼️', n: '그림', p: 250, room: true },
+  { id: 'phones', e: '🎧', n: '헤드폰', p: 300 },
+  { id: 'teddy', e: '🧸', n: '곰 인형', p: 300, room: true },
+  { id: 'sofa', e: '🛋️', n: '소파', p: 400, room: true },
+  { id: 'moon', e: '🌙', n: '달 조명', p: 500, room: true },
+  { id: 'crown', e: '👑', n: '왕관', p: 600 },
+  { id: 'piano', e: '🎹', n: '피아노', p: 800, room: true },
+  { id: 'tree', e: '🌳', n: '나무', p: 1000, room: true }
+];
+const STAGES = [[0, '🥚 아기 친구'], [7, '🌱 꼬마 친구'], [30, '🌿 좋은 친구'], [100, '🌳 단짝 친구']];
+const friend = () => settings.friend || (settings.friend = { pet: 'cat', name: '', spent: 0, owned: [], wear: '', stage: 0 });
+const starsLeft = () => Math.max(0, Math.floor(Object.values(records).reduce((a, r) => a + usedTotal(r.acts), 0)) - friend().spent);
+
+function friendLine() {
+  const m = usedTotal((records[dateKey(new Date())] || {}).acts), h = new Date().getHours();
+  if (timer) return timer.act + ' 하는 중이구나! 옆에서 조용히 응원할게.';
+  if (m >= 1) return '오늘 벌써 ' + fmt(m) + '을 너를 위해 썼네! 고마워. ⭐';
+  const lines = h < 12 ? ['좋은 아침! 오늘도 와 줘서 반가워.', '오늘 하루도 천천히 가 보자.']
+    : h < 18 ? ['오늘 하루 어때? 잠깐 쉬어 가도 좋아.', '바쁜 하루 속에서 보러 와 줘서 고마워.']
+    : ['오늘도 수고 많았어. 이제 나의 시간이야.', '5분만이라도 너를 위한 시간 써 볼까?'];
+  return lines[new Date().getDate() % lines.length];
+}
+
+function renderFriend() {
+  const f = friend(), [face, kind] = PETS[f.pet] || PETS.cat, name = f.name || kind;
+  const days = Object.values(records).filter(r => usedTotal(r.acts) > 0).length;
+  const stage = STAGES.reduce((a, [d], i) => days >= d ? i : a, 0);
+  $('friendTitle').textContent = face + ' ' + name;
+  $('petFace').textContent = face;
+  $('petWear').textContent = (SHOP.find(i => i.id === f.wear) || {}).e || '';
+  $('floor').textContent = SHOP.filter(i => i.room && f.owned.includes(i.id)).map(i => i.e).join(' ');
+  $('stars').textContent = '⭐ ' + starsLeft();
+  $('friendDays').textContent = STAGES[stage][1] + ' · 함께한 날 ' + days + '일';
+  $('friendSay').textContent = friendLine();
+  if (stage > (f.stage || 0)) {
+    f.stage = stage; store('ft.settings', settings);
+    toast('🎉 이제 ' + STAGES[stage][1] + '예요!'); hop();
+  }
+  const shop = $('shop');
+  shop.innerHTML = '';
+  for (const it of SHOP) {
+    const b = document.createElement('button'), own = f.owned.includes(it.id);
+    b.className = own ? 'owned' + (f.wear === it.id ? ' on' : '') : '';
+    b.innerHTML = '<b></b><span></span><small></small>';
+    b.children[0].textContent = it.e;
+    b.children[1].textContent = it.n;
+    b.children[2].textContent = !own ? '⭐ ' + it.p : it.room ? '방에 있어요' : f.wear === it.id ? '입는 중' : '입히기';
+    b.onclick = () => shopTap(it);
+    shop.appendChild(b);
+  }
+  for (const c of $('petKinds').children) c.classList.toggle('on', c.dataset.pet === (f.pet || 'cat'));
+}
+
+function shopTap(it) {
+  const f = friend();
+  if (f.owned.includes(it.id)) {
+    if (it.room) return;
+    f.wear = f.wear === it.id ? '' : it.id;
+  } else {
+    const left = starsLeft();
+    if (left < it.p) { toast('별이 ' + (it.p - left) + '개 더 필요해요'); return; }
+    if (!confirm('⭐ ' + it.p + '개로 ' + it.e + ' ' + it.n + '을(를) 살까요?')) return;
+    f.spent += it.p; f.owned.push(it.id);
+    if (!it.room) f.wear = it.id;
+    toast(it.e + ' ' + it.n + ' 샀어요!');
+  }
+  store('ft.settings', settings);
+  renderFriend(); hop();
+}
+
+function hop() {
+  const p = $('pet');
+  p.classList.remove('hop'); void p.offsetWidth; p.classList.add('hop');
+}
+
+const PET_CHEERS = ['헤헤, 간지러워!', '오늘도 같이 있어 줘서 좋아.', '천천히 해도 괜찮아.', '너는 생각보다 잘하고 있어.'];
+$('pet').onclick = () => { hop(); $('friendSay').textContent = PET_CHEERS[Math.floor(Math.random() * PET_CHEERS.length)]; };
+for (const [key, [face, kind]] of Object.entries(PETS)) {
+  const c = document.createElement('button');
+  c.className = 'chip'; c.dataset.pet = key; c.textContent = face + ' ' + kind;
+  c.onclick = () => { friend().pet = key; store('ft.settings', settings); renderFriend(); hop(); };
+  $('petKinds').appendChild(c);
+}
+$('petName').value = friend().name;
+$('petName').addEventListener('input', () => { friend().name = $('petName').value.trim(); store('ft.settings', settings); renderFriend(); });
 
 function alertGoal() {
   if (settings.alert === 'vibrate' && navigator.vibrate) navigator.vibrate([300, 150, 300]);
