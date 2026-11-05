@@ -184,6 +184,16 @@
   @keyframes bob { 50% { transform: translateY(-4px) scale(1.02, .98); } }
   @keyframes blink { 0%, 93%, 100% { transform: scaleY(1); } 96% { transform: scaleY(.1); } }
   @media (prefers-reduced-motion: reduce) { .pet svg, .pet .eyes { animation: none; } }
+  .room { overflow: hidden; min-height: 290px; }
+  .room > :not(.scene) { position: relative; z-index: 1; }
+  .scene { position: absolute; inset: 0; }
+  .scene svg { width: 100%; height: 100%; display: block; }
+  .homes { display: grid; gap: 8px; margin-top: 10px; }
+  .homes button { display: flex; align-items: center; justify-content: space-between; gap: 8px; text-align: left; font-family: "Gaegu", "Gowun Dodum", sans-serif; font-size: 19px; padding: 8px 14px; }
+  .homes button small { color: var(--muted); font-size: 16px; white-space: nowrap; }
+  .homes button.here { border: 2px solid var(--accent); background: color-mix(in srgb, var(--accent) 16%, var(--card)); }
+  .homes button.next small { color: var(--accent); font-weight: 700; }
+  .homes button.locked { opacity: .55; }
   .floor { font-size: 28px; letter-spacing: 6px; min-height: 36px; margin-top: 2px; padding-bottom: 6px;
     background: linear-gradient(transparent 70%, color-mix(in srgb, var(--accent) 22%, transparent) 70%); }
   #friendCard .sumline, #friendCard summary, .shop button { font-family: "Gaegu", "Gowun Dodum", sans-serif; font-size: 18px; }
@@ -369,11 +379,13 @@
         <li>할 일 시간을 재거나 기록하면 <b>1분에 별 ⭐ 1개</b>가 쌓여요.</li>
         <li>모은 별로 <b>별 상점</b>에서 친구 옷과 방 물건을 사요. 산 옷은 눌러서 입히고 벗겨요.</li>
         <li>기록한 날이 쌓일수록 친구와 더 친해져요. 목표는 없어요. 5분만 기록해도 별을 받아요.</li>
+        <li>별을 모아 <b>이사하기</b>에서 단칸방 → 원룸 → 내 집 → 아파트 → 땅 → 산 → 마을까지 한 칸씩 넓혀 가요.</li>
         <li><b>친구 바꾸기</b>에서 동물과 이름을 바꿔요. 바꿔도 별과 물건은 그대로예요.</li>
         <li>기록을 지우거나 줄이면 별도 같이 줄어요.</li>
       </ul>
     </div>
     <div class="room sketch">
+      <div class="scene" id="scene"></div>
       <div class="bubble sketch hand" id="friendSay"></div><br>
       <button class="pet" id="pet" aria-label="친구 쓰다듬기"><span class="wear" id="petWear"></span><span id="petFace"></span></button>
       <div class="floor" id="floor"></div>
@@ -382,6 +394,11 @@
     <details id="shopBox">
       <summary class="hint">⭐ 별 상점</summary>
       <div class="shop" id="shop"></div>
+    </details>
+    <details id="homeBox">
+      <summary class="hint">🏠 이사하기</summary>
+      <p class="hint" style="margin:8px 0 0">별을 모아 한 칸씩 더 넓은 곳으로 이사해요.</p>
+      <div class="homes" id="homes"></div>
     </details>
     <details id="friendSet">
       <summary class="hint">친구 바꾸기</summary>
@@ -1332,8 +1349,54 @@ const SHOP = [
   { id: 'piano', e: '🎹', n: '피아노', p: 800, room: true },
   { id: 'tree', e: '🌳', n: '나무', p: 1000, room: true }
 ];
+// Homes the friend moves through, bought in order with stars. Each draws its own scene
+// behind the friend: three rooms indoors, then ever wider places outdoors.
+const HOMES = [
+  { n: '단칸방 (월세)', to: '단칸방으로', p: 0 }, { n: '원룸 (전세)', to: '원룸 전세로', p: 400 }, { n: '작은 내 집', to: '작은 내 집으로', p: 1200 },
+  { n: '아파트', to: '아파트로', p: 2500 }, { n: '마당 있는 땅', to: '마당 있는 땅으로', p: 4000 }, { n: '뒷산', to: '뒷산으로', p: 6500 },
+  { n: '우리 마을', to: '우리 마을로', p: 10000 }
+];
+const SKY = '<rect width="320" height="260" fill="#cfe8f5" stroke="none"/><circle cx="46" cy="40" r="16" fill="#ffd95a"/>';
+const GROUND = y => '<rect x="-10" y="' + y + '" width="340" height="80" fill="#b9dc8f"/>';
+const HOUSE = (x, y, w, wall, roof) => '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + w * .8 + '" fill="' + wall + '"/>' +
+  '<path d="M' + (x - 8) + ' ' + (y + 2) + ' L' + (x + w / 2) + ' ' + (y - w * .45) + ' L' + (x + w + 8) + ' ' + (y + 2) + 'Z" fill="' + roof + '"/>' +
+  '<rect x="' + (x + w * .38) + '" y="' + (y + w * .4) + '" width="' + w * .24 + '" height="' + w * .4 + '" fill="#a6714d"/>';
+const TREE = (x, y) => '<rect x="' + (x - 3) + '" y="' + y + '" width="6" height="18" fill="#a6714d"/><circle cx="' + x + '" cy="' + (y - 6) + '" r="14" fill="#7fb36f"/>';
+const SCENES = [
+  // 단칸방: bare wall, a small window, a hanging bulb, a crack.
+  '<rect width="320" height="260" fill="#e3d8c6" stroke="none"/><rect x="-10" y="215" width="340" height="60" fill="#c9ad86"/>' +
+    '<rect x="236" y="70" width="46" height="38" fill="#bfe0f0"/><path d="M259 70 v38 M236 89 h46" fill="none"/>' +
+    '<path d="M70 0 v52" fill="none" stroke-width="2"/><circle cx="70" cy="60" r="8" fill="#fff3b0"/><path d="M28 120 l10 12 l-6 10 l9 14" fill="none" stroke-width="2"/>',
+  // 원룸 전세: warm wallpaper, a bigger window with curtains, a clock.
+  '<rect width="320" height="260" fill="#f4e4d0" stroke="none"/><g fill="#ecc9a8" stroke="none"><circle cx="40" cy="40" r="3"/><circle cx="90" cy="90" r="3"/><circle cx="40" cy="150" r="3"/><circle cx="290" cy="170" r="3"/><circle cx="140" cy="30" r="3"/></g>' +
+    '<rect x="-10" y="215" width="340" height="60" fill="#d9b98c"/><rect x="222" y="58" width="74" height="60" fill="#bfe0f0"/><path d="M259 58 v60 M222 88 h74" fill="none"/>' +
+    '<path d="M216 52 q10 40 0 74 h18 q-6 -40 0 -74z M302 52 q-10 40 0 74 h-18 q6 -40 0 -74z" fill="#f6a6a6"/><circle cx="58" cy="78" r="17" fill="#fff"/><path d="M58 66 v12 l8 5" fill="none" stroke-width="2"/>',
+  // 작은 내 집: outdoors in front of our own little house.
+  SKY + GROUND(205) + HOUSE(220, 130, 80, '#f6d7a7', '#e07a5f') + TREE(30, 186),
+  // 아파트: a tall building with rows of windows.
+  SKY + GROUND(205) + '<rect x="16" y="110" width="52" height="98" fill="#ded6c8"/><rect x="226" y="34" width="80" height="174" fill="#ece6dc"/>' +
+    [60, 90, 120, 150].map(y => '<rect x="238" y="' + y + '" width="16" height="14" fill="#bfe0f0"/><rect x="278" y="' + y + '" width="16" height="14" fill="#bfe0f0"/>').join('') +
+    '<rect x="26" y="130" width="12" height="12" fill="#bfe0f0"/><rect x="46" y="130" width="12" height="12" fill="#bfe0f0"/><rect x="26" y="160" width="12" height="12" fill="#bfe0f0"/>',
+  // 마당 있는 땅: a house with a fenced garden and flowers.
+  SKY + GROUND(190) + HOUSE(226, 120, 72, '#f6d7a7', '#e07a5f') + TREE(34, 170) +
+    '<path d="M0 200 h320" fill="none"/>' + [10, 40, 70, 250, 280, 310].map(x => '<path d="M' + x + ' 210 v-22 l5 -6 l5 6 v22" fill="#fbf7f0" stroke-width="2"/>').join('') +
+    '<g stroke="none"><circle cx="120" cy="232" r="5" fill="#f6a6a6"/><circle cx="200" cy="238" r="5" fill="#ffd95a"/><circle cx="96" cy="244" r="5" fill="#c9a7e8"/></g>',
+  // 뒷산: mountains behind the house, trees around.
+  SKY + '<path d="M-20 200 L70 70 L150 200Z" fill="#9cc58a"/><path d="M90 200 L200 50 L340 200Z" fill="#7fb36f"/><path d="M180 78 L200 50 L220 78 q-10 8 -20 0 q-10 8 -20 0z" fill="#fbf7f0" stroke-width="2"/>' +
+    GROUND(200) + HOUSE(238, 146, 62, '#f6d7a7', '#e07a5f') + TREE(26, 186) + TREE(60, 192) + TREE(214, 190),
+  // 우리 마을: mountains, a few houses and a little church.
+  SKY + '<path d="M-20 190 L80 80 L180 190Z" fill="#9cc58a"/><path d="M120 190 L230 70 L340 190Z" fill="#7fb36f"/>' + GROUND(190) +
+    HOUSE(10, 160, 44, '#f6d7a7', '#e07a5f') + HOUSE(70, 170, 36, '#fbe3e3', '#8aa9d6') + HOUSE(270, 160, 44, '#e6f0d0', '#c58a5a') +
+    '<rect x="218" y="140" width="40" height="52" fill="#fbf7f0"/><path d="M212 142 L238 112 L264 142Z" fill="#8aa9d6"/><path d="M238 90 v20 M231 97 h14" fill="none"/><rect x="232" y="168" width="12" height="24" fill="#a6714d"/>'
+];
+function sceneSVG(i) {
+  return '<svg viewBox="0 0 320 260" preserveAspectRatio="xMidYMax slice" aria-hidden="true"><defs><filter id="wobh"><feTurbulence type="fractalNoise" baseFrequency=".03" numOctaves="2" seed="7"/>' +
+    '<feDisplacementMap in="SourceGraphic" scale="3"/></filter></defs><g filter="url(#wobh)" stroke="' + INK + '" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" opacity=".9">' +
+    SCENES[i] + '</g></svg>';
+}
+
 const STAGES = [[0, '🥚 아기 친구'], [7, '🌱 꼬마 친구'], [30, '🌿 좋은 친구'], [100, '🌳 단짝 친구']];
-const friend = () => settings.friend || (settings.friend = { pet: 'cat', name: '', spent: 0, owned: [], wear: '', stage: 0 });
+const friend = () => settings.friend || (settings.friend = { pet: 'cat', name: '', spent: 0, owned: [], wear: '', stage: 0, home: 0 });
 const starsLeft = () => Math.max(0, Math.floor(Object.values(records).reduce((a, r) => a + usedTotal(r.acts), 0)) - friend().spent);
 
 function friendLine() {
@@ -1350,13 +1413,26 @@ function renderFriend() {
   const f = friend(), [face, kind] = PETS[f.pet] || PETS.cat, name = f.name || kind;
   const days = Object.values(records).filter(r => usedTotal(r.acts) > 0).length;
   const stage = STAGES.reduce((a, [d], i) => days >= d ? i : a, 0);
-  $('friendTitle').textContent = name;
   if ($('petFace').dataset.kind !== f.pet) { $('petFace').innerHTML = petSVG(f.pet); $('petFace').dataset.kind = f.pet; }
   $('petWear').textContent = (SHOP.find(i => i.id === f.wear) || {}).e || '';
   $('petWear').classList.toggle('neck', NECK.includes(f.wear));
   $('floor').textContent = SHOP.filter(i => i.room && f.owned.includes(i.id)).map(i => i.e).join(' ');
   $('stars').textContent = '⭐ ' + starsLeft();
   $('friendDays').textContent = STAGES[stage][1] + ' · 함께한 날 ' + days + '일';
+  const home = f.home || 0;
+  if ($('scene').dataset.home !== String(home)) { $('scene').innerHTML = sceneSVG(home); $('scene').dataset.home = home; }
+  $('friendTitle').textContent = name + ' · 🏠 ' + HOMES[home].n;
+  const homes = $('homes');
+  homes.innerHTML = '';
+  HOMES.forEach((h, i) => {
+    const b = document.createElement('button');
+    b.className = i === home ? 'here' : i === home + 1 ? 'next' : i > home ? 'locked' : '';
+    b.innerHTML = '<span></span><small></small>';
+    b.firstChild.textContent = (i > home + 1 ? '🔒 ' : '') + h.n;
+    b.lastChild.textContent = i === home ? '지금 사는 곳' : i < home ? '살았던 곳' : '⭐ ' + h.p.toLocaleString() + (i === home + 1 ? ' 이사하기' : '');
+    if (i === home + 1) b.onclick = () => moveHome(i);
+    homes.appendChild(b);
+  });
   $('friendSay').textContent = friendLine();
   if (stage > (f.stage || 0)) {
     f.stage = stage; store('ft.settings', settings);
@@ -1375,6 +1451,17 @@ function renderFriend() {
     shop.appendChild(b);
   }
   for (const c of $('petKinds').children) c.classList.toggle('on', c.dataset.pet === (f.pet || 'cat'));
+}
+
+function moveHome(i) {
+  const f = friend(), h = HOMES[i], left = starsLeft();
+  if (left < h.p) { toast('별이 ' + (h.p - left).toLocaleString() + '개 더 필요해요'); return; }
+  if (!confirm('⭐ ' + h.p.toLocaleString() + '개로 ' + h.to + ' 이사할까요?')) return;
+  f.spent += h.p; f.home = i;
+  store('ft.settings', settings);
+  renderFriend(); hop();
+  toast('🎉 ' + h.to + ' 이사했어요!');
+  $('friendSay').textContent = '우와, 새집이다! 고마워!';
 }
 
 function shopTap(it) {
