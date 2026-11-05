@@ -153,11 +153,15 @@
   .modes button small { display: block; font-weight: 400; font-size: 12px; color: var(--muted); margin-top: 2px; }
   .modes button.on { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 16%, var(--card)); }
   #dayBox > summary { list-style: none; margin: 0; }
-  .wrow { display: grid; grid-template-columns: 28px 1fr; gap: 8px; align-items: center; margin-top: 8px; }
-  .wrow select { width: 100%; padding: 8px; font: inherit; color: var(--text); background: var(--bg); border: 1px solid var(--line); border-radius: 9px; }
-  .wrow .wt { grid-column: 2; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-  .wrow .wt input { margin: 0; }
-  .wrow .wt[hidden] { display: none; }
+  .wrow { border-top: 1px solid var(--line); margin-top: 12px; padding-top: 10px; }
+  .whead { display: flex; align-items: center; gap: 8px; font-size: 14px; }
+  .whead .hint { flex: 1; }
+  .whead button { margin-left: auto; padding: 4px 10px; font-size: 13px; }
+  .wdays { gap: 6px; margin: 8px 0 0; }
+  .wdays .chip { width: 38px; padding: 6px 0; text-align: center; }
+  .wt { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+  .wt input { margin: 0; }
+  .wrow .chips.wbi { margin: 8px 0 0; align-items: center; font-size: 13px; color: var(--muted); }
   .task { position: relative; overflow: hidden; }
   .task .tbar { position: absolute; left: 0; bottom: 0; height: 4px; background: var(--accent); opacity: .7; }
   .task.done .ttime { color: var(--accent); }
@@ -344,7 +348,9 @@
         <li>모드에 맞게 "근무·출퇴근", "수업·등하교" 같은 이름이 바뀌어요. <b>모드마다 시간을 따로 기억해요.</b></li>
         <li><b>+ 모드 추가</b>로 나만의 모드(예: 🍼 육아, 💪 알바)를 만들고, ✕로 지워요. 지워도 기록과 통계는 그대로예요.</li>
         <li><span class="hh">📆 요일마다 다를 때</span></li>
-        <li>펼친 뒤 아래 <b>요일마다 시간이 달라요</b>에서 평소대로 / 시간이 달라요 / 쉬는 날을 골라요.</li>
+        <li>펼친 뒤 아래 <b>요일마다</b>를 열어요. 시간이 같은 요일끼리 한 줄이에요. <b>요일을 누르면 그 줄로 옮겨 가요.</b></li>
+        <li>토요일만 짧게 일하면 <b>+ 다른 시간 추가</b>를 누르고 [토]를 누른 뒤 시간을 골라요.</li>
+        <li>2주에 한 번이면 그 줄의 <b>격주</b>에 체크하고, 이번 주에 일정이 있는지 한 번만 골라요. 다음부터는 앱이 번갈아 계산해요.</li>
         <li><span class="hh">🌴 오늘만 다르게</span></li>
         <li>반차·연차·여행처럼 하루만 바뀔 때 눌러요. <b>날짜</b>를 바꾸면 다른 날도 미리 정하고, <b>이 날의 모드</b>로 그날만 다른 모드를 써요.</li>
         <li>그날이 지나면 저절로 원래대로 돌아와요. 미리 정해 둔 날은 맨 아래에서 고치거나 ✕로 취소해요.</li>
@@ -363,9 +369,10 @@
         <label><span data-l="out">퇴근길</span> (분)<input type="number" id="commuteOut" min="0" step="5" inputmode="numeric"></label>
       </div>
       <details id="weeklyBox">
-        <summary class="hint">📆 요일마다 시간이 달라요 (선택)</summary>
-        <p class="hint" style="margin:6px 0 0">예: 토요일은 9시~1시, 일요일은 쉬는 날. 위의 시간이 "평소대로"예요.</p>
+        <summary class="hint">📆 요일마다 (쉬는 날 · 다른 시간 · 격주)</summary>
+        <p class="hint" style="margin:6px 0 0">시간이 같은 요일끼리 한 줄이에요. 요일을 누르면 그 줄로 옮겨 가요.</p>
         <div id="weeklyRows"></div>
+        <div class="row"><button id="wAdd">+ 다른 시간 추가</button></div>
       </details>
     </details>
     <div class="row"><button id="ovBtn">오늘만 다르게</button></div>
@@ -516,7 +523,7 @@
 <script>
 const $ = id => document.getElementById(id);
 const FIELDS = ['wake', 'sleep', 'workStart', 'workEnd', 'commuteIn', 'commuteOut'];
-const DEFAULTS = { modeTimes: {}, weekly: {}, goals: {}, mode: '', customModes: [], keepAwake: true, statusNotif: false, goal: 25, focusGoals: { '휴식': 0 }, alert: 'vibrate', acts: ['독서', '공부', '휴식', '기도', '운동'], act: '독서', notionUrl: '', remindAt: '21:30', notifyOn: false, wake: '06:30', sleep: '23:30', workStart: '09:00', workEnd: '18:00', commuteIn: 40, commuteOut: 40 };
+const DEFAULTS = { modeTimes: {}, goals: {}, mode: '', customModes: [], keepAwake: true, statusNotif: false, goal: 25, focusGoals: { '휴식': 0 }, alert: 'vibrate', acts: ['독서', '공부', '휴식', '기도', '운동'], act: '독서', notionUrl: '', remindAt: '21:30', notifyOn: false, wake: '06:30', sleep: '23:30', workStart: '09:00', workEnd: '18:00', commuteIn: 40, commuteOut: 40 };
 
 function load(key, fallback) {
   try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; } catch (e) { return fallback; }
@@ -529,6 +536,28 @@ let settings = Object.assign({}, DEFAULTS, load('ft.settings', {}));
 let records = load('ft.records', {});
 // One-day changes to the work schedule, keyed by date: { workStart, workEnd, off, label }.
 let overrides = load('ft.overrides', {});
+migrateWeek();
+
+// Weekday plan for the main mode, { days, groups }: each day (0 = Sunday) is 'usual', 'off', or
+// the id of a group with its own hours. A biweekly group is on in weeks an even number of weeks
+// from its anchor Monday and a day off in between.
+function migrateWeek() {
+  if (settings.week) return;
+  const days = {}, groups = [];
+  for (let d = 0; d < 7; d++) {
+    const w = (settings.weekly || {})[d];
+    if (!w || w.type === 'same') days[d] = 'usual';
+    else if (w.type === 'off') days[d] = 'off';
+    else {
+      let g = groups.find(g => g.workStart === w.workStart && g.workEnd === w.workEnd);
+      if (!g) groups.push(g = { id: 'g' + (groups.length + 1), workStart: w.workStart, workEnd: w.workEnd, biweekly: false, anchor: '' });
+      days[d] = g.id;
+    }
+  }
+  settings.week = { days, groups };
+  delete settings.weekly;
+  store('ft.settings', settings);
+}
 
 const toMin = t => { const [h, m] = (t || '0:0').split(':').map(Number); return h * 60 + m; };
 const dateKey = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
@@ -554,20 +583,38 @@ const pick = o => Object.fromEntries(TIME_FIELDS.map(f => [f, o[f]]));
 // One date's schedule. Order: a change made for that date, then the weekday rule (main
 // mode only), then the usual settings.
 function dayPlan(key) {
-  const o = overrides[key] || {}, mode = o.mode || settings.mode, dow = new Date(key + 'T00:00').getDay();
+  const o = overrides[key] || {}, mode = o.mode || settings.mode;
   const t = timesFor(mode);
   let off = false, label = '';
   if (mode !== settings.mode) label = getMode(mode).icon + ' ' + getMode(mode).name;
   else {
-    const w = (settings.weekly || {})[dow];
-    if (w && w.type === 'off') { off = true; label = DAYS[dow] + '요일 · 쉬는 날'; }
-    if (w && w.type === 'custom') { t.workStart = w.workStart; t.workEnd = w.workEnd; label = DAYS[dow] + '요일 시간'; }
+    const w = weekRule(key);
+    if (w) { off = !!w.off; label = w.label; }
+    if (w && w.workStart) { t.workStart = w.workStart; t.workEnd = w.workEnd; }
   }
   if (o.workStart) t.workStart = o.workStart;
   if (o.workEnd) t.workEnd = o.workEnd;
   if (o.off !== undefined) off = !!o.off;
   if (o.label) label = o.label;
   return Object.assign({}, settings, t, { off, label, mode });
+}
+
+// Monday of a date's week, and whether a biweekly group is on in that week.
+function monday(key) {
+  const d = new Date(key + 'T00:00');
+  d.setDate(d.getDate() - (d.getDay() + 6) % 7);
+  return d;
+}
+const onWeek = (g, key) => Math.round((monday(key) - monday(g.anchor)) / 6048e5) % 2 === 0;
+
+// The weekday rule for a date, or null when it is a usual day.
+function weekRule(key) {
+  const dow = new Date(key + 'T00:00').getDay(), v = settings.week.days[dow];
+  if (v === 'off') return { off: true, label: DAYS[dow] + '요일 · 쉬는 날' };
+  const g = settings.week.groups.find(g => g.id === v);
+  if (!g) return null;
+  if (g.biweekly && !onWeek(g, key)) return { off: true, label: '격주 · 쉬는 주' };
+  return { workStart: g.workStart, workEnd: g.workEnd, label: DAYS[dow] + '요일 시간' + (g.biweekly ? ' (격주)' : '') };
 }
 
 // Today's schedule.
@@ -1008,31 +1055,98 @@ for (const id of ['ovStart', 'ovEnd']) $(id).addEventListener('change', () => {
   setOverride(o);
 });
 
-// Weekday rules for the main mode: same as usual, a day off, or different hours.
+// Weekday rows: the usual hours, each group with its own hours, and days off. Tapping a day
+// moves it into that row; tapping it again in its own row sends it to 쉬는 날 (or back to 평소).
 function renderWeekly() {
-  const box = $('weeklyRows');
+  const box = $('weeklyRows'), wk = settings.week, m = getMode(settings.mode || 'work');
+  const today = dateKey(new Date());
   box.innerHTML = '';
-  for (const dow of [1, 2, 3, 4, 5, 6, 0]) {
-    const w = settings.weekly[dow] || { type: 'same' };
+  const rows = [['usual']].concat(wk.groups.map(g => [g.id, g]), [['off']]);
+  for (const [id, g] of rows) {
     const row = document.createElement('div');
     row.className = 'wrow';
-    row.innerHTML = '<b></b><select><option value="same">평소대로</option><option value="custom">시간이 달라요</option><option value="off">쉬는 날</option></select>' +
-      '<div class="wt"><input type="time"><input type="time"></div>';
-    row.firstChild.textContent = DAYS[dow];
-    const sel = row.children[1], [a, b] = row.children[2].children;
-    sel.value = w.type;
-    a.value = w.workStart || settings.workStart; b.value = w.workEnd || settings.workEnd;
-    row.children[2].hidden = w.type !== 'custom';
-    const save = () => {
-      if (sel.value === 'same') delete settings.weekly[dow];
-      else settings.weekly[dow] = { type: sel.value, workStart: a.value || settings.workStart, workEnd: b.value || settings.workEnd };
-      store('ft.settings', settings);
-      row.children[2].hidden = sel.value !== 'custom';
-      render(); renderOverride(); renderDaySummary();
-    };
-    sel.onchange = save; a.onchange = save; b.onchange = save;
+    const head = document.createElement('div');
+    head.className = 'whead';
+    head.innerHTML = '<b></b><span class="hint"></span>';
+    head.firstChild.textContent = id === 'usual' ? m.icon + ' 평소' : id === 'off' ? '🌿 쉬는 날' : '🕘 다른 시간';
+    if (id === 'usual') head.children[1].id = 'wUsual';
+    if (g) {
+      const del = document.createElement('button');
+      del.textContent = '✕ 지우기';
+      del.onclick = () => {
+        for (const d in wk.days) if (wk.days[d] === id) wk.days[d] = 'usual';
+        wk.groups = wk.groups.filter(x => x !== g);
+        saveWeek();
+      };
+      head.appendChild(del);
+    }
+    row.appendChild(head);
+    const chips = document.createElement('div');
+    chips.className = 'chips wdays';
+    for (const d of [1, 2, 3, 4, 5, 6, 0]) {
+      const b = document.createElement('button');
+      b.className = 'chip' + (wk.days[d] === id ? ' on' : '');
+      b.textContent = DAYS[d];
+      b.onclick = () => { wk.days[d] = wk.days[d] !== id ? id : id === 'off' ? 'usual' : 'off'; saveWeek(); };
+      chips.appendChild(b);
+    }
+    row.appendChild(chips);
+    if (g) {
+      const t = document.createElement('div');
+      t.className = 'wt';
+      t.innerHTML = '<input type="time"><input type="time">';
+      const [a, b] = t.children;
+      a.value = g.workStart; b.value = g.workEnd;
+      a.onchange = b.onchange = () => { g.workStart = a.value || g.workStart; g.workEnd = b.value || g.workEnd; saveWeek(); };
+      row.appendChild(t);
+      const bi = document.createElement('label');
+      bi.className = 'check';
+      bi.innerHTML = '<input type="checkbox"> 격주 (2주에 한 번)';
+      bi.firstChild.checked = !!g.biweekly;
+      bi.firstChild.onchange = () => {
+        g.biweekly = bi.firstChild.checked;
+        if (g.biweekly && !g.anchor) g.anchor = dateKey(monday(today));
+        saveWeek();
+      };
+      row.appendChild(bi);
+      if (g.biweekly) {
+        const on = onWeek(g, today), choose = document.createElement('div');
+        choose.className = 'chips wbi';
+        choose.innerHTML = '<span>이번 주는</span><button class="chip"></button><button class="chip">쉬어요</button>';
+        const [, yes, no] = choose.children;
+        yes.textContent = (m.busy || '일정') + ' 있어요';
+        yes.classList.toggle('on', on); no.classList.toggle('on', !on);
+        const thisMon = monday(today), nextMon = new Date(thisMon);
+        nextMon.setDate(nextMon.getDate() + 7);
+        yes.onclick = () => { g.anchor = dateKey(thisMon); saveWeek(); };
+        no.onclick = () => { g.anchor = dateKey(nextMon); saveWeek(); };
+        row.appendChild(choose);
+      }
+    }
     box.appendChild(row);
   }
+  renderDaySummary();
+}
+function saveWeek() {
+  store('ft.settings', settings);
+  renderWeekly(); render(); renderOverride();
+}
+$('wAdd').onclick = () => {
+  settings.week.groups.push({ id: 'g' + Date.now().toString(36), workStart: settings.workStart, workEnd: settings.workEnd, biweekly: false, anchor: '' });
+  saveWeek();
+  toast('새 줄에서 요일을 누르고 시간을 골라요');
+};
+
+// Day names for a row, with runs of three or more written as 월~금.
+function dayNames(id) {
+  const ds = [1, 2, 3, 4, 5, 6, 0].filter(d => settings.week.days[d] === id), out = [];
+  for (let i = 0; i < ds.length;) {
+    let j = i;
+    while (j + 1 < ds.length && (ds[j + 1] + 6) % 7 === (ds[j] + 6) % 7 + 1) j++;
+    out.push(j - i >= 2 ? DAYS[ds[i]] + '~' + DAYS[ds[j]] : ds.slice(i, j + 1).map(d => DAYS[d]).join('·'));
+    i = j + 1;
+  }
+  return out.join('·');
 }
 $('note').addEventListener('input', () => saveToday());
 
@@ -1226,7 +1340,9 @@ function applyMode() {
 
 function renderDaySummary() {
   const l = L(settings.mode || 'work'), m = getMode(settings.mode || 'work');
-  const wk = Object.entries(settings.weekly || {}).map(([d, w]) => DAYS[d] + (w.type === 'off' ? ' 쉼' : ' ' + w.workStart + '~' + w.workEnd));
+  const wk = settings.week.groups.filter(g => dayNames(g.id)).map(g => dayNames(g.id) + ' ' + g.workStart + '~' + g.workEnd + (g.biweekly ? ' 격주' : ''));
+  if (dayNames('off')) wk.push(dayNames('off') + ' 쉼');
+  if ($('wUsual')) $('wUsual').textContent = dayNames('usual') ? settings.workStart + '~' + settings.workEnd + ' (위에서 정한 시간)' : '';
   $('daySummary').textContent = m.icon + ' ' + m.name + ' · ' + l.busy + ' ' + settings.workStart + '~' + settings.workEnd +
     ' · ' + l.go + ' ' + fmt((+settings.commuteIn || 0) + (+settings.commuteOut || 0)) + ' · 취침 ' + settings.sleep +
     (wk.length ? ' · ' + wk.join(', ') : '');
@@ -1244,9 +1360,11 @@ function chooseMode(key, firstRun) {
   settings.mode = key;
   if (fresh && m.acts) { settings.acts = m.acts.slice(); settings.act = m.acts[0]; }
   if (fresh && m.times) Object.assign(settings, m.times);
+  // A new user starts with the weekend off; a later mode switch keeps their weekday plan.
+  if (fresh && Object.values(settings.week.days).every(v => v === 'usual')) settings.week.days[0] = settings.week.days[6] = 'off';
   FIELDS.forEach(f => { $(f).value = settings[f]; });
   store('ft.settings', settings);
-  applyMode(); renderOverride(); render();
+  applyMode(); renderOverride(); render(); renderWeekly();
   if (fresh) $('dayBox').open = true;
   toast(m.icon + ' ' + m.name + ' 모드로 바꿨어요');
 }
@@ -1580,7 +1698,7 @@ $('restoreFile').onchange = async () => {
   if (data.memo && !$('memo').value.trim()) { $('memo').value = data.memo; store('ft.memo', data.memo); renderMemo(); }
   store('ft.overrides', overrides);
   // On a new phone take the old settings too; otherwise only bring over missing activities.
-  if (fresh && data.settings) settings = Object.assign({}, DEFAULTS, data.settings);
+  if (fresh && data.settings) { settings = Object.assign({}, DEFAULTS, data.settings); migrateWeek(); }
   else if (data.settings && Array.isArray(data.settings.acts)) {
     for (const a of data.settings.acts) if (!settings.acts.includes(a)) settings.acts.push(a);
   }
@@ -1590,7 +1708,7 @@ $('restoreFile').onchange = async () => {
   $('remindAt').value = settings.remindAt;
   $('notionUrl').value = settings.notionUrl;
   $('note').value = (records[dateKey(new Date())] || {}).note || '';
-  render(); renderBackupInfo(); renderOverride(); applyMode(); $('keepAwake').checked = settings.keepAwake;
+  render(); renderBackupInfo(); renderOverride(); applyMode(); renderWeekly(); $('keepAwake').checked = settings.keepAwake;
   toast(added + '일치 기록을 불러왔어요');
 };
 
