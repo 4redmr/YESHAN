@@ -179,13 +179,18 @@
   .pet .eyes { transform-box: fill-box; transform-origin: center; animation: blink 4.5s infinite; }
   .pet .wear { position: absolute; top: 2px; left: 50%; transform: translateX(-50%) rotate(-8deg); font-size: 34px; z-index: 1; }
   .pet .wear.neck { top: 92px; transform: translateX(-50%); }
+  .pet .wear.eyes { top: 44px; transform: translateX(-50%); font-size: 40px; }
+  .deco { position: absolute; inset: 0; pointer-events: none; }
+  .deco span { position: absolute; transform: translate(-50%, -50%); line-height: 1; filter: drop-shadow(0 2px 0 rgba(74, 59, 47, .25)); }
+  .shop h3 { grid-column: 1 / -1; margin: 10px 0 0; font: 700 19px "Gaegu", "Gowun Dodum", sans-serif; }
+  .shop p { grid-column: 1 / -1; margin: 0; font-size: 13px; color: var(--muted); }
   .pet.hop { animation: hop .5s; }
   @keyframes hop { 50% { transform: translateY(-14px) rotate(-4deg); } }
   @keyframes bob { 50% { transform: translateY(-4px) scale(1.02, .98); } }
   @keyframes blink { 0%, 93%, 100% { transform: scaleY(1); } 96% { transform: scaleY(.1); } }
   @media (prefers-reduced-motion: reduce) { .pet svg, .pet .eyes { animation: none; } }
-  .room { overflow: hidden; min-height: 290px; }
-  .room > :not(.scene) { position: relative; z-index: 1; }
+  .room { overflow: hidden; min-height: 320px; }
+  .room > :not(.scene):not(.deco) { position: relative; z-index: 1; }
   .scene { position: absolute; inset: 0; }
   .scene svg { width: 100%; height: 100%; display: block; }
   .homes { display: grid; gap: 8px; margin-top: 10px; }
@@ -194,8 +199,7 @@
   .homes button.here { border: 2px solid var(--accent); background: color-mix(in srgb, var(--accent) 16%, var(--card)); }
   .homes button.next small { color: var(--accent); font-weight: 700; }
   .homes button.locked { opacity: .55; }
-  .floor { font-size: 28px; letter-spacing: 6px; min-height: 36px; margin-top: 2px; padding-bottom: 6px;
-    background: linear-gradient(transparent 70%, color-mix(in srgb, var(--accent) 22%, transparent) 70%); }
+  .floor { height: 64px; }
   #friendCard .sumline, #friendCard summary, .shop button { font-family: "Gaegu", "Gowun Dodum", sans-serif; font-size: 18px; }
   #friendCard .sumline { font-size: 17px; gap: 8px; }
   #friendCard .sumline span { white-space: nowrap; }
@@ -377,15 +381,17 @@
     <div class="helpbox" id="help-friend" hidden>
       <ul>
         <li>할 일 시간을 재거나 기록하면 <b>1분에 별 ⭐ 1개</b>가 쌓여요.</li>
-        <li>모은 별로 <b>별 상점</b>에서 친구 옷과 방 물건을 사요. 산 옷은 눌러서 입히고 벗겨요.</li>
+        <li>모은 별로 <b>별 상점</b>에서 친구 옷과 방 물건을 사요. 산 물건은 방 곳곳에 놓이고, 산 옷은 눌러서 입히고 벗겨요.</li>
+        <li>집마다 <b>그 집에만 놓는 꾸미기 물건</b>이 따로 있어요. 이사하면 새 물건이 나와요.</li>
         <li>기록한 날이 쌓일수록 친구와 더 친해져요. 목표는 없어요. 5분만 기록해도 별을 받아요.</li>
-        <li>별을 모아 <b>이사하기</b>에서 단칸방 → 원룸 → 내 집 → 아파트 → 땅 → 산 → 마을까지 한 칸씩 넓혀 가요.</li>
+        <li>별을 모아 <b>이사하기</b>에서 단칸방 → 원룸 → 내 집 → 아파트 → 땅 → 산 → 마을까지 한 칸씩 넓혀 가요. 전에 살던 집에는 <b>놀러 가기</b>로 언제든 돌아가요.</li>
         <li><b>친구 바꾸기</b>에서 동물과 이름을 바꿔요. 바꿔도 별과 물건은 그대로예요.</li>
         <li>기록을 지우거나 줄이면 별도 같이 줄어요.</li>
       </ul>
     </div>
     <div class="room sketch">
       <div class="scene" id="scene"></div>
+      <div class="deco" id="deco"></div>
       <div class="bubble sketch hand" id="friendSay"></div><br>
       <button class="pet" id="pet" aria-label="친구 쓰다듬기"><span class="wear" id="petWear"></span><span id="petFace"></span></button>
       <div class="floor" id="floor"></div>
@@ -1331,24 +1337,47 @@ function petSVG(kind, mini) {
     '<g filter="url(#wob' + (mini ? 'm' : '') + ')" fill="' + f + '" stroke="' + INK + '" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">' +
     (mini ? '' : body) + a.ears + head + (a.extra || '') + mouth + face + '</g></svg>';
 }
-const NECK = ['scarf'];
+// Where things sit in the room, as [left %, top %, size px]: wall, middle and floor spots.
+const SPOT = {
+  W1: [10, 40, 30], W2: [27, 36, 28], W3: [74, 38, 28], W4: [90, 42, 28],
+  M1: [10, 63, 34], M2: [25, 64, 32], M3: [76, 63, 32], M4: [91, 62, 42],
+  F1: [9, 87, 36], F2: [21, 91, 28], F3: [33, 93, 26], F4: [44, 94, 22], F5: [57, 94, 24], F6: [68, 92, 28], F7: [79, 91, 24], F8: [91, 86, 40]
+};
+const NECK = ['scarf'], EYES = ['glasses', 'shades'];
+// Clothes are worn one at a time. Room things (spot) show in every home; a home's own things
+// (home: index) show only there and can be bought once the friend has lived there.
 const SHOP = [
-  { id: 'tea', e: '☕', n: '따뜻한 차', p: 60, room: true },
   { id: 'ribbon', e: '🎀', n: '리본', p: 80 },
-  { id: 'plant', e: '🪴', n: '화분', p: 100, room: true },
   { id: 'cap', e: '🧢', n: '모자', p: 120 },
-  { id: 'books', e: '📚', n: '책', p: 150, room: true },
+  { id: 'flower', e: '🌸', n: '꽃핀', p: 150 },
   { id: 'scarf', e: '🧣', n: '목도리', p: 200 },
-  { id: 'candle', e: '🕯️', n: '촛불', p: 200, room: true },
-  { id: 'picture', e: '🖼️', n: '그림', p: 250, room: true },
+  { id: 'glasses', e: '👓', n: '안경', p: 250 },
   { id: 'phones', e: '🎧', n: '헤드폰', p: 300 },
-  { id: 'teddy', e: '🧸', n: '곰 인형', p: 300, room: true },
-  { id: 'sofa', e: '🛋️', n: '소파', p: 400, room: true },
-  { id: 'moon', e: '🌙', n: '달 조명', p: 500, room: true },
+  { id: 'shades', e: '🕶️', n: '선글라스', p: 400 },
+  { id: 'tophat', e: '🎩', n: '신사 모자', p: 500 },
   { id: 'crown', e: '👑', n: '왕관', p: 600 },
-  { id: 'piano', e: '🎹', n: '피아노', p: 800, room: true },
-  { id: 'tree', e: '🌳', n: '나무', p: 1000, room: true }
+  { id: 'grad', e: '🎓', n: '학사모', p: 700 },
+  { id: 'tea', e: '☕', n: '따뜻한 차', p: 60, spot: 'F4' },
+  { id: 'plant', e: '🪴', n: '화분', p: 100, spot: 'M1' },
+  { id: 'books', e: '📚', n: '책', p: 150, spot: 'F3' },
+  { id: 'candle', e: '🕯️', n: '촛불', p: 200, spot: 'F7' },
+  { id: 'picture', e: '🖼️', n: '그림', p: 250, spot: 'W1' },
+  { id: 'teddy', e: '🧸', n: '곰 인형', p: 300, spot: 'F6' },
+  { id: 'sofa', e: '🛋️', n: '소파', p: 400, spot: 'F8' },
+  { id: 'moon', e: '🌙', n: '달 조명', p: 500, spot: 'W4' },
+  { id: 'piano', e: '🎹', n: '피아노', p: 800, spot: 'F1' },
+  { id: 'tree', e: '🌳', n: '나무', p: 1000, spot: 'M4' },
+  ...[
+    [['calendar', '🗓️', '달력', 50], ['socks', '🧦', '양말 빨래', 60], ['radio', '📻', '라디오', 80], ['basket', '🧺', '빨래 바구니', 90], ['quilt', '🛏️', '이불', 120], ['ramen', '🍜', '컵라면', 40]],
+    [['mirror', '🪞', '거울', 150], ['vase', '🌷', '꽃병', 120], ['computer', '🖥️', '컴퓨터', 250], ['fish', '🐟', '어항', 200], ['bed', '🛏️', '침대', 300], ['cupcake', '🧁', '컵케이크', 100]],
+    [['bird', '🐦', '작은 새', 150], ['chime', '🎐', '풍경', 200], ['sunflower', '🌻', '해바라기', 250], ['mailbox', '📬', '우체통', 300], ['bike', '🚲', '자전거', 400], ['tulip', '🌷', '튤립', 150]],
+    [['balloon', '🎈', '풍선', 200], ['plane', '✈️', '비행기', 300], ['slide', '🛝', '미끄럼틀', 500], ['car', '🚗', '자동차', 600], ['ball', '🏀', '농구공', 250], ['kitty', '🐈', '길고양이', 300]],
+    [['butterfly', '🦋', '나비', 250], ['kite', '🪁', '연', 400], ['carrot', '🥕', '텃밭', 500], ['hen', '🐔', '닭', 600], ['apple', '🍎', '사과', 450], ['daisy', '🌼', '꽃밭', 300]],
+    [['rainbow', '🌈', '무지개', 600], ['cloud', '☁️', '구름', 300], ['tent', '⛺', '텐트', 800], ['deer', '🦌', '사슴', 900], ['fire', '🔥', '모닥불', 500], ['mushroom', '🍄', '버섯', 400]],
+    [['fireworks', '🎆', '불꽃놀이', 1200], ['dove', '🕊️', '비둘기', 600], ['fountain', '⛲', '분수', 1500], ['carousel', '🎠', '회전목마', 1800], ['bread', '🥐', '빵', 700], ['gift', '🎁', '선물', 900]]
+  ].flatMap((set, home) => set.map(([id, e, n, p], k) => ({ id, e, n, p, home, spot: ['W2', 'W3', 'M2', 'M3', 'F2', 'F5'][k] })))
 ];
+const isThing = it => !!it.spot;
 // Homes the friend moves through, bought in order with stars. Each draws its own scene
 // behind the friend: three rooms indoors, then ever wider places outdoors.
 const HOMES = [
@@ -1416,21 +1445,30 @@ function renderFriend() {
   if ($('petFace').dataset.kind !== f.pet) { $('petFace').innerHTML = petSVG(f.pet); $('petFace').dataset.kind = f.pet; }
   $('petWear').textContent = (SHOP.find(i => i.id === f.wear) || {}).e || '';
   $('petWear').classList.toggle('neck', NECK.includes(f.wear));
-  $('floor').textContent = SHOP.filter(i => i.room && f.owned.includes(i.id)).map(i => i.e).join(' ');
+  $('petWear').classList.toggle('eyes', EYES.includes(f.wear));
   $('stars').textContent = '⭐ ' + starsLeft();
   $('friendDays').textContent = STAGES[stage][1] + ' · 함께한 날 ' + days + '일';
-  const home = f.home || 0;
+  const home = f.home || 0, maxHome = Math.max(f.maxHome || 0, home);
+  $('deco').innerHTML = '';
+  for (const it of SHOP) {
+    if (!isThing(it) || !f.owned.includes(it.id) || (it.home !== undefined && it.home !== home)) continue;
+    const [x, y, size] = SPOT[it.spot], el = document.createElement('span');
+    el.textContent = it.e;
+    el.style.cssText = 'left:' + x + '%;top:' + y + '%;font-size:' + size + 'px';
+    $('deco').appendChild(el);
+  }
   if ($('scene').dataset.home !== String(home)) { $('scene').innerHTML = sceneSVG(home); $('scene').dataset.home = home; }
   $('friendTitle').textContent = name + ' · 🏠 ' + HOMES[home].n;
   const homes = $('homes');
   homes.innerHTML = '';
   HOMES.forEach((h, i) => {
     const b = document.createElement('button');
-    b.className = i === home ? 'here' : i === home + 1 ? 'next' : i > home ? 'locked' : '';
+    b.className = i === home ? 'here' : i === maxHome + 1 ? 'next' : i > maxHome ? 'locked' : '';
     b.innerHTML = '<span></span><small></small>';
-    b.firstChild.textContent = (i > home + 1 ? '🔒 ' : '') + h.n;
-    b.lastChild.textContent = i === home ? '지금 사는 곳' : i < home ? '살았던 곳' : '⭐ ' + h.p.toLocaleString() + (i === home + 1 ? ' 이사하기' : '');
-    if (i === home + 1) b.onclick = () => moveHome(i);
+    b.firstChild.textContent = (i > maxHome + 1 ? '🔒 ' : '') + h.n;
+    b.lastChild.textContent = i === home ? '지금 있는 곳' : i <= maxHome ? '놀러 가기' : '⭐ ' + h.p.toLocaleString() + (i === maxHome + 1 ? ' 이사하기' : '');
+    if (i !== home && i <= maxHome) b.onclick = () => { f.home = i; store('ft.settings', settings); renderFriend(); hop(); };
+    if (i === maxHome + 1) b.onclick = () => moveHome(i);
     homes.appendChild(b);
   });
   $('friendSay').textContent = friendLine();
@@ -1440,16 +1478,25 @@ function renderFriend() {
   }
   const shop = $('shop');
   shop.innerHTML = '';
-  for (const it of SHOP) {
-    const b = document.createElement('button'), own = f.owned.includes(it.id);
-    b.className = own ? 'owned' + (f.wear === it.id ? ' on' : '') : '';
-    b.innerHTML = '<b></b><span></span><small></small>';
-    b.children[0].textContent = it.e;
-    b.children[1].textContent = it.n;
-    b.children[2].textContent = !own ? '⭐ ' + it.p : it.room ? '방에 있어요' : f.wear === it.id ? '입는 중' : '입히기';
-    b.onclick = () => shopTap(it);
-    shop.appendChild(b);
-  }
+  const section = (title, items, note) => {
+    const h = document.createElement('h3');
+    h.textContent = title;
+    shop.appendChild(h);
+    if (note) { const p = document.createElement('p'); p.textContent = note; shop.appendChild(p); }
+    for (const it of items) {
+      const b = document.createElement('button'), own = f.owned.includes(it.id);
+      b.className = own ? 'owned' + (f.wear === it.id ? ' on' : '') : '';
+      b.innerHTML = '<b></b><span></span><small></small>';
+      b.children[0].textContent = it.e;
+      b.children[1].textContent = it.n;
+      b.children[2].textContent = !own ? '⭐ ' + it.p.toLocaleString() : isThing(it) ? '놓여 있어요' : f.wear === it.id ? '입는 중' : '입히기';
+      b.onclick = () => shopTap(it);
+      shop.appendChild(b);
+    }
+  };
+  section('🏡 ' + HOMES[home].n + ' 꾸미기', SHOP.filter(i => i.home === home), '이 집에만 놓여요.' + (maxHome < HOMES.length - 1 ? ' 다음 집으로 이사하면 새 물건이 나와요.' : ''));
+  section('🧸 어느 집에서나', SHOP.filter(i => isThing(i) && i.home === undefined));
+  section('👕 옷', SHOP.filter(i => !isThing(i)));
   for (const c of $('petKinds').children) c.classList.toggle('on', c.dataset.pet === (f.pet || 'cat'));
 }
 
@@ -1457,7 +1504,7 @@ function moveHome(i) {
   const f = friend(), h = HOMES[i], left = starsLeft();
   if (left < h.p) { toast('별이 ' + (h.p - left).toLocaleString() + '개 더 필요해요'); return; }
   if (!confirm('⭐ ' + h.p.toLocaleString() + '개로 ' + h.to + ' 이사할까요?')) return;
-  f.spent += h.p; f.home = i;
+  f.spent += h.p; f.home = i; f.maxHome = i;
   store('ft.settings', settings);
   renderFriend(); hop();
   toast('🎉 ' + h.to + ' 이사했어요!');
@@ -1467,14 +1514,14 @@ function moveHome(i) {
 function shopTap(it) {
   const f = friend();
   if (f.owned.includes(it.id)) {
-    if (it.room) return;
+    if (isThing(it)) return;
     f.wear = f.wear === it.id ? '' : it.id;
   } else {
     const left = starsLeft();
     if (left < it.p) { toast('별이 ' + (it.p - left) + '개 더 필요해요'); return; }
     if (!confirm('⭐ ' + it.p + '개로 ' + it.e + ' ' + it.n + '을(를) 살까요?')) return;
     f.spent += it.p; f.owned.push(it.id);
-    if (!it.room) f.wear = it.id;
+    if (!isThing(it)) f.wear = it.id;
     toast(it.e + ' ' + it.n + ' 샀어요!');
   }
   store('ft.settings', settings);
