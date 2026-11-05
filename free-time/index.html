@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>나의 시간</title>
 <link rel="manifest" href="manifest.webmanifest">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&family=Gowun+Dodum&display=swap">
 <link rel="icon" type="image/png" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <meta name="theme-color" content="#101114">
@@ -28,13 +31,15 @@
   * { box-sizing: border-box; }
   body {
     margin: 0; background: var(--bg); color: var(--text);
-    font: 16px/1.5 -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+    font: 16px/1.5 "Gowun Dodum", -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
   }
+  /* Hand-written font for titles, the big number and the friend card. */
+  h1, h2, .big, .hand { font-family: "Gaegu", "Gowun Dodum", sans-serif; font-weight: 700; }
   main { max-width: 560px; margin: 0 auto; padding: max(24px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(48px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)); }
-  h1 { font-size: 20px; margin: 0 0 4px; }
+  h1 { font-size: 26px; margin: 0 0 4px; }
   .sub { color: var(--muted); font-size: 14px; margin: 0 0 20px; }
   .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 18px; margin-bottom: 14px; }
-  .big { font-size: 44px; font-weight: 700; color: var(--accent); line-height: 1.1; font-variant-numeric: tabular-nums; }
+  .big { font-size: 52px; font-weight: 700; color: var(--accent); line-height: 1.1; font-variant-numeric: tabular-nums; }
   .label { color: var(--muted); font-size: 13px; }
   .bar { display: flex; height: 14px; border-radius: 7px; overflow: hidden; margin: 14px 0 8px; background: var(--line); }
   .bar span { display: block; height: 100%; }
@@ -55,7 +60,7 @@
     background: var(--bg); color: var(--text); cursor: pointer;
   }
   button.primary { background: var(--accent); border-color: var(--accent); color: #17150f; font-weight: 600; flex: 1; }
-  h2 { font-size: 15px; margin: 0 0 12px; }
+  h2 { font-size: 21px; margin: 0 0 12px; }
   .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; text-align: center; }
   .stats b { display: block; font-size: 17px; white-space: nowrap; font-variant-numeric: tabular-nums; }
   ul { list-style: none; margin: 0; padding: 0; }
@@ -162,18 +167,35 @@
   .wt { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
   .wt input { margin: 0; }
   .wrow .chips.wbi { margin: 8px 0 0; align-items: center; font-size: 13px; color: var(--muted); }
-  .room { border-radius: 14px; padding: 14px 12px 10px; text-align: center; background: color-mix(in srgb, var(--accent) 10%, var(--bg)); }
-  .bubble { display: inline-block; max-width: 92%; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 8px 12px; font-size: 14px; margin-bottom: 18px; }
-  .pet { position: relative; display: inline-block; font-size: 64px; line-height: 1; padding: 0; border: 0; background: none; }
-  .pet .wear { position: absolute; top: -20px; left: 50%; transform: translateX(-50%); font-size: 30px; }
+  /* Wobbly "drawn with a pen" corners for the friend card. */
+  .sketch { border: 2px solid color-mix(in srgb, var(--text) 55%, transparent); border-radius: 255px 18px 225px 18px / 18px 225px 18px 255px; }
+  .room { position: relative; padding: 14px 12px 4px; text-align: center; background: color-mix(in srgb, var(--accent) 12%, var(--bg)); }
+  .bubble { position: relative; display: inline-block; max-width: 92%; background: var(--card); padding: 6px 14px; font-size: 19px; line-height: 1.3; margin-bottom: 12px; }
+  .bubble::after { content: ""; position: absolute; left: 50%; bottom: -9px; width: 14px; height: 14px; background: var(--card);
+    border-right: 2px solid color-mix(in srgb, var(--text) 55%, transparent); border-bottom: 2px solid color-mix(in srgb, var(--text) 55%, transparent);
+    transform: translateX(-50%) rotate(45deg); }
+  .pet { position: relative; display: inline-block; width: 140px; height: 140px; padding: 0; border: 0; background: none; }
+  .pet svg { width: 100%; height: 100%; animation: bob 2.6s ease-in-out infinite; overflow: visible; }
+  .pet .eyes { transform-box: fill-box; transform-origin: center; animation: blink 4.5s infinite; }
+  .pet .wear { position: absolute; top: 2px; left: 50%; transform: translateX(-50%) rotate(-8deg); font-size: 34px; z-index: 1; }
+  .pet .wear.neck { top: 92px; transform: translateX(-50%); }
   .pet.hop { animation: hop .5s; }
-  @keyframes hop { 50% { transform: translateY(-12px); } }
-  .floor { font-size: 26px; letter-spacing: 4px; min-height: 32px; margin-top: 8px; }
+  @keyframes hop { 50% { transform: translateY(-14px) rotate(-4deg); } }
+  @keyframes bob { 50% { transform: translateY(-4px) scale(1.02, .98); } }
+  @keyframes blink { 0%, 93%, 100% { transform: scaleY(1); } 96% { transform: scaleY(.1); } }
+  @media (prefers-reduced-motion: reduce) { .pet svg, .pet .eyes { animation: none; } }
+  .floor { font-size: 28px; letter-spacing: 6px; min-height: 36px; margin-top: 2px; padding-bottom: 6px;
+    background: linear-gradient(transparent 70%, color-mix(in srgb, var(--accent) 22%, transparent) 70%); }
+  #friendCard .sumline, #friendCard summary, .shop button { font-family: "Gaegu", "Gowun Dodum", sans-serif; font-size: 18px; }
+  #friendCard .sumline { font-size: 17px; gap: 8px; }
+  #friendCard .sumline span { white-space: nowrap; }
+  #petKinds .chip { display: inline-flex; align-items: center; gap: 4px; font-family: "Gaegu", sans-serif; font-size: 17px; padding: 3px 12px 3px 6px; }
+  #petKinds svg { width: 30px; height: 30px; }
   .shop { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 10px; }
-  .shop button { padding: 10px 4px; border-radius: 12px; line-height: 1.3; font-size: 13px; }
+  .shop button { padding: 10px 4px; line-height: 1.15; }
   .shop button b { display: block; font-size: 26px; font-weight: 400; }
   .shop button small { display: block; color: var(--muted); }
-  .shop button.owned { border-color: var(--accent); }
+  .shop button.owned { border-color: var(--accent); border-width: 2px; }
   .shop button.on { background: color-mix(in srgb, var(--accent) 16%, var(--card)); }
   .task { position: relative; overflow: hidden; }
   .task .tbar { position: absolute; left: 0; bottom: 0; height: 4px; background: var(--accent); opacity: .7; }
@@ -340,8 +362,8 @@
     </details>
   </section>
 
-  <section class="card">
-    <h2><span id="friendTitle">🐱 나의 시간 친구</span> <button class="helpbtn" data-help="friend" aria-label="사용법 보기">?</button></h2>
+  <section class="card" id="friendCard">
+    <h2><span id="friendTitle">나의 시간 친구</span> <button class="helpbtn" data-help="friend" aria-label="사용법 보기">?</button></h2>
     <div class="helpbox" id="help-friend" hidden>
       <ul>
         <li>할 일 시간을 재거나 기록하면 <b>1분에 별 ⭐ 1개</b>가 쌓여요.</li>
@@ -351,9 +373,9 @@
         <li>기록을 지우거나 줄이면 별도 같이 줄어요.</li>
       </ul>
     </div>
-    <div class="room">
-      <div class="bubble" id="friendSay"></div><br>
-      <button class="pet" id="pet" aria-label="친구 쓰다듬기"><span class="wear" id="petWear"></span><span id="petFace">🐱</span></button>
+    <div class="room sketch">
+      <div class="bubble sketch hand" id="friendSay"></div><br>
+      <button class="pet" id="pet" aria-label="친구 쓰다듬기"><span class="wear" id="petWear"></span><span id="petFace"></span></button>
       <div class="floor" id="floor"></div>
     </div>
     <div class="sumline"><span>내 별 <b id="stars">⭐ 0</b></span><span id="friendDays"></span></div>
@@ -1262,6 +1284,37 @@ function stopTimer(minutes, quiet, reason) {
 // 나의 시간 친구: every recorded minute is a star, and stars buy clothes and room things. Stars
 // come from the records, so fixing or deleting minutes changes them; spent stars are kept.
 const PETS = { cat: ['🐱', '고양이'], rabbit: ['🐰', '토끼'], bear: ['🐻', '곰'], chick: ['🐥', '병아리'], sheep: ['🐑', '양'], dog: ['🐶', '강아지'] };
+
+// Hand-drawn friends: simple shapes in a dark pen line, roughened by a displacement filter.
+const INK = '#4a3b2f';
+const PET_ART = {
+  cat: { fill: '#f4c58f', ears: '<path d="M34 42 L38 14 L58 32Z M86 42 L82 14 L62 32Z"/><path d="M40 34 L41 22 L50 31Z M80 34 L79 22 L70 31Z" fill="#f6a6a6" stroke="none"/>',
+    extra: '<path d="M22 62 h14 M22 70 l14 -3 M98 62 h-14 M98 70 l-14 -3" fill="none" stroke-width="2"/>' },
+  rabbit: { fill: '#fbf7f0', ears: '<ellipse cx="46" cy="18" rx="9" ry="22"/><ellipse cx="74" cy="18" rx="9" ry="22"/><ellipse cx="46" cy="20" rx="4" ry="14" fill="#f6a6a6" stroke="none"/><ellipse cx="74" cy="20" rx="4" ry="14" fill="#f6a6a6" stroke="none"/>' },
+  bear: { fill: '#c8936a', ears: '<circle cx="34" cy="32" r="11"/><circle cx="86" cy="32" r="11"/><circle cx="34" cy="32" r="5" fill="#a6714d" stroke="none"/><circle cx="86" cy="32" r="5" fill="#a6714d" stroke="none"/>',
+    extra: '<ellipse cx="60" cy="70" rx="13" ry="9" fill="#ead2b8" stroke-width="2"/>' },
+  chick: { fill: '#ffd95a', ears: '<path d="M56 26 q4 -14 6 0 q4 -12 6 2" fill="none"/>',
+    extra: '<path d="M54 66 l6 7 l6 -7z" fill="#f29b38" stroke-width="2"/>', mouth: '' },
+  sheep: { fill: '#fbf7f0', ears: '<ellipse cx="26" cy="56" rx="12" ry="6" fill="#d9c7b5" transform="rotate(-20 26 56)"/><ellipse cx="94" cy="56" rx="12" ry="6" fill="#d9c7b5" transform="rotate(20 94 56)"/>',
+    head: '<circle cx="60" cy="30" r="12"/><circle cx="44" cy="36" r="11"/><circle cx="76" cy="36" r="11"/><ellipse cx="60" cy="60" rx="26" ry="26" fill="#ead9c6"/>',
+    body: '<path d="M30 100 q-6 -16 10 -20 q6 -10 20 -6 q14 -4 20 6 q16 4 10 20 q-4 14 -30 14 q-26 0 -30 -14z"/>' },
+  dog: { fill: '#e8c9a0', ears: '<path d="M32 36 q-14 2 -12 30 q10 2 16 -14z M88 36 q14 2 12 30 q-10 2 -16 -14z" fill="#a6714d"/>',
+    extra: '<ellipse cx="60" cy="66" rx="5" ry="3.5" fill="' + INK + '"/>' }
+};
+function petSVG(kind, mini) {
+  const a = PET_ART[kind] || PET_ART.cat, f = a.fill;
+  const head = a.head || '<circle cx="60" cy="58" r="32"/>';
+  const body = a.body || '<ellipse cx="60" cy="100" rx="30" ry="18"/>';
+  const mouth = a.mouth !== undefined ? a.mouth : '<path d="M53 72 q3.5 4 7 0 q3.5 4 7 0" fill="none" stroke-width="2.5"/>';
+  const face = '<g class="eyes"><ellipse cx="48" cy="58" rx="3.6" ry="4.6" fill="' + INK + '" stroke="none"/><ellipse cx="72" cy="58" rx="3.6" ry="4.6" fill="' + INK + '" stroke="none"/>' +
+    '<circle cx="49.2" cy="56.4" r="1.3" fill="#fff" stroke="none"/><circle cx="73.2" cy="56.4" r="1.3" fill="#fff" stroke="none"/></g>' +
+    '<ellipse cx="39" cy="68" rx="6" ry="3.6" fill="#f6a6a6" opacity=".75" stroke="none"/><ellipse cx="81" cy="68" rx="6" ry="3.6" fill="#f6a6a6" opacity=".75" stroke="none"/>';
+  return '<svg viewBox="0 0 120 124" aria-hidden="true"><defs><filter id="wob' + (mini ? 'm' : '') + '"><feTurbulence type="fractalNoise" baseFrequency=".045" numOctaves="2" seed="4"/>' +
+    '<feDisplacementMap in="SourceGraphic" scale="' + (mini ? 2 : 3.5) + '"/></filter></defs>' +
+    '<g filter="url(#wob' + (mini ? 'm' : '') + ')" fill="' + f + '" stroke="' + INK + '" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">' +
+    (mini ? '' : body) + a.ears + head + (a.extra || '') + mouth + face + '</g></svg>';
+}
+const NECK = ['scarf'];
 const SHOP = [
   { id: 'tea', e: '☕', n: '따뜻한 차', p: 60, room: true },
   { id: 'ribbon', e: '🎀', n: '리본', p: 80 },
@@ -1297,9 +1350,10 @@ function renderFriend() {
   const f = friend(), [face, kind] = PETS[f.pet] || PETS.cat, name = f.name || kind;
   const days = Object.values(records).filter(r => usedTotal(r.acts) > 0).length;
   const stage = STAGES.reduce((a, [d], i) => days >= d ? i : a, 0);
-  $('friendTitle').textContent = face + ' ' + name;
-  $('petFace').textContent = face;
+  $('friendTitle').textContent = name;
+  if ($('petFace').dataset.kind !== f.pet) { $('petFace').innerHTML = petSVG(f.pet); $('petFace').dataset.kind = f.pet; }
   $('petWear').textContent = (SHOP.find(i => i.id === f.wear) || {}).e || '';
+  $('petWear').classList.toggle('neck', NECK.includes(f.wear));
   $('floor').textContent = SHOP.filter(i => i.room && f.owned.includes(i.id)).map(i => i.e).join(' ');
   $('stars').textContent = '⭐ ' + starsLeft();
   $('friendDays').textContent = STAGES[stage][1] + ' · 함께한 날 ' + days + '일';
@@ -1349,7 +1403,8 @@ const PET_CHEERS = ['헤헤, 간지러워!', '오늘도 같이 있어 줘서 좋
 $('pet').onclick = () => { hop(); $('friendSay').textContent = PET_CHEERS[Math.floor(Math.random() * PET_CHEERS.length)]; };
 for (const [key, [face, kind]] of Object.entries(PETS)) {
   const c = document.createElement('button');
-  c.className = 'chip'; c.dataset.pet = key; c.textContent = face + ' ' + kind;
+  c.className = 'chip'; c.dataset.pet = key; c.innerHTML = petSVG(key, true) + '<span></span>';
+  c.lastChild.textContent = kind;
   c.onclick = () => { friend().pet = key; store('ft.settings', settings); renderFriend(); hop(); };
   $('petKinds').appendChild(c);
 }
