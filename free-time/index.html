@@ -1379,12 +1379,13 @@ const eyes = (x1, x2, y, r) => { r = r || 1; return '<g class="eyes"><ellipse cx
   '<circle cx="' + (x1 + .8) + '" cy="' + (y - 1.2) + '" r=".9" fill="#fff" stroke="none"/><circle cx="' + (x2 + .9) + '" cy="' + (y - 1.3) + '" r="1" fill="#fff" stroke="none"/></g>'; };
 const cheek = (x, y) => '<ellipse cx="' + x + '" cy="' + y + '" rx="4.5" ry="2.6" fill="#f6a6a6" opacity=".7" stroke="none"/>';
 const g = (cls, d, fill) => '<path class="' + cls + '" d="' + d + '" fill="' + fill + '"/>';
-// Legs are drawn in their own little space (hip at 0,0, paw at y=46) and placed with a width
-// factor. Far legs go behind the body with a full outline; near legs go in front of it with no
-// line across the top, so the body's outline disappears into them like a real haunch or shoulder.
+// Legs are drawn in their own little space (hip at 0,0, paw at y=46); hind and fore legs
+// share one straight, narrowing shape, since a bent hind leg looked like a second haunch.
+// They are placed with a width factor. Far legs go behind the body with a full outline; near
+// legs go in front of it with no line across the top, so the body's outline runs into them.
 const NS = ' vector-effect="non-scaling-stroke"';
 const LEG = {
-  hind: ['M-11 0 C-14 14 -8 22 -2 28 L-3 40 Q2 47 10 43 L7 35 C9 26 12 14 13 0Z', 'M-12.5 8 C-13 16 -8 23 -2 28 L-3 40 Q2 47 10 43 L7 35 C9 26 11 18 12 10'],
+  hind: ['M-7 0 C-6 16 -6 30 -6 40 Q0 47 7 43 L5 36 C5 26 6 14 7 0Z', 'M-6.4 14 C-6 24 -6 32 -6 40 Q0 47 7 43 L5 36 C5 28 5.5 20 6 14'],
   fore: ['M-6 0 C-5 16 -5 30 -5 40 Q1 47 8 43 L5 36 C5 26 6 14 7 0Z', 'M-5.4 14 C-5 24 -5 32 -5 40 Q1 47 8 43 L5 36 C5 28 5.5 20 6 14']
 };
 const limb = (kind, x, w, fill, cls, near, y) => {
@@ -1431,7 +1432,7 @@ const ANIMALS = {
     return '<path d="M96 42 C88 24 88 8 94 4 C100 6 102 24 100 42Z" fill="#efe8dc"/>' +
       g('leg b', 'M80 76 L80 100 Q86 106 92 101 L90 76Z', f) +
       '<circle cx="30" cy="74" r="8" fill="#fff"/><path d="M30 82 C24 62 40 50 60 52 C76 52 88 58 92 66 C96 78 90 90 76 92 L44 92 C34 92 30 88 30 82Z" fill="' + f + '"/>' +
-      '<g class="leg a"><path d="M40 98 C40 90 50 88 66 94 C71 97 70 104 64 104 L44 104 C40 104 40 101 40 98Z" fill="' + f + '"/><path d="M36 82 C34 68 52 64 60 74 C64 84 60 96 48 98 C40 98 37 90 36 82Z" fill="' + f + '"/></g>' +
+      '<g class="leg a"><path d="M40 98 C40 90 50 88 66 94 C71 97 70 104 64 104 L44 104 C40 104 40 101 40 98Z" fill="' + f + '"/></g>' +
       '<path d="M104 40 C100 22 104 6 110 4 C116 6 114 24 108 40Z" fill="' + f + '"/><path d="M106 34 C104 22 106 12 109 10 C112 12 111 24 107 34Z" fill="#f6a6a6" stroke="none"/>' +
       '<path d="M86 56 C82 44 90 36 102 36 C112 36 118 44 118 52 C118 60 110 66 100 66 C92 66 88 62 86 56Z" fill="' + f + '"/>' +
       eyes(103, 111, 49) + cheek(104, 58) + '<path d="M116 52 l2.5 1 l-1.5 2.5z" fill="#f6a6a6" stroke-width="1.3"/><path d="M116 57 q-2 2 -4 1" fill="none" stroke-width="1.6"/>';
