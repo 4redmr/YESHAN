@@ -169,7 +169,21 @@
   .wrow .chips.wbi { margin: 8px 0 0; align-items: center; font-size: 13px; color: var(--muted); }
   /* The friend's room: one hand-drawn picture with the friend walking across it. Its colours
      are the picture's own, so it looks the same in the dark theme. */
-  .room { position: relative; height: 330px; border-radius: 22px; overflow: hidden; border: 2.5px solid #333; background: #fffaf2; }
+  .roomcard { padding: 0; border: 0; background: none; }
+  .roomtop { position: absolute; top: 8px; left: 0; right: 0; z-index: 2; text-align: center; color: #333; line-height: 1.1; pointer-events: none; }
+  .roomtop small { display: block; font-size: 16px; }
+  .roomtop b { display: block; font-size: 40px; color: #c48a1c; }
+  .roomtop small#roomBadge { font-size: 15px; color: #8a6a2c; }
+  .room .bubble { top: 92px; }
+  /* Four tabs along the bottom: 홈 for every day, the rest for now and then. */
+  main { padding-bottom: calc(84px + env(safe-area-inset-bottom)) !important; }
+  .tabbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 6; display: flex; justify-content: center; background: var(--card); border-top: 1px solid var(--line);
+    padding: 4px max(8px, env(safe-area-inset-left)) max(6px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-right)); }
+  .tabbar button { flex: 1; max-width: 140px; border: 0; background: none; padding: 6px 0 2px; font-size: 12px; color: var(--muted); line-height: 1.2; }
+  .tabbar button b { display: block; font-size: 22px; font-weight: 400; }
+  .tabbar button.on { color: var(--accent); font-weight: 700; }
+  .tabbar button[hidden] { display: none; }
+  .room { position: relative; height: 380px; border-radius: 22px; overflow: hidden; border: 2.5px solid #333; background: #fffaf2; }
   .scene { position: absolute; inset: 0; }
   .scene svg { width: 100%; height: 100%; display: block; }
   .bubble { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); z-index: 2; width: max-content; max-width: 86%;
@@ -279,6 +293,7 @@
     <div class="fgoal" id="fGoal"></div>
   </div>
 
+  <div class="tab" id="tab-home">
   <section class="card" id="welcome" hidden>
     <h2>👋 반가워요! 나에게 맞는 모드를 골라 주세요</h2>
     <p class="hint" style="margin:0">고르면 화면의 이름이 나에게 맞게 바뀌어요. 나중에 "나의 하루"에서 언제든 바꿀 수 있어요.</p>
@@ -294,20 +309,31 @@
     </div>
   </section>
 
-  <section class="card">
-    <button class="helpbtn" data-help="start" aria-label="사용법 보기">?</button>
-    <div class="label">지금부터 잠들 때까지, 나의 시간</div>
-    <div class="big" id="left">–</div>
-    <div class="label" id="leftNote"></div>
-    <div class="helpbox" id="help-start" hidden>
+  <div class="helpbox" id="help-start" hidden>
       <ul>
         <li><b>나의 시간</b>은 회사·학교처럼 바쁜 시간과 오가는 시간을 빼고, 잠들 때까지 남은 <b>내가 주인인 시간</b>이에요. 쉬든 공부하든 다 괜찮아요.</li>
         <li><b>나의 하루</b>에 일어나는 시간, 잠드는 시간, 바쁜 시간, 오가는 시간을 한 번만 넣으면 기억해요.</li>
-        <li>할 일을 누르면 시간을 재고, 기록이 쌓이면 아래 <b>기록 한눈에</b>에서 볼 수 있어요.</li>
+        <li>화면 맨 아래 탭으로 옮겨 다녀요. <b>🏠 홈</b>에서 할 일을 누르고, <b>📊 기록</b>에서 쌓인 기록을 보고, <b>🛍️ 꾸미기</b>에서 친구를 꾸미고, <b>⚙️ 설정</b>에서 나의 하루와 알림을 정해요.</li>
+        <li>맨 위 친구 방은 할 일을 기록할수록 별이 쌓이는 곳이에요. 설정의 <b>친구 보기</b>를 끄면 글자로만 보여요.</li>
         <li>각 칸 오른쪽 위의 <b>?</b>를 누르면 그 칸의 사용법이 나와요.</li>
         <li>휴대폰 홈 화면에 설치하면 앱처럼 쓸 수 있어요. 아이폰은 Safari의 공유(□↑) → "홈 화면에 추가"예요.</li>
       </ul>
     </div>
+
+  <section class="card roomcard" id="friendHome">
+    <div class="room" id="room">
+      <div class="scene" id="scene"></div>
+      <div class="roomtop hand"><small>잠들 때까지 나의 시간</small><b id="roomLeft">–</b><small id="roomBadge"></small></div>
+      <div class="bubble hand" id="friendSay"></div>
+      <div class="walker"><button class="pet" id="pet" aria-label="친구 쓰다듬기"><span id="petFace"></span></button></div>
+    </div>
+  </section>
+
+  <section class="card" id="mainCard">
+    <button class="helpbtn" data-help="start" aria-label="사용법 보기">?</button>
+    <div class="label">지금부터 잠들 때까지, 나의 시간</div>
+    <div class="big" id="left">–</div>
+    <div class="label" id="leftNote"></div>
     <div id="ovBadge" hidden></div>
     <div class="bar" id="bar"></div>
     <div class="legend">
@@ -328,15 +354,13 @@
         <li><span class="hh">✏️ 추가 · 고치기 · 빼기</span></li>
         <li><b>+ 할 일 추가</b>로 만들어요. <b>편집</b> → 할 일을 누르면 이름, 하루 목표, 집중 목표를 고쳐요. 이름을 바꾸면 지난 기록도 같이 바뀌어요.</li>
         <li><b>✕</b>는 목록에서 빼기예요. 지난 기록은 남아요.</li>
-        <li><span class="hh">🎯 집중 알림 설정</span></li>
-        <li>목표 시간(기본 25분, 휴식은 없음)이 되면 무음·진동·소리로 한 번 알려 줘요. 앱이 열려 있을 때만 울려요.</li>
-        <li><b>화면 켜 두기</b>, <b>알림창에 표시하기</b>(⏸ 멈추기 버튼)도 여기서 켜요.</li>
+        <li><span class="hh">🎯 집중 알림</span></li>
+        <li>목표 시간(기본 25분, 휴식은 없음)이 되면 무음·진동·소리로 한 번 알려 줘요. 앱이 열려 있을 때만 울려요. 바꾸려면 아래 <b>⚙️ 설정</b> 탭의 <b>집중 알림 설정</b>이에요.</li>
         <li><span class="hh">🛠 깜빡했거나 잘못 잰 때</span></li>
         <li>시작을 깜빡했으면 <b>깜빡했나요? 시간 직접 더하기</b>, 방금 것을 빼려면 <b>되돌리기</b>, 분을 고치려면 <b>기록 고치기</b>를 눌러요.</li>
         <li>켜 둔 채 잠들었으면 다음에 앱을 열 때 "실제로 몇 분 했나요?"라고 물어봐요.</li>
-        <li>기록 옆 표시: ⏱ 타이머 · ✋ 직접 더함 · ✏️ 고침</li>
-        <li><span class="hh">📤 보내기</span></li>
-        <li><b>기록 보내기</b>는 카톡·메모로, <b>노션에 저장하기</b>는 노션 연결 설정에 주소를 넣으면 복사 후 노션이 열려요.</li>
+        <li><span class="hh">📊 기록 탭</span></li>
+        <li>오늘 무엇을 몇 분 했는지, 카톡·노션으로 보내기, 달력과 지난 기록은 아래 <b>📊 기록</b> 탭에 있어요.</li>
       </ul>
     </div>
     <p id="nudge" hidden>알림 시간이 지났어요. 아직 오늘 기록이 없어요.</p>
@@ -354,32 +378,22 @@
         <button data-m="30">+30분</button><button data-m="60">+1시간</button>
       </div>
     </details>
-    <details id="focusSet">
-      <summary class="hint">집중 알림 설정</summary>
-      <p class="step" style="margin-top:10px">기본 목표 시간 <span class="hint">(할 일마다 따로 정하려면 편집 → 할 일 누르기)</span></p>
-      <div class="chips" id="goalChips">
-        <button class="chip" data-goal="0">없음</button><button class="chip" data-goal="15">15분</button>
-        <button class="chip" data-goal="25">25분</button><button class="chip" data-goal="50">50분</button>
-      </div>
-      <p class="step">목표 시간이 되면</p>
-      <div class="chips" id="alertChips">
-        <button class="chip" data-alert="silent">무음</button><button class="chip" data-alert="vibrate">진동</button>
-        <button class="chip" data-alert="sound">소리</button>
-      </div>
-      <label class="check"><input type="checkbox" id="keepAwake">재는 동안 화면 켜 두기 (알림을 놓치지 않아요)</label>
-      <label class="check"><input type="checkbox" id="statusNotif">재는 동안 휴대폰 알림창에 표시하기</label>
-      <p class="hint" style="margin:8px 0 0">알림은 앱이 열려 있을 때만 울려요. 진동은 아이폰에서는 되지 않아요. 앱을 닫아도 시간은 계속 재고 있어요.</p>
-    </details>
-    <ul class="used" id="used"></ul>
-    <p class="srclegend" id="srcLegend"><span class="src src-timer">⏱</span>타이머로 잼 <span class="src src-manual">✋ 직접</span>직접 더함 <span class="src src-edit">✏️ 고침</span>고친 기록</p>
     <div class="sumline"><span>오늘 쓴 시간 <b id="usedSum">0분</b></span><span>나의 시간 <b id="freeSum">–</b></span></div>
     <div class="row">
       <button id="undo">되돌리기</button>
       <button id="editToday">기록 고치기</button>
     </div>
+  </section>
+  </div>
+
+  <div class="tab" id="tab-log" hidden>
+  <section class="card">
+    <h2>오늘 기록</h2>
+    <ul class="used" id="used"></ul>
+    <p class="srclegend" id="srcLegend"><span class="src src-timer">⏱</span>타이머로 잼 <span class="src src-manual">✋ 직접</span>직접 더함 <span class="src src-edit">✏️ 고침</span>고친 기록</p>
+    <label style="margin-top:14px">오늘 한 줄 (선택)<textarea id="note" placeholder="예: 아침 기도가 특히 좋았다"></textarea></label>
     <div class="row"><button class="primary" id="shareBtn">기록 보내기</button></div>
     <div class="row"><button id="toNotion">노션에 저장하기</button></div>
-    <label style="margin-top:14px">오늘 한 줄 (선택)<textarea id="note" placeholder="예: 아침 기도가 특히 좋았다"></textarea></label>
     <details id="notionSetup">
       <summary class="hint">노션 연결 설정</summary>
       <label style="margin-top:8px">노션 기록 페이지 주소<input type="url" id="notionUrl" placeholder="https://www.notion.so/..."></label>
@@ -387,40 +401,37 @@
     </details>
   </section>
 
-  <section class="card" id="friendCard">
-    <h2><span id="friendTitle">나의 시간 친구</span> <button class="helpbtn" data-help="friend" aria-label="사용법 보기">?</button></h2>
-    <div class="helpbox" id="help-friend" hidden>
+  <section class="card">
+    <h2>기록 한눈에 <button class="helpbtn" data-help="stats" aria-label="사용법 보기">?</button></h2>
+    <div class="helpbox" id="help-stats" hidden>
       <ul>
-        <li>할 일 시간을 재거나 기록하면 <b>1분에 별 ⭐ 1개</b>가 쌓여요.</li>
-        <li>모은 별로 <b>별 상점</b>에서 친구 옷과 방 물건을 사요. 산 물건은 방 곳곳에 놓이고, 산 옷은 눌러서 입히고 벗겨요.</li>
-        <li>집마다 <b>그 집에만 놓는 꾸미기 물건</b>이 따로 있어요. 이사하면 새 물건이 나와요.</li>
-        <li>기록한 날이 쌓일수록 친구와 더 친해져요. 목표는 없어요. 5분만 기록해도 별을 받아요.</li>
-        <li>별을 모아 <b>이사하기</b>에서 단칸방 → 원룸 → 내 집 → 아파트 → 땅 → 산 → 마을까지 한 칸씩 넓혀 가요. 전에 살던 집에는 <b>놀러 가기</b>로 언제든 돌아가요.</li>
-        <li><b>친구 바꾸기</b>에서 동물과 이름을 바꿔요. 바꿔도 별과 물건은 그대로예요.</li>
-        <li>기록을 지우거나 줄이면 별도 같이 줄어요.</li>
+        <li><b>최근 7일</b>: 하루 평균 나의 시간, 7일 합계, 기록한 날, 할 일별 합계예요.</li>
+        <li><b>🔥 연속 기록</b>: 며칠째 이어서 기록하고 있는지 알려 줘요.</li>
+        <li><b>달력</b>: 많이 한 날일수록 진한 색이에요. ‹ › 로 지난 달을 보고, 날짜를 누르면 그날 기록을 고쳐요.</li>
       </ul>
     </div>
-    <div class="room" id="room">
-      <div class="scene" id="scene"></div>
-      <div class="bubble hand" id="friendSay"></div>
-      <div class="walker"><button class="pet" id="pet" aria-label="친구 쓰다듬기"><span id="petFace"></span></button></div>
+    <p class="step" style="margin:0 0 8px">최근 7일</p>
+    <div class="stats">
+      <div><b id="avg">–</b><span class="label">하루 평균 나의 시간</span></div>
+      <div><b id="sum">–</b><span class="label">7일 합계</span></div>
+      <div><b id="days">0</b><span class="label">기록한 날</span></div>
     </div>
-    <svg id="probe" aria-hidden="true"></svg>
-    <div class="sumline"><span>내 별 <b id="stars">⭐ 0</b></span><span id="friendDays"></span></div>
-    <details id="shopBox">
-      <summary class="hint">⭐ 별 상점</summary>
-      <div class="shop" id="shop"></div>
-    </details>
-    <details id="homeBox">
-      <summary class="hint">🏠 이사하기</summary>
-      <p class="hint" style="margin:8px 0 0">별을 모아 한 칸씩 더 넓은 곳으로 이사해요.</p>
-      <div class="homes" id="homes"></div>
-    </details>
-    <details id="friendSet">
-      <summary class="hint">친구 바꾸기</summary>
-      <div class="chips" id="petKinds" style="margin:10px 0 0"></div>
-      <label>이름<input id="petName" maxlength="10" placeholder="예: 나비"></label>
-    </details>
+    <ul class="used" id="weekActs"></ul>
+    <p id="streak"></p>
+    <div class="calhead"><button id="calPrev" aria-label="지난 달">‹</button><b id="calTitle"></b><button id="calNext" aria-label="다음 달">›</button></div>
+    <div class="cal" id="cal"></div>
+    <p id="monthSum"></p>
+  </section>
+
+  <section class="card">
+    <h2>지난 기록 <button class="helpbtn" data-help="history" aria-label="사용법 보기">?</button></h2>
+    <div class="helpbox" id="help-history" hidden>
+      <ul>
+        <li>날짜 옆 <b>고치기</b>로 그날 할 일마다 분을 고치고, 고친 이유를 남길 수 있어요. 그날 기록을 모두 지울 수도 있어요.</li>
+        <li>고치기 창의 <b>이 날 변경 기록 보기</b>에서 언제, 무엇을, 왜 고쳤는지 볼 수 있어요.</li>
+      </ul>
+    </div>
+    <ul id="list"></ul>
   </section>
 
   <section class="card">
@@ -435,6 +446,46 @@
       <textarea id="memo" placeholder="떠오른 생각, 나중에 할 일… 지우기 전까지 그대로 남아요."></textarea>
       <div class="row" id="memoClearRow"><button id="memoClear">메모 지우기</button></div>
     </details>
+  </section>
+  </div>
+
+  <div class="tab" id="tab-deco" hidden>
+  <section class="card" id="friendCard">
+    <h2><span id="friendTitle">나의 시간 친구</span> <button class="helpbtn" data-help="friend" aria-label="사용법 보기">?</button></h2>
+    <div class="helpbox" id="help-friend" hidden>
+      <ul>
+        <li>할 일 시간을 재거나 기록하면 <b>1분에 별 ⭐ 1개</b>가 쌓여요.</li>
+        <li>모은 별로 <b>별 상점</b>에서 친구 옷과 방 물건을 사요. 산 물건은 방 곳곳에 놓이고, 산 옷은 눌러서 입히고 벗겨요.</li>
+        <li>집마다 <b>그 집에만 놓는 꾸미기 물건</b>이 따로 있어요. 이사하면 새 물건이 나와요.</li>
+        <li>기록한 날이 쌓일수록 친구와 더 친해져요. 목표는 없어요. 5분만 기록해도 별을 받아요.</li>
+        <li>별을 모아 <b>이사하기</b>에서 단칸방 → 원룸 → 내 집 → 아파트 → 땅 → 산 → 마을까지 한 칸씩 넓혀 가요. 전에 살던 집에는 <b>놀러 가기</b>로 언제든 돌아가요.</li>
+        <li><b>친구 바꾸기</b>에서 동물과 이름을 바꿔요. 바꿔도 별과 물건은 그대로예요.</li>
+        <li>기록을 지우거나 줄이면 별도 같이 줄어요.</li>
+      </ul>
+    </div>
+    <div class="sumline"><span>내 별 <b id="stars">⭐ 0</b></span><span id="friendDays"></span></div>
+    <details id="shopBox" open>
+      <summary class="hint">⭐ 별 상점</summary>
+      <div class="shop" id="shop"></div>
+    </details>
+    <details id="homeBox">
+      <summary class="hint">🏠 이사하기</summary>
+      <p class="hint" style="margin:8px 0 0">별을 모아 한 칸씩 더 넓은 곳으로 이사해요.</p>
+      <div class="homes" id="homes"></div>
+    </details>
+    <details id="friendSet">
+      <summary class="hint">친구 바꾸기</summary>
+      <div class="chips" id="petKinds" style="margin:10px 0 0"></div>
+      <label>이름<input id="petName" maxlength="10" placeholder="예: 나비"></label>
+    </details>
+  </section>
+  </div>
+
+  <div class="tab" id="tab-set" hidden>
+  <section class="card">
+    <h2>보기</h2>
+    <label class="check"><input type="checkbox" id="showFriend">나의 시간 친구 보기</label>
+    <p class="hint" style="margin:8px 0 0">끄면 친구 방 대신 글자로 된 나의 시간이 보여요. 별과 꾸민 물건은 그대로 남아요.</p>
   </section>
 
   <section class="card">
@@ -492,6 +543,23 @@
     </div>
   </section>
 
+  <section class="card" id="focusSet">
+    <h2>🎯 집중 알림 설정</h2>
+      <p class="step" style="margin-top:10px">기본 목표 시간 <span class="hint">(할 일마다 따로 정하려면 편집 → 할 일 누르기)</span></p>
+      <div class="chips" id="goalChips">
+        <button class="chip" data-goal="0">없음</button><button class="chip" data-goal="15">15분</button>
+        <button class="chip" data-goal="25">25분</button><button class="chip" data-goal="50">50분</button>
+      </div>
+      <p class="step">목표 시간이 되면</p>
+      <div class="chips" id="alertChips">
+        <button class="chip" data-alert="silent">무음</button><button class="chip" data-alert="vibrate">진동</button>
+        <button class="chip" data-alert="sound">소리</button>
+      </div>
+      <label class="check"><input type="checkbox" id="keepAwake">재는 동안 화면 켜 두기 (알림을 놓치지 않아요)</label>
+      <label class="check"><input type="checkbox" id="statusNotif">재는 동안 휴대폰 알림창에 표시하기</label>
+      <p class="hint" style="margin:8px 0 0">알림은 앱이 열려 있을 때만 울려요. 진동은 아이폰에서는 되지 않아요. 앱을 닫아도 시간은 계속 재고 있어요.</p>
+  </section>
+
   <section class="card">
     <h2>매일 기록 알림 <button class="helpbtn" data-help="remind" aria-label="사용법 보기">?</button></h2>
     <div class="helpbox" id="help-remind" hidden>
@@ -507,39 +575,6 @@
     </div>
     <label class="check"><input type="checkbox" id="notifyOn">앱이 열려 있을 때도 알림 받기</label>
     <p class="hint">캘린더에 한 번 추가해 두면 매일 그 시간에 휴대폰이 울려요. 알림 시간을 바꿨다면 캘린더의 예전 일정은 지우고 다시 추가하세요.</p>
-  </section>
-
-  <section class="card">
-    <h2>기록 한눈에 <button class="helpbtn" data-help="stats" aria-label="사용법 보기">?</button></h2>
-    <div class="helpbox" id="help-stats" hidden>
-      <ul>
-        <li><b>최근 7일</b>: 하루 평균 나의 시간, 7일 합계, 기록한 날, 할 일별 합계예요.</li>
-        <li><b>🔥 연속 기록</b>: 며칠째 이어서 기록하고 있는지 알려 줘요.</li>
-        <li><b>달력</b>: 많이 한 날일수록 진한 색이에요. ‹ › 로 지난 달을 보고, 날짜를 누르면 그날 기록을 고쳐요.</li>
-      </ul>
-    </div>
-    <p class="step" style="margin:0 0 8px">최근 7일</p>
-    <div class="stats">
-      <div><b id="avg">–</b><span class="label">하루 평균 나의 시간</span></div>
-      <div><b id="sum">–</b><span class="label">7일 합계</span></div>
-      <div><b id="days">0</b><span class="label">기록한 날</span></div>
-    </div>
-    <ul class="used" id="weekActs"></ul>
-    <p id="streak"></p>
-    <div class="calhead"><button id="calPrev" aria-label="지난 달">‹</button><b id="calTitle"></b><button id="calNext" aria-label="다음 달">›</button></div>
-    <div class="cal" id="cal"></div>
-    <p id="monthSum"></p>
-  </section>
-
-  <section class="card">
-    <h2>지난 기록 <button class="helpbtn" data-help="history" aria-label="사용법 보기">?</button></h2>
-    <div class="helpbox" id="help-history" hidden>
-      <ul>
-        <li>날짜 옆 <b>고치기</b>로 그날 할 일마다 분을 고치고, 고친 이유를 남길 수 있어요. 그날 기록을 모두 지울 수도 있어요.</li>
-        <li>고치기 창의 <b>이 날 변경 기록 보기</b>에서 언제, 무엇을, 왜 고쳤는지 볼 수 있어요.</li>
-      </ul>
-    </div>
-    <ul id="list"></ul>
   </section>
 
   <section class="card">
@@ -563,7 +598,15 @@
       <button id="csv">엑셀용 표로 내보내기</button>
     </div>
   </section>
+  </div>
 </main>
+<nav class="tabbar" id="tabbar">
+  <button data-tab="home" class="on"><b>🏠</b>홈</button>
+  <button data-tab="log"><b>📊</b>기록</button>
+  <button data-tab="deco" id="decoTab"><b>🛍️</b>꾸미기</button>
+  <button data-tab="set"><b>⚙️</b>설정</button>
+</nav>
+    <svg id="probe" aria-hidden="true"></svg>
 <dialog id="modeDlg">
   <h2>나만의 모드 만들기</h2>
   <label>모드 이름<input type="text" id="modeName" maxlength="10" placeholder="예: 육아, 알바, 교회 봉사"></label>
@@ -751,6 +794,8 @@ function render() {
   $('today').textContent = now.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'long' });
 
   const left = freeLeft(p, nowMin), s = sched();
+  $('roomLeft').textContent = fmt(left);
+  $('roomBadge').textContent = s.label ? '오늘: ' + s.label : '';
   $('ovBadge').hidden = !s.label;
   $('ovBadge').textContent = '오늘: ' + s.label + (s.off ? '' : ' · ' + s.workStart + '~' + s.workEnd);
   $('left').textContent = fmt(left);
@@ -1326,68 +1371,90 @@ const C = { pink: '#f7c6c0', rose: '#f4a3a3', mint: '#c8e6c9', green: '#a8d5a2',
 const WOB = id => '<filter id="' + id + '"><feTurbulence type="fractalNoise" baseFrequency=".05" numOctaves="2" seed="3"/><feDisplacementMap in="SourceGraphic" scale="1.5"/></filter>';
 const PEN = 'stroke="' + INK + '" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"';
 
-// Friends, seen from the side and facing right (viewBox 0 0 150 112, feet at y=106). Tails and
-// legs are drawn before the body, so the body covers where they join.
-const leg = (x, y, h, w, fill, cls) => '<path class="leg ' + cls + '" d="M' + x + ' ' + y + 'h' + w + 'v' + (h - w / 2) + 'a' + w / 2 + ' ' + w / 2 + ' 0 0 1 ' + -w + ' 0Z" fill="' + fill + '"/>';
+// Friends, seen from the side and facing right (viewBox 0 0 150 112, feet at y=106), shaped
+// like the real animals: a back that curves into the haunch and chest, and legs that narrow to
+// a paw, with a bent hock on the hind legs.
 const thick = (d, fill, w) => '<path d="' + d + '" fill="none" stroke="' + INK + '" stroke-width="' + (w + 5) + '"/><path d="' + d + '" fill="none" stroke="' + fill + '" stroke-width="' + w + '"/>';
-const eyes = (x1, x2, y) => '<g class="eyes"><ellipse cx="' + x1 + '" cy="' + y + '" rx="2.8" ry="3.6" fill="' + INK + '" stroke="none"/><ellipse cx="' + x2 + '" cy="' + y + '" rx="2.8" ry="3.6" fill="' + INK + '" stroke="none"/>' +
-  '<circle cx="' + (x1 + .9) + '" cy="' + (y - 1.3) + '" r="1" fill="#fff" stroke="none"/><circle cx="' + (x2 + .9) + '" cy="' + (y - 1.3) + '" r="1" fill="#fff" stroke="none"/></g>';
-const cheek = (x, y) => '<ellipse cx="' + x + '" cy="' + y + '" rx="5" ry="3" fill="#f6a6a6" opacity=".7" stroke="none"/>';
+const eyes = (x1, x2, y, r) => { r = r || 1; return '<g class="eyes"><ellipse cx="' + x1 + '" cy="' + y + '" rx="' + 2.4 * r + '" ry="' + 3.2 * r + '" fill="' + INK + '" stroke="none"/><ellipse cx="' + x2 + '" cy="' + y + '" rx="' + 2.7 * r + '" ry="' + 3.6 * r + '" fill="' + INK + '" stroke="none"/>' +
+  '<circle cx="' + (x1 + .8) + '" cy="' + (y - 1.2) + '" r=".9" fill="#fff" stroke="none"/><circle cx="' + (x2 + .9) + '" cy="' + (y - 1.3) + '" r="1" fill="#fff" stroke="none"/></g>'; };
+const cheek = (x, y) => '<ellipse cx="' + x + '" cy="' + y + '" rx="4.5" ry="2.6" fill="#f6a6a6" opacity=".7" stroke="none"/>';
+const g = (cls, d, fill) => '<path class="' + cls + '" d="' + d + '" fill="' + fill + '"/>';
+// Legs are drawn in their own little space (hip at 0,0, paw at y=46) and placed with a width
+// factor. Far legs go behind the body with a full outline; near legs go in front of it with no
+// line across the top, so the body's outline disappears into them like a real haunch or shoulder.
+const NS = ' vector-effect="non-scaling-stroke"';
+const LEG = {
+  hind: ['M-11 0 C-14 14 -8 22 -2 28 L-3 40 Q2 47 10 43 L7 35 C9 26 12 14 13 0Z', 'M-12.5 8 C-13 16 -8 23 -2 28 L-3 40 Q2 47 10 43 L7 35 C9 26 11 18 12 10'],
+  fore: ['M-6 0 C-5 16 -5 30 -5 40 Q1 47 8 43 L5 36 C5 26 6 14 7 0Z', 'M-5.4 14 C-5 24 -5 32 -5 40 Q1 47 8 43 L5 36 C5 28 5.5 20 6 14']
+};
+const limb = (kind, x, w, fill, cls, near, y) => {
+  const [f, o] = LEG[kind];
+  return '<g class="leg ' + cls + '"><g transform="translate(' + x + ' ' + (y || 60) + ') scale(' + w + ' 1)">' +
+    (near ? '<path d="' + f + '" fill="' + fill + '" stroke="none"/><path d="' + o + '" fill="none"' + NS + '/><path d="M0 43 q2 -3 1 -6" fill="none" stroke-width="1.4"' + NS + '/>'
+      : '<path d="' + f + '" fill="' + fill + '"' + NS + '/>') + '</g></g>';
+};
 const ANIMALS = {
-  cat: { top: [106, 27], eye: [109.5, 45], neck: [90, 64], draw: () => {
+  cat: { top: [114, 18], eye: [117, 33], neck: [100, 52], draw: () => {
     const f = '#f4c58f', d = '#e3ac72';
-    return leg(40, 62, 44, 11, d, 'b') + leg(84, 62, 44, 11, d, 'a') + leg(48, 64, 42, 11, f, 'a') + leg(92, 64, 42, 11, f, 'b') +
-      '<g class="tail">' + thick('M36 62 C14 58 8 36 18 24', f, 7) + '</g>' +
-      '<ellipse cx="64" cy="66" rx="38" ry="21" fill="' + f + '"/><path d="M56 47 q4 6 0 11 M68 46 q4 6 0 11 M44 50 q4 5 1 10" fill="none" stroke="' + d + '" stroke-width="3"/>' +
-      '<path d="M89 38 L92 15 L106 28Z M106 27 L120 12 L124 36Z" fill="' + f + '"/><path d="M93 30 L94 21 L101 28Z M110 27 L118 18 L120 31Z" fill="#f6a6a6" stroke="none"/>' +
-      '<circle cx="106" cy="46" r="21" fill="' + f + '"/>' + eyes(103, 116, 45) + cheek(98, 53) + cheek(124, 52) +
-      '<path d="M108 53 l3 3 l3 -3z" fill="#f6a6a6" stroke-width="1.5"/><path d="M106 57 q2.5 3 5 0 q2.5 3 5 0" fill="none" stroke-width="2"/>' +
-      '<path d="M124 51 h13 M124 56 l12 3" fill="none" stroke-width="1.6"/>';
+    return limb('hind', 44, .9, d, 'b') + limb('fore', 92, .9, d, 'a') + '<g class="tail">' + thick('M30 56 C10 54 4 40 12 28 C16 22 22 22 22 28', f, 7) + '</g>' +
+      '<path d="M28 58 C26 44 42 40 58 43 C74 46 88 42 98 40 L106 52 C112 60 110 72 102 77 C92 82 72 81 56 80 C42 80 30 72 28 58Z" fill="' + f + '"/>' +
+      '<path d="M58 45 q4 6 1 11 M70 45 q4 6 1 11 M46 46 q4 5 1 10" fill="none" stroke="' + d + '" stroke-width="3"/>' +
+      limb('hind', 52, .95, f, 'a', true) + limb('fore', 99, .9, f, 'b', true) +
+      '<path d="M104 56 C108 64 106 72 100 76 C96 70 98 62 104 56Z" fill="#fbe3c4" stroke="none"/>' +
+      '<path d="M101 26 L101 7 L113 18Z M117 17 L128 5 L129 24Z" fill="' + f + '"/><path d="M104 20 L104 12 L109 18Z M120 16 L126 10 L126 20Z" fill="#f6a6a6" stroke="none"/>' +
+      '<path d="M96 38 C93 26 100 17 112 17 C124 17 132 25 132 36 C132 46 126 54 114 55 C103 56 97 48 96 38Z" fill="' + f + '"/>' +
+      eyes(111, 123, 33) + cheek(108, 43) + '<path d="M128 40 l3 1 l-2 3z" fill="#f6a6a6" stroke-width="1.4"/><path d="M129 45 q-2 3 -5 2" fill="none" stroke-width="1.8"/>' +
+      '<path d="M130 42 h12 M130 46 l11 3" fill="none" stroke-width="1.4"/>';
   } },
-  dog: { top: [104, 25], eye: [110, 41], neck: [88, 61], draw: () => {
+  dog: { top: [110, 21], eye: [116.5, 31], neck: [98, 51], draw: () => {
     const f = '#e8c9a0', d = '#d6b283';
-    return leg(40, 62, 44, 12, d, 'b') + leg(86, 62, 44, 12, d, 'a') + leg(48, 64, 42, 12, f, 'a') + leg(94, 64, 42, 12, f, 'b') +
-      '<g class="tail wag">' + thick('M34 60 q-14 -6 -12 -22', f, 7) + '</g>' +
-      '<ellipse cx="64" cy="66" rx="38" ry="21" fill="' + f + '"/><ellipse cx="56" cy="58" rx="12" ry="8" fill="#fff4e4" stroke="none"/>' +
-      '<circle cx="104" cy="44" r="20" fill="' + f + '"/><ellipse cx="124" cy="52" rx="11" ry="8" fill="#fff4e4"/><ellipse cx="133" cy="48" rx="4" ry="3" fill="' + INK + '"/>' +
-      '<path d="M92 28 q-12 4 -9 24 q9 2 13 -10z" fill="#a6714d"/>' + eyes(104, 116, 41) + cheek(110, 52) +
-      '<path d="M124 57 q3 3 6 0" fill="none" stroke-width="2"/><path d="M127 59 q2 6 5 0" fill="#f6a6a6" stroke-width="1.5"/>';
+    return limb('hind', 44, 1, d, 'b') + limb('fore', 90, 1, d, 'a') + '<g class="tail wag">' + thick('M30 52 C20 46 18 34 24 26', f, 7) + '</g>' +
+      '<path d="M28 56 C28 44 46 42 62 44 C76 46 88 42 96 42 L106 54 C112 64 108 74 100 78 C90 82 72 80 58 80 C44 80 30 72 28 56Z" fill="' + f + '"/>' +
+      '<ellipse cx="60" cy="54" rx="11" ry="6" fill="#fff4e4" stroke="none"/>' + limb('hind', 52, 1, f, 'a', true) + limb('fore', 97, 1, f, 'b', true) +
+      '<path d="M94 40 C90 26 100 18 112 20 C120 22 124 28 125 33 L138 36 C143 40 141 48 134 49 L121 50 C114 56 101 54 96 48Z" fill="' + f + '"/>' +
+      '<path d="M122 42 C128 46 134 48 138 46" fill="none" stroke-width="1.8"/><ellipse cx="139" cy="38" rx="3.6" ry="3" fill="' + INK + '"/>' +
+      '<path d="M104 24 C96 26 93 40 98 50 C105 48 109 36 108 26Z" fill="#a6714d"/>' + eyes(112, 121, 31) + cheek(117, 42) +
+      '<path d="M126 49 q2 6 6 1" fill="#f6a6a6" stroke-width="1.4"/>';
   } },
-  bear: { top: [105, 25], eye: [107.5, 42], neck: [88, 63], draw: () => {
+  bear: { top: [109, 25], eye: [115, 35], neck: [94, 53], draw: () => {
     const f = '#c8936a', d = '#b17d55';
-    return leg(38, 62, 44, 14, d, 'b') + leg(86, 62, 44, 14, d, 'a') + leg(46, 64, 42, 14, f, 'a') + leg(94, 64, 42, 14, f, 'b') +
-      '<circle cx="26" cy="60" r="7" fill="' + f + '"/><ellipse cx="62" cy="64" rx="40" ry="25" fill="' + f + '"/>' +
-      '<circle cx="93" cy="27" r="8" fill="' + f + '"/><circle cx="116" cy="25" r="8" fill="' + f + '"/><circle cx="93" cy="27" r="3.5" fill="#a6714d" stroke="none"/><circle cx="116" cy="25" r="3.5" fill="#a6714d" stroke="none"/>' +
-      '<circle cx="105" cy="45" r="21" fill="' + f + '"/><ellipse cx="121" cy="52" rx="10" ry="8" fill="#ead2b8"/><ellipse cx="127" cy="48" rx="3.6" ry="2.8" fill="' + INK + '"/>' +
-      eyes(101, 114, 42) + cheek(96, 52) + '<path d="M120 56 q3 3 6 0" fill="none" stroke-width="2"/>';
+    return limb('hind', 38, 1.4, d, 'b') + limb('fore', 86, 1.5, d, 'a') + '<circle cx="24" cy="60" r="6" fill="' + f + '"/>' +
+      '<path d="M22 64 C20 46 38 34 58 36 C72 34 86 32 94 40 L104 50 C110 62 108 74 100 80 C86 86 52 86 38 82 C28 78 22 72 22 64Z" fill="' + f + '"/>' +
+      limb('hind', 48, 1.45, f, 'a', true) + limb('fore', 96, 1.5, f, 'b', true) +
+      '<circle cx="100" cy="24" r="7" fill="' + f + '"/><circle cx="117" cy="24" r="7" fill="' + f + '"/><circle cx="100" cy="24" r="3" fill="#a6714d" stroke="none"/><circle cx="117" cy="24" r="3" fill="#a6714d" stroke="none"/>' +
+      '<path d="M90 42 C88 30 98 22 110 23 C120 24 127 32 128 38 L135 42 C139 46 137 52 131 53 L119 54 C110 60 96 58 92 50Z" fill="' + f + '"/>' +
+      '<path d="M120 42 C126 40 134 42 136 46 C134 52 126 52 120 50Z" fill="#ead2b8" stroke="none"/><ellipse cx="135" cy="43" rx="3.4" ry="2.6" fill="' + INK + '"/>' +
+      eyes(110, 120, 35) + cheek(112, 45) + '<path d="M131 49 q-3 3 -6 1" fill="none" stroke-width="1.8"/>';
   } },
-  rabbit: { top: [101, 37], eye: [104, 52], neck: [88, 70], draw: () => {
+  rabbit: { top: [98, 38], eye: [107, 49], neck: [90, 65], draw: () => {
     const f = '#fbf7f0';
-    return '<ellipse cx="88" cy="22" rx="6" ry="20" fill="' + f + '" transform="rotate(-25 88 40)"/>' +
-      '<ellipse class="leg a" cx="52" cy="99" rx="17" ry="7" fill="' + f + '"/>' + leg(80, 74, 32, 10, f, 'b') +
-      '<circle cx="33" cy="70" r="8" fill="#fff"/><ellipse cx="62" cy="74" rx="32" ry="24" fill="' + f + '"/>' +
-      '<ellipse cx="99" cy="22" rx="6.5" ry="21" fill="' + f + '" transform="rotate(-8 99 42)"/><ellipse cx="99" cy="24" rx="3" ry="14" fill="#f6a6a6" stroke="none" transform="rotate(-8 99 42)"/>' +
-      '<circle cx="100" cy="54" r="19" fill="' + f + '"/>' + eyes(98, 110, 52) + cheek(94, 60) + cheek(117, 60) +
-      '<path d="M108 58 l2.5 2.5 l2.5 -2.5z" fill="#f6a6a6" stroke-width="1.4"/><path d="M106 62 q2 2.5 4.5 0 q2 2.5 4.5 0" fill="none" stroke-width="1.8"/>';
+    return '<path d="M96 42 C88 24 88 8 94 4 C100 6 102 24 100 42Z" fill="#efe8dc"/>' +
+      g('leg b', 'M80 76 L80 100 Q86 106 92 101 L90 76Z', f) +
+      '<circle cx="30" cy="74" r="8" fill="#fff"/><path d="M30 82 C24 62 40 50 60 52 C76 52 88 58 92 66 C96 78 90 90 76 92 L44 92 C34 92 30 88 30 82Z" fill="' + f + '"/>' +
+      '<g class="leg a"><path d="M40 98 C40 90 50 88 66 94 C71 97 70 104 64 104 L44 104 C40 104 40 101 40 98Z" fill="' + f + '"/><path d="M36 82 C34 68 52 64 60 74 C64 84 60 96 48 98 C40 98 37 90 36 82Z" fill="' + f + '"/></g>' +
+      '<path d="M104 40 C100 22 104 6 110 4 C116 6 114 24 108 40Z" fill="' + f + '"/><path d="M106 34 C104 22 106 12 109 10 C112 12 111 24 107 34Z" fill="#f6a6a6" stroke="none"/>' +
+      '<path d="M86 56 C82 44 90 36 102 36 C112 36 118 44 118 52 C118 60 110 66 100 66 C92 66 88 62 86 56Z" fill="' + f + '"/>' +
+      eyes(103, 111, 49) + cheek(104, 58) + '<path d="M116 52 l2.5 1 l-1.5 2.5z" fill="#f6a6a6" stroke-width="1.3"/><path d="M116 57 q-2 2 -4 1" fill="none" stroke-width="1.6"/>';
   } },
-  sheep: { top: [110, 33], eye: [112.5, 50], neck: [98, 68], draw: () => {
-    const w = '#fbf7f0', k = '#7a6a60';
-    const wool = [[40, 58], [54, 48], [70, 46], [86, 52], [92, 66], [80, 80], [62, 82], [44, 78], [34, 68]].map(([x, y]) => '<circle cx="' + x + '" cy="' + y + '" r="13" fill="' + w + '"/>').join('');
-    return leg(42, 70, 36, 8, '#5f5149', 'b') + leg(80, 70, 36, 8, '#5f5149', 'a') + leg(50, 72, 34, 8, k, 'a') + leg(88, 72, 34, 8, k, 'b') +
-      wool + '<ellipse cx="63" cy="64" rx="30" ry="18" fill="' + w + '" stroke="none"/>' +
-      '<ellipse cx="96" cy="50" rx="10" ry="5" fill="' + k + '" transform="rotate(-25 96 50)"/><ellipse cx="110" cy="53" rx="16" ry="19" fill="#ead9c6"/>' +
-      '<circle cx="103" cy="36" r="7" fill="' + w + '"/><circle cx="113" cy="34" r="7" fill="' + w + '"/>' + eyes(107, 118, 51) + cheek(104, 61) +
-      '<path d="M112 63 q2.5 2.5 5 0" fill="none" stroke-width="1.8"/>';
+  sheep: { top: [110, 31], eye: [115.5, 42], neck: [102, 57], draw: () => {
+    const w = '#fbf7f0', k = '#6f625a';
+    const wool = 'M26 62 ' + [[30, 48], [42, 40], [56, 38], [70, 38], [84, 40], [96, 48], [100, 62], [94, 76], [80, 82], [64, 84], [48, 82], [34, 76], [26, 62]].map(([x, y], i, a) => i ? 'Q' + ((x + a[i - 1][0]) / 2 + (y - a[i - 1][1]) * .45) + ' ' + ((y + a[i - 1][1]) / 2 - (x - a[i - 1][0]) * .45) + ' ' + x + ' ' + y : '').join(' ') + 'Z';
+    const lg = (x, c, cls) => g('leg ' + cls, 'M' + x + ' 70 L' + x + ' 100 L' + (x - 1) + ' 105 h9 L' + (x + 7) + ' 100 L' + (x + 7) + ' 70Z', c);
+    return limb('hind', 44, .6, '#5f5149', 'b', false, 62) + limb('fore', 82, .7, '#5f5149', 'a', false, 62) + limb('hind', 52, .62, k, 'a', false, 62) + limb('fore', 90, .72, k, 'b', false, 62) + '<path d="' + wool + '" fill="' + w + '"/>' +
+      '<path d="M50 58 q4 -4 8 0 M66 52 q4 -4 8 0 M40 68 q4 -4 8 0 M74 68 q4 -4 8 0" fill="none" stroke-width="1.6"/>' +
+      '<path d="M100 42 C98 34 104 28 112 30 C120 32 126 42 129 52 C130 58 125 62 119 60 C110 58 102 52 100 42Z" fill="#ead9c6"/>' +
+      '<ellipse cx="104" cy="40" rx="9" ry="4" fill="#d9c7b5" transform="rotate(25 104 40)"/>' +
+      '<path d="M98 36 q2 -10 10 -8 q4 -6 10 0 q4 4 0 8" fill="' + w + '"/>' + eyes(112, 119, 42, .9) + cheek(116, 50) +
+      '<path d="M127 55 q-2 2 -4 1" fill="none" stroke-width="1.6"/>';
   } },
-  chick: { top: [80, 36], eye: [93, 54], neck: [84, 84], draw: () => {
+  chick: { top: [78, 36], eye: [92, 47], neck: [84, 72], draw: () => {
     const f = '#ffd95a';
-    return '<path class="leg a" d="M64 90 v16 l-5 3 M64 106 l5 3" fill="none" stroke="#f29b38" stroke-width="3"/><path class="leg b" d="M80 90 v16 l-5 3 M80 106 l5 3" fill="none" stroke="#f29b38" stroke-width="3"/>' +
-      '<path d="M44 62 q-18 -10 -18 4 q4 6 20 4z" fill="' + f + '"/><circle cx="74" cy="66" r="31" fill="' + f + '"/>' +
-      '<path class="wing" d="M56 66 q8 20 26 8 q-10 -12 -26 -8z" fill="#ffcb2e"/><path d="M76 36 q2 -12 6 -2 q4 -10 5 2" fill="none"/>' +
-      '<path d="M101 58 l12 4 l-12 5z" fill="#f29b38"/>' + eyes(88, 98, 54) + cheek(92, 64);
+    return '<path class="leg a" d="M64 88 l-2 16 l-6 3 M62 104 l6 3" fill="none" stroke="#f29b38" stroke-width="3"/><path class="leg b" d="M78 88 l2 16 l-6 3 M80 104 l6 3" fill="none" stroke="#f29b38" stroke-width="3"/>' +
+      '<path d="M44 58 L28 50 L38 70Z" fill="' + f + '"/><path d="M40 64 C40 44 58 32 76 34 C94 36 104 50 104 64 C104 82 90 94 72 94 C52 94 40 80 40 64Z" fill="' + f + '"/>' +
+      '<path class="wing" d="M52 64 C56 56 70 56 76 62 C78 72 70 80 60 78 C56 76 52 72 52 64Z" fill="#ffcb2e"/><path d="M60 72 l6 -4 M58 66 l8 -2" fill="none" stroke-width="1.4"/>' +
+      '<path d="M74 34 q0 -10 5 -4 q3 -8 6 0" fill="none"/><path d="M102 52 l12 3 l-11 5z" fill="#f29b38"/><path d="M103 56 l10 0" fill="none" stroke-width="1.2"/>' + eyes(88, 96, 47) + cheek(92, 58);
   } }
 };
-
 // Clothes, drawn around the point they attach to: the top of the head, the eyes or the neck.
 const WEAR = {
   ribbon: ['top', '<g transform="translate(-10 4) rotate(-20)"><path d="M0 0 l-12 -8 v16z M0 0 l12 -8 v16z" fill="' + C.rose + '"/><circle r="3.5" fill="' + C.pink + '"/></g>'],
@@ -2003,8 +2070,28 @@ document.addEventListener('click', e => {
   const fold = box.closest('details');
   if (open && fold && !fold.open) fold.open = true;
 }, true);
+// Tabs: 홈 holds the friend's room (or the plain 나의 시간 card) and the tasks; 기록, 꾸미기 and
+// 설정 hold everything else. 나의 시간 친구 can be turned off in 설정 for the plain text look.
+function showTab(name) {
+  for (const t of document.querySelectorAll('.tab')) t.hidden = t.id !== 'tab-' + name;
+  for (const b of $('tabbar').children) b.classList.toggle('on', b.dataset.tab === name);
+  window.scrollTo(0, 0);
+  if (name === 'deco' && $('shopBox').open) renderShop();
+}
+for (const b of $('tabbar').children) b.onclick = () => showTab(b.dataset.tab);
+function applyFriendView() {
+  const on = settings.showFriend !== false;
+  $('friendHome').hidden = !on;
+  $('mainCard').hidden = on;
+  $('decoTab').hidden = !on;
+  $('showFriend').checked = on;
+}
+$('showFriend').addEventListener('change', () => { settings.showFriend = $('showFriend').checked; store('ft.settings', settings); applyFriendView(); });
+applyFriendView();
+
 $('guideLink').onclick = e => {
   e.preventDefault();
+  showTab('home');
   $('help-start').hidden = false;
   document.querySelector('[data-help="start"]').classList.add('on');
   $('help-start').scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -2250,6 +2337,7 @@ $('shareBtn').onclick = async () => {
 
 $('toNotion').onclick = () => {
   if (!settings.notionUrl) {
+    showTab('log');
     $('notionSetup').open = true;
     $('notionUrl').focus();
     toast('먼저 노션 페이지 주소를 넣어 주세요');
