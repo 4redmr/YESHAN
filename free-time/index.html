@@ -174,7 +174,10 @@
   .roomtop small { display: block; font-size: 16px; }
   .roomtop b { display: block; font-size: 40px; color: #c48a1c; }
   .roomtop small#roomBadge { font-size: 15px; color: #8a6a2c; }
-  .room .bubble { top: 92px; }
+  .room .bubble { top: 100px; font-size: 17px; }
+  .roomstars { position: absolute; right: 10px; bottom: 8px; z-index: 2; background: #fff; color: #333; border: 2px solid #333; border-radius: 12px; padding: 0 9px; font-size: 17px; }
+  .starpop { position: absolute; right: 16px; bottom: 34px; z-index: 3; color: #c48a1c; font-size: 22px; font-weight: 700; animation: pop 1.6s ease-out forwards; pointer-events: none; }
+  @keyframes pop { 0% { opacity: 0; transform: translateY(10px); } 15% { opacity: 1; } 100% { opacity: 0; transform: translateY(-40px); } }
   /* Four tabs along the bottom: 홈 for every day, the rest for now and then. */
   main { padding-bottom: calc(84px + env(safe-area-inset-bottom)) !important; }
   .tabbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 6; display: flex; justify-content: center; background: var(--card); border-top: 1px solid var(--line);
@@ -183,7 +186,7 @@
   .tabbar button b { display: block; font-size: 22px; font-weight: 400; }
   .tabbar button.on { color: var(--accent); font-weight: 700; }
   .tabbar button[hidden] { display: none; }
-  .room { position: relative; height: 380px; border-radius: 22px; overflow: hidden; border: 2.5px solid #333; background: #fffaf2; }
+  .room { position: relative; height: min(300px, 44vh); min-height: 250px; border-radius: 22px; overflow: hidden; border: 2.5px solid #333; background: #fffaf2; }
   .scene { position: absolute; inset: 0; }
   .scene svg { width: 100%; height: 100%; display: block; }
   .bubble { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); z-index: 2; width: max-content; max-width: 86%;
@@ -274,7 +277,7 @@
   .helpbox li { display: list-item; border-top: 0; padding: 3px 0; font-size: 14px; color: var(--muted); line-height: 1.55; }
   .helpbox b { color: var(--text); }
   .helpbox .hh { list-style: none; margin: 6px 0 0 -14px; color: var(--text); font-weight: 600; }
-  .toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: var(--text); color: var(--bg);
+  .toast { position: fixed; left: 50%; bottom: calc(84px + env(safe-area-inset-bottom)); z-index: 10; transform: translateX(-50%); background: var(--text); color: var(--bg);
     padding: 8px 14px; border-radius: 20px; font-size: 14px; opacity: 0; transition: opacity .2s; pointer-events: none; }
   .toast.on { opacity: 1; }
 </style>
@@ -314,7 +317,7 @@
         <li><b>나의 시간</b>은 회사·학교처럼 바쁜 시간과 오가는 시간을 빼고, 잠들 때까지 남은 <b>내가 주인인 시간</b>이에요. 쉬든 공부하든 다 괜찮아요.</li>
         <li><b>나의 하루</b>에 일어나는 시간, 잠드는 시간, 바쁜 시간, 오가는 시간을 한 번만 넣으면 기억해요.</li>
         <li>화면 맨 아래 탭으로 옮겨 다녀요. <b>🏠 홈</b>에서 할 일을 누르고, <b>📊 기록</b>에서 쌓인 기록을 보고, <b>🛍️ 꾸미기</b>에서 친구를 꾸미고, <b>⚙️ 설정</b>에서 나의 하루와 알림을 정해요.</li>
-        <li>맨 위 친구 방은 할 일을 기록할수록 별이 쌓이는 곳이에요. 설정의 <b>친구 보기</b>를 끄면 글자로만 보여요.</li>
+        <li>맨 위 친구 방은 할 일을 기록할수록 별이 쌓이는 곳이에요. 오른쪽 아래에 지금 가진 별이 보여요. 설정의 <b>친구 보기</b>를 끄면 글자로만 보여요.</li>
         <li>각 칸 오른쪽 위의 <b>?</b>를 누르면 그 칸의 사용법이 나와요.</li>
         <li>휴대폰 홈 화면에 설치하면 앱처럼 쓸 수 있어요. 아이폰은 Safari의 공유(□↑) → "홈 화면에 추가"예요.</li>
       </ul>
@@ -323,8 +326,9 @@
   <section class="card roomcard" id="friendHome">
     <div class="room" id="room">
       <div class="scene" id="scene"></div>
-      <div class="roomtop hand"><small>잠들 때까지 나의 시간</small><b id="roomLeft">–</b><small id="roomBadge"></small></div>
+      <div class="roomtop hand"><small>잠들 때까지 남은 나의 시간</small><b id="roomLeft">–</b><small id="roomBadge"></small></div>
       <div class="bubble hand" id="friendSay"></div>
+      <div class="roomstars hand" id="roomStars">⭐ 0</div>
       <div class="walker"><button class="pet" id="pet" aria-label="친구 쓰다듬기"><span id="petFace"></span></button></div>
     </div>
   </section>
@@ -378,7 +382,7 @@
         <button data-m="30">+30분</button><button data-m="60">+1시간</button>
       </div>
     </details>
-    <div class="sumline"><span>오늘 쓴 시간 <b id="usedSum">0분</b></span><span>나의 시간 <b id="freeSum">–</b></span></div>
+    <div class="sumline"><span>오늘 쓴 시간 <b id="usedSum">0분</b></span><span>오늘 하루 나의 시간 <b id="freeSum">–</b></span></div>
     <div class="row">
       <button id="undo">되돌리기</button>
       <button id="editToday">기록 고치기</button>
@@ -412,8 +416,8 @@
     </div>
     <p class="step" style="margin:0 0 8px">최근 7일</p>
     <div class="stats">
-      <div><b id="avg">–</b><span class="label">하루 평균 나의 시간</span></div>
-      <div><b id="sum">–</b><span class="label">7일 합계</span></div>
+      <div><b id="avg">–</b><span class="label">하루 평균 쓴 시간</span></div>
+      <div><b id="sum">–</b><span class="label">7일 동안 쓴 시간</span></div>
       <div><b id="days">0</b><span class="label">기록한 날</span></div>
     </div>
     <ul class="used" id="weekActs"></ul>
@@ -607,6 +611,15 @@
   <button data-tab="set"><b>⚙️</b>설정</button>
 </nav>
     <svg id="probe" aria-hidden="true"></svg>
+<dialog id="askDlg">
+  <h2 id="askTitle"></h2>
+  <p id="askText" style="white-space:pre-line;margin:0 0 4px"></p>
+  <div id="askBody"></div>
+  <div class="row">
+    <button id="askNo">취소</button>
+    <button class="primary" id="askYes">확인</button>
+  </div>
+</dialog>
 <dialog id="modeDlg">
   <h2>나만의 모드 만들기</h2>
   <label>모드 이름<input type="text" id="modeName" maxlength="10" placeholder="예: 육아, 알바, 교회 봉사"></label>
@@ -995,7 +1008,7 @@ function renderHistory() {
       const d = new Date(k + 'T00:00');
       li.innerHTML = '<span class="d"></span><span class="h"></span><span class="n"></span><button>고치기</button>';
       li.children[0].textContent = (d.getMonth() + 1) + '/' + d.getDate() + ' ' + '일월화수목금토'[d.getDay()];
-      li.children[1].textContent = fmt(r.free);
+      li.children[1].textContent = fmt(usedTotal(r.acts));
       const marked = Object.entries(r.acts || {}).map(([a, v]) => a + ' ' + fmt(v) + (SRC_MARK[actSrc(r, a)] || '')).join(', ');
       li.children[2].textContent = (r.off ? '[쉬는 날] ' : '') + [marked, r.note].filter(Boolean).join(' · ');
       li.children[3].onclick = () => openEditor(k);
@@ -1005,7 +1018,7 @@ function renderHistory() {
 
   const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 6);
   const recentKeys = keys.filter(k => k >= dateKey(cutoff));
-  const recent = recentKeys.map(k => records[k].free);
+  const recent = recentKeys.map(k => usedTotal(records[k].acts));
   const total = recent.reduce((a, b) => a + b, 0);
   const week = {};
   for (const k of recentKeys) for (const [a, m] of Object.entries(records[k].acts || {})) week[a] = (week[a] || 0) + m;
@@ -1356,7 +1369,7 @@ function stopTimer(minutes, quiet, reason) {
   } else render();
   tick();
   if (!quiet) toast(t.act + ' ' + (m >= 1 ? fmt(m) + ' 기록했어요 · ⭐+' + Math.floor(m) : '1분 미만 기록했어요'));
-  if (m >= 1) hop();
+  if (m >= 1) { hop(); starPop(Math.floor(m)); }
 }
 
 // 나의 시간 친구: every recorded minute is a star, and stars buy clothes, things for the room,
@@ -1589,7 +1602,7 @@ const SCENES = [
   // 원룸 전세: striped wallpaper, a big window with curtains, a clock.
   '<rect x="-5" y="-5" width="350" height="350" fill="#fdf3ea" stroke="none"/>' + [20, 60, 100, 140, 180, 220, 260, 300].map(x => '<path d="M' + x + ' 0 v250" stroke="#f4e1d2" stroke-width="10"/>').join('') + FLOOR('#ecd3b2') +
     '<rect x="196" y="98" width="80" height="66" rx="5" fill="' + C.sky + '"/><path d="M236 98 v66 M196 131 h80" fill="none"/><path d="M188 92 q10 36 0 76 h14 q-6 -40 0 -76z M284 92 q-10 36 0 76 h-14 q6 -40 0 -76z" fill="' + C.pink + '"/><path d="M184 92 h104" fill="none"/>' +
-    '<circle cx="128" cy="116" r="15" fill="#fff"/><path d="M128 116 v-9 M128 116 l6 4" fill="none"/>',
+    '<circle cx="40" cy="168" r="15" fill="#fff"/><path d="M40 168 v-9 M40 168 l6 4" fill="none"/>',
   // 작은 내 집: outdoors, in front of our own little house.
   OUT() + '<path d="M-5 250 h350 v90 h-350z" fill="#e3f2d9"/><path d="M-5 250 q85 -4 175 0 t175 0" fill="none"/>' + HOUSE(232, 250, 1, C.peach, C.pink) + BUSH(320, 252) + BUSH(150, 252, .8) +
     '<path d="M60 90 q-10 0 -8 -10 q2 -8 10 -6 q4 -10 16 -6 q10 -4 14 6 q10 0 8 10z" fill="#fff"/>',
@@ -1641,7 +1654,9 @@ function friendLine() {
   const m = usedTotal((records[dateKey(new Date())] || {}).acts), h = new Date().getHours();
   if (timer) return timer.act + ' 하는 중이구나! 옆에서 조용히 응원할게.';
   if (m >= 1) return '오늘 벌써 ' + fmt(m) + '을 너를 위해 썼네! 고마워. ⭐';
-  const lines = h < 12 ? ['좋은 아침! 오늘도 와 줘서 반가워.', '오늘 하루도 천천히 가 보자.']
+  const lines = h < 5 ? ['늦은 밤이네. 오늘도 수고 많았어.', '푹 자고 내일 또 만나자.']
+    : sched().off ? ['오늘은 쉬는 날이네! 마음 편히 보내.', '쉬는 날에도 와 줘서 반가워.']
+    : h < 12 ? ['좋은 아침! 오늘도 와 줘서 반가워.', '오늘 하루도 천천히 가 보자.']
     : h < 18 ? ['오늘 하루 어때? 잠깐 쉬어 가도 좋아.', '바쁜 하루 속에서 보러 와 줘서 고마워.']
     : ['오늘도 수고 많았어. 이제 나의 시간이야.', '5분만이라도 너를 위한 시간 써 볼까?'];
   return lines[new Date().getDate() % lines.length];
@@ -1656,7 +1671,7 @@ function renderFriend() {
   const petKey = f.pet + '|' + f.wear, sceneKey = home + '|' + f.owned.join();
   if ($('petFace').dataset.key !== petKey) { $('petFace').innerHTML = sideSVG(f.pet, f.wear); $('petFace').dataset.key = petKey; }
   if ($('scene').dataset.key !== sceneKey) { $('scene').innerHTML = sceneSVG(home, f.owned); $('scene').dataset.key = sceneKey; }
-  $('stars').textContent = '⭐ ' + starsLeft();
+  $('stars').textContent = $('roomStars').textContent = '⭐ ' + starsLeft().toLocaleString();
   $('friendDays').textContent = STAGES[stage][1] + ' · 함께한 날 ' + days + '일';
   $('friendTitle').textContent = name + ' · 🏠 ' + HOMES[home].n;
   $('friendSay').textContent = friendLine();
@@ -1705,10 +1720,10 @@ function renderShop() {
 }
 $('shopBox').addEventListener('toggle', () => { if ($('shopBox').open) renderShop(); });
 
-function moveHome(i) {
+async function moveHome(i) {
   const f = friend(), h = HOMES[i], left = starsLeft();
   if (left < h.p) { toast('별이 ' + (h.p - left).toLocaleString() + '개 더 필요해요'); return; }
-  if (!confirm('⭐ ' + h.p.toLocaleString() + '개로 ' + h.to + ' 이사할까요?')) return;
+  if (!await ask({ title: '🏠 ' + h.to + ' 이사할까요?', text: '별 ⭐ ' + h.p.toLocaleString() + '개를 써요. 지금 가진 별은 ' + left.toLocaleString() + '개예요.', yes: '이사하기' })) return;
   f.spent += h.p; f.home = i; f.maxHome = i;
   store('ft.settings', settings);
   renderFriend(); hop();
@@ -1716,7 +1731,7 @@ function moveHome(i) {
   $('friendSay').textContent = '우와, 새집이다! 고마워!';
 }
 
-function shopTap(it) {
+async function shopTap(it) {
   const f = friend();
   if (f.owned.includes(it.id)) {
     if (isThing(it)) return;
@@ -1724,13 +1739,40 @@ function shopTap(it) {
   } else {
     const left = starsLeft();
     if (left < it.p) { toast('별이 ' + (it.p - left) + '개 더 필요해요'); return; }
-    if (!confirm('⭐ ' + it.p + '개로 ' + it.n + '을(를) 살까요?')) return;
+    if (!await ask({ title: eul(it.n) + ' 살까요?', text: '별 ⭐ ' + it.p.toLocaleString() + '개를 써요. 지금 가진 별은 ' + left.toLocaleString() + '개예요.', yes: '사기' })) return;
     f.spent += it.p; f.owned.push(it.id);
     if (!isThing(it)) f.wear = it.id;
     toast(it.n + ' 샀어요!');
   }
   store('ft.settings', settings);
   renderFriend(); hop();
+}
+
+// A little "+26⭐" that floats up from the star badge when minutes are recorded.
+function starPop(n) {
+  if (!n || settings.showFriend === false) return;
+  const el = document.createElement('div');
+  el.className = 'starpop hand'; el.textContent = '+' + n + '⭐';
+  $('room').appendChild(el);
+  setTimeout(() => el.remove(), 1700);
+}
+
+// The app's own question box instead of the browser's confirm/prompt. Resolves to true/false,
+// or to the typed number when a number field is asked for (null on 취소).
+function ask({ title, text, yes, no, number }) {
+  return new Promise(resolve => {
+    $('askTitle').textContent = title || '';
+    $('askText').textContent = text || '';
+    $('askBody').innerHTML = number !== undefined ? '<input type="number" id="askNum" inputmode="decimal" min="0" step="1">' : '';
+    if (number !== undefined) $('askNum').value = number;
+    $('askYes').textContent = yes || '확인';
+    $('askNo').textContent = no || '취소';
+    const done = v => { $('askDlg').close(); resolve(v); };
+    $('askYes').onclick = () => done(number !== undefined ? $('askNum').value : true);
+    $('askNo').onclick = () => done(number !== undefined ? null : false);
+    $('askDlg').oncancel = e => { e.preventDefault(); done(number !== undefined ? null : false); };
+    $('askDlg').showModal();
+  });
 }
 
 function hop() {
@@ -1899,8 +1941,33 @@ function chooseMode(key, firstRun) {
   FIELDS.forEach(f => { $(f).value = settings[f]; });
   store('ft.settings', settings);
   applyMode(); renderOverride(); render(); renderWeekly();
-  if (fresh) $('dayBox').open = true;
+  if (fresh) askFirstTimes();
   toast(m.icon + ' ' + m.name + ' 모드로 바꿨어요');
+}
+
+// On a fresh install, ask the two or three times the whole app depends on instead of guessing.
+async function askFirstTimes() {
+  const l = L(settings.mode);
+  $('askBody').innerHTML = '';
+  const ok = await new Promise(resolve => {
+    $('askTitle').textContent = '⏰ 나의 하루를 알려 주세요';
+    $('askText').textContent = '이 시간으로 잠들 때까지 남은 나의 시간을 계산해요. 나중에 설정에서 바꿀 수 있어요.';
+    $('askBody').innerHTML = '<div class="grid" style="margin-top:6px"><label>' + l.start + ' 시간<input type="time" id="fwStart"></label><label>' + l.end + ' 시간<input type="time" id="fwEnd"></label>' +
+      '<label>잠드는 시간<input type="time" id="fwSleep"></label><label>일어나는 시간<input type="time" id="fwWake"></label></div>';
+    $('fwStart').value = settings.workStart; $('fwEnd').value = settings.workEnd; $('fwSleep').value = settings.sleep; $('fwWake').value = settings.wake;
+    $('askYes').textContent = '시작하기'; $('askNo').textContent = '나중에';
+    const done = v => { $('askDlg').close(); resolve(v); };
+    $('askYes').onclick = () => done(true);
+    $('askNo').onclick = () => done(false);
+    $('askDlg').oncancel = e => { e.preventDefault(); done(false); };
+    $('askDlg').showModal();
+  });
+  if (!ok) return;
+  for (const [f, id] of [['workStart', 'fwStart'], ['workEnd', 'fwEnd'], ['sleep', 'fwSleep'], ['wake', 'fwWake']]) if ($(id).value) settings[f] = $(id).value;
+  FIELDS.forEach(f => { $(f).value = settings[f]; });
+  store('ft.settings', settings);
+  render(); renderDaySummary();
+  toast('좋아요! 이제 할 일을 눌러 시간을 재 보세요');
 }
 
 // Adding and removing the user's own modes.
@@ -1998,8 +2065,8 @@ $('keepAwake').checked = settings.keepAwake;
 $('keepAwake').addEventListener('change', () => { settings.keepAwake = $('keepAwake').checked; store('ft.settings', settings); syncWakeLock(); });
 
 // A timer left on for hours is usually forgotten; ask once every 3 hours.
-function checkForgotten() {
-  if (!timer) return;
+async function checkForgotten() {
+  if (!timer || $('askDlg').open) return;
   // Past the user's bedtime, the likeliest story is that they fell asleep with it on.
   const bed = new Date(timer.start), [bh, bm] = settings.sleep.split(':').map(Number);
   bed.setHours(bh, bm, 0, 0);
@@ -2007,7 +2074,7 @@ function checkForgotten() {
   if (Date.now() > bed && !timer.bedAsked) {
     timer.bedAsked = true; store('ft.timer', timer);
     const guess = Math.round(Math.min(elapsedMin(), (bed - timer.start) / 60000));
-    const ans = prompt(eul(timer.act) + ' 재다가 잠드신 것 같아요 😴\n잠드는 시간(' + settings.sleep + ')이 지나도록 타이머가 켜져 있었어요.\n\n실제로 몇 분 했나요? (숫자만)\n아직 하는 중이면 "취소"를 눌러 주세요.', String(guess));
+    const ans = await ask({ title: eul(timer.act) + ' 재다가 잠드신 것 같아요 😴', text: '잠드는 시간(' + settings.sleep + ')이 지나도록 타이머가 켜져 있었어요.\n실제로 몇 분 했나요?', number: guess, yes: '이만큼 했어요', no: '아직 하는 중' });
     if (ans === null) { timer.askedAt = Date.now(); store('ft.timer', timer); return; }
     const m = parseFloat(ans);
     stopTimer(isNaN(m) ? guess : Math.max(0, m), false, '잠들었음');
@@ -2015,10 +2082,10 @@ function checkForgotten() {
   }
   if (elapsedMin() < 180) return;
   if (timer.askedAt && (Date.now() - timer.askedAt) / 60000 < 180) return;
-  if (confirm(eul(timer.act) + ' ' + fmt(elapsedMin()) + ' 동안 재고 있어요.\n아직 하는 중이에요?\n\n확인: 계속 재기 / 취소: 멈추기')) {
+  if (await ask({ title: '아직 하는 중이에요?', text: eul(timer.act) + ' ' + fmt(elapsedMin()) + ' 동안 재고 있어요.', yes: '계속 재기', no: '멈추기' })) {
     timer.askedAt = Date.now(); store('ft.timer', timer); return;
   }
-  const ans = prompt('실제로 몇 분 했나요? (숫자만)', String(Math.round(elapsedMin())));
+  const ans = await ask({ title: '실제로 몇 분 했나요?', number: Math.round(elapsedMin()), yes: '이만큼 했어요', no: '나중에' });
   const m = parseFloat(ans);
   if (ans === null) { timer.askedAt = Date.now(); store('ft.timer', timer); return; }
   stopTimer(isNaN(m) ? elapsedMin() : Math.max(0, m), false, '멈추는 걸 깜빡함');
