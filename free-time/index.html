@@ -152,6 +152,9 @@
   .modes .madd { border-style: dashed; color: var(--muted); }
   #modeDlg { width: min(92vw, 420px); padding: 18px; border: 1px solid var(--line); border-radius: 14px; background: var(--card); color: var(--text); }
   #modeDlg::backdrop { background: rgba(0, 0, 0, .5); }
+  #askDlg { width: min(92vw, 420px); padding: 18px; border: 1px solid var(--line); border-radius: 14px; background: var(--card); color: var(--text); }
+  #askDlg::backdrop { background: rgba(0, 0, 0, .5); }
+  #askDlg h2 { margin-bottom: 8px; }
   #modeIcons .chip { font-size: 20px; padding: 4px 10px; }
   .modes { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
   .modes button { padding: 14px 8px; border-radius: 12px; font-weight: 600; line-height: 1.3; }
@@ -838,6 +841,8 @@ function render() {
   $('lgFree').textContent = fmt(p.free);
 
   $('freeSum').textContent = fmt(p.free);
+  // The one-line memo belongs to today; refill it when the date changes with the app left open.
+  if ($('note').dataset.day !== dateKey(now)) { $('note').value = (records[dateKey(now)] || {}).note || ''; $('note').dataset.day = dateKey(now); }
   renderToday();
   renderHistory();
   renderFriend();
@@ -1374,7 +1379,7 @@ function startTimer(name) {
 // minutes overrides the measured time (used when the user corrects a forgotten timer).
 function stopTimer(minutes, quiet, reason) {
   if (!timer) return;
-  const measured = elapsedMin(), t = timer, m = minutes === undefined ? measured : minutes;
+  const measured = elapsedMin(), t = timer, m = minutes === undefined ? measured : minutes, before = starsLeft();
   timer = null;
   store('ft.timer', null);
   syncStatusNotif();
@@ -1383,8 +1388,11 @@ function stopTimer(minutes, quiet, reason) {
     else addMinutes(t.date, t.act, m, 'edit', { from: Math.round(measured), to: Math.round(m * 10) / 10, reason });
   } else render();
   tick();
-  if (!quiet) toast(t.act + ' ' + (m >= 1 ? fmt(m) + ' 기록했어요 · ⭐+' + Math.floor(m) : '1분 미만 기록했어요'));
-  if (m >= 1) { hop(); starPop(Math.floor(m)); }
+  // Stars can be owed after spending and then fixing minutes, so show only what was really gained.
+  const gained = starsLeft() - before;
+  if (!quiet) toast(m < 0.1 ? t.act + ' 기록할 시간이 없어서 저장하지 않았어요' : t.act + ' ' + (m >= 1 ? fmt(m) : '1분 미만') + ' 기록했어요' + (gained > 0 ? ' · ⭐+' + gained : ''));
+  if (m >= 1) hop();
+  if (gained > 0) starPop(gained);
 }
 
 // 나의 시간 친구: every recorded minute is a star, and stars buy clothes, things for the room,
@@ -1791,6 +1799,7 @@ function ask({ title, text, yes, no, number, input, placeholder }) {
     $('askDlg').oncancel = e => { e.preventDefault(); done(field ? null : false); };
     $('askDlg').showModal();
     // Typing a name needs the keyboard; anything else starts on the main button, not a field.
+    if (field) $('askNum').onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); $('askYes').click(); } };
     (input !== undefined ? $('askNum') : $('askYes')).focus();
   });
 }
@@ -2019,9 +2028,10 @@ function renderModeIcons() {
   }
 }
 $('modeCancel').onclick = () => $('modeDlg').close();
+$('modeName').addEventListener('input', () => $('modeName').setCustomValidity(''));
 $('modeSave').onclick = () => {
   const name = $('modeName').value.trim();
-  if (!name) { toast('모드 이름을 적어 주세요'); $('modeName').focus(); return; }
+  if (!name) { $('modeName').setCustomValidity('모드 이름을 적어 주세요'); $('modeName').reportValidity(); return; }
   const c = { id: Date.now().toString(36), icon: modeIcon, name, busy: $('modeBusy').value.trim(), go: $('modeGo').value.trim() };
   settings.customModes = (settings.customModes || []).concat(c);
   store('ft.settings', settings);
@@ -2230,7 +2240,7 @@ function openEditor(key) {
   $('editDlg').showModal();
 }
 $('editToday').onclick = () => {
-  if (timer) stopTimer(undefined, true);
+  if (timer) toast('재고 있는 ' + timer.act + ' 시간은 멈출 때 더해져요');
   openEditor(dateKey(new Date()));
 };
 $('editCancel').onclick = () => $('editDlg').close();
@@ -2361,8 +2371,11 @@ $('restoreFile').onchange = async () => {
   store('ft.overrides', overrides);
   // On a new phone take the old settings too; otherwise only bring over missing activities.
   if (fresh && data.settings) { settings = Object.assign({}, DEFAULTS, data.settings); migrateWeek(); }
-  else if (data.settings && Array.isArray(data.settings.acts)) {
-    for (const a of data.settings.acts) if (!settings.acts.includes(a)) settings.acts.push(a);
+  else if (data.settings) {
+    if (Array.isArray(data.settings.acts)) for (const a of data.settings.acts) if (!settings.acts.includes(a)) settings.acts.push(a);
+    // A friend still untouched on this phone takes the backup's friend, with its room and stars spent.
+    const mine = settings.friend, theirs = data.settings.friend;
+    if (theirs && (!mine || (!mine.spent && !(mine.owned || []).length))) settings.friend = theirs;
   }
   store('ft.records', records);
   store('ft.settings', settings);
