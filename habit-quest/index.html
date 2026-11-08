@@ -1,0 +1,1482 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- /wrapper-head -->
+<title>하루 퀘스트</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans+KR:wght@400;500;700&display=swap">
+<style>
+  /* Layout: one column (max 760px). A 24-hour dial of today sits on top, the day's quests run below it in time order. */
+  :root {
+    --bg: #eef1ec;
+    --surface: #fbfcfa;
+    --surface-2: #e2e8e0;
+    --ink: #17201b;
+    --muted: #55625a;
+    --line: #cdd6cb;
+    --accent: #3346c4;
+    --accent-ink: #ffffff;
+    --accent-soft: #dde2fa;
+    --xp: #9a6300;
+    --xp-soft: #f5e4c0;
+    --good: #23794b;
+    --good-soft: #d6eedf;
+    --warn: #9c5600;
+    --warn-soft: #f7e3c8;
+    --bad: #b2381f;
+    --bad-soft: #f6dad3;
+    --night: rgba(51, 70, 196, .08);
+    --shadow: 0 10px 30px rgba(23, 32, 27, .08);
+    --f-display: "Do Hyeon", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+    --f-body: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+    --f-num: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0f1311; --surface: #171c19; --surface-2: #222a25; --ink: #e5ebe6; --muted: #9ba89f; --line: #2d3731;
+      --accent: #9aa6ff; --accent-ink: #0f1311; --accent-soft: #262c55; --xp: #f0b445; --xp-soft: #3a2f17;
+      --good: #5ec78d; --good-soft: #17301f; --warn: #f0a24a; --warn-soft: #3a2a14; --bad: #ff7f68; --bad-soft: #3d1d17;
+      --night: rgba(154, 166, 255, .09); --shadow: 0 10px 30px rgba(0, 0, 0, .35);
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0f1311; --surface: #171c19; --surface-2: #222a25; --ink: #e5ebe6; --muted: #9ba89f; --line: #2d3731;
+    --accent: #9aa6ff; --accent-ink: #0f1311; --accent-soft: #262c55; --xp: #f0b445; --xp-soft: #3a2f17;
+    --good: #5ec78d; --good-soft: #17301f; --warn: #f0a24a; --warn-soft: #3a2a14; --bad: #ff7f68; --bad-soft: #3d1d17;
+    --night: rgba(154, 166, 255, .09); --shadow: 0 10px 30px rgba(0, 0, 0, .35);
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 15px/1.6 var(--f-body);
+    -webkit-font-smoothing: antialiased;
+  }
+  body::before {
+    content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg);
+  }
+  .shell {
+    max-width: 760px; margin: 0 auto;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-block: 12px 120px;
+  }
+  button, input, select, textarea { font: inherit; color: inherit; }
+  button { cursor: pointer; }
+  :focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  h1, h2, h3 { font-family: var(--f-display); font-weight: 400; letter-spacing: .01em; text-wrap: balance; margin: 0; }
+  .num { font-family: var(--f-num); font-variant-numeric: tabular-nums; }
+  .muted { color: var(--muted); }
+  .small { font-size: 13px; }
+
+  /* top bar */
+  .top {
+    position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5;
+    background: var(--bg);
+    display: flex; flex-direction: column; gap: 10px; padding-block: 8px 10px;
+    border-bottom: 1px solid var(--line);
+  }
+  .brand-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .brand { font-family: var(--f-display); font-size: 26px; line-height: 1; display: flex; align-items: center; gap: 8px; }
+  .brand-mark { width: 26px; height: 26px; }
+  .lvl { margin-left: auto; display: flex; align-items: center; gap: 10px; min-width: 0; }
+  .lvl-badge {
+    font-family: var(--f-display); font-size: 15px; background: var(--xp-soft); color: var(--xp);
+    padding: 3px 10px; border-radius: 999px; white-space: nowrap;
+  }
+  .xpbar { width: 120px; max-width: 30vw; height: 8px; border-radius: 99px; background: var(--surface-2); overflow: hidden; }
+  .xpbar > i { display: block; height: 100%; background: var(--xp); border-radius: 99px; transition: width .4s; }
+  .xp-text { font-size: 12px; color: var(--muted); white-space: nowrap; }
+  .tabs { display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; }
+  .tabs a {
+    text-decoration: none; color: var(--muted); padding: 6px 12px; border-radius: 10px; white-space: nowrap; font-weight: 500;
+  }
+  .tabs a[aria-current="page"] { background: var(--ink); color: var(--bg); }
+
+  main { display: flex; flex-direction: column; gap: 18px; padding-top: 16px; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 16px; }
+  .section-h { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .section-h h2 { font-size: 22px; }
+
+  /* hero */
+  .hero { display: grid; grid-template-columns: minmax(0, 260px) minmax(0, 1fr); gap: 20px; align-items: center; }
+  .dial { width: 100%; max-width: 260px; aspect-ratio: 1; display: block; margin: 0 auto; }
+  .dial .face { fill: var(--surface); stroke: var(--line); }
+  .dial .night { fill: none; stroke: var(--night); stroke-width: 22; }
+  .dial .tick { stroke: var(--line); stroke-width: 1.5; }
+  .dial .tick.major { stroke: var(--muted); stroke-width: 2; }
+  .dial .lab { fill: var(--muted); font: 600 11px var(--f-num); }
+  .dial .daystart { stroke: var(--accent); stroke-width: 2; stroke-dasharray: 3 3; }
+  .dial .hand { stroke: var(--accent); stroke-width: 3; stroke-linecap: round; }
+  .dial .hub { fill: var(--accent); }
+  .dial .mk { stroke: var(--surface); stroke-width: 2.5; }
+  .dial .mk.done { fill: var(--good); }
+  .dial .mk.late { fill: var(--bad); }
+  .dial .mk.soon { fill: var(--warn); }
+  .dial .mk.plan, .dial .mk.learn, .dial .mk.off { fill: var(--surface); stroke: var(--muted); stroke-width: 2; }
+  .dial .now { fill: var(--ink); font: 600 30px var(--f-num); }
+  .dial .sub { fill: var(--muted); font: 500 11px var(--f-body); }
+  .dial .next { fill: var(--ink); font: 500 12px var(--f-body); }
+  .hero-side { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+  .date { font-family: var(--f-display); font-size: 30px; line-height: 1.15; }
+  .progress { display: flex; flex-direction: column; gap: 6px; }
+  .progress-top { display: flex; justify-content: space-between; gap: 8px; font-size: 14px; }
+  .bar { height: 10px; border-radius: 99px; background: var(--surface-2); overflow: hidden; }
+  .bar > i { display: block; height: 100%; background: var(--good); border-radius: 99px; transition: width .4s; }
+  .chips { display: flex; gap: 6px; flex-wrap: wrap; }
+  .chip {
+    border: 1px solid var(--line); background: var(--surface); padding: 5px 12px; border-radius: 999px; font-size: 13px;
+  }
+  .chip[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+
+  /* suggestion cards */
+  .suggest { border: 1px solid var(--accent); background: var(--accent-soft); border-radius: 16px; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; }
+  .suggest.example { border-color: var(--xp); background: var(--xp-soft); }
+  .suggest h3 { font-size: 18px; }
+  .suggest p { margin: 0; }
+  .chain { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-weight: 500; }
+  .chain .gap { font: 500 12px var(--f-num); color: var(--muted); }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .btn {
+    border: 1px solid var(--line); background: var(--surface); padding: 8px 14px; border-radius: 10px; font-weight: 500;
+    min-height: 40px;
+  }
+  .btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  .btn.ghost { background: transparent; border-color: transparent; color: var(--muted); }
+  .btn.danger { color: var(--bad); border-color: var(--bad); background: transparent; }
+  .btn.sm { min-height: 32px; padding: 4px 10px; font-size: 13px; }
+  .input {
+    border: 1px solid var(--line); background: var(--surface); border-radius: 10px; padding: 8px 10px; min-height: 40px; min-width: 0;
+  }
+
+  /* timeline */
+  .list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+  .item {
+    display: grid; grid-template-columns: 64px minmax(0, 1fr) auto; gap: 4px 12px; align-items: center;
+    background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 10px 12px;
+    border-left-width: 4px;
+  }
+  .item.st-done { border-left-color: var(--good); }
+  .item.st-late { border-left-color: var(--bad); }
+  .item.st-soon { border-left-color: var(--warn); }
+  .item.st-plan, .item.st-learn, .item.st-off { border-left-color: var(--line); }
+  .when { display: flex; flex-direction: column; line-height: 1.2; }
+  .when .clock { font: 600 17px var(--f-num); font-variant-numeric: tabular-nums; }
+  .when .spread { font: 500 11px var(--f-num); color: var(--muted); }
+  .when button { all: unset; cursor: pointer; display: flex; flex-direction: column; border-radius: 6px; }
+  .when button:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  .what { min-width: 0; }
+  .what .name { font-weight: 700; overflow-wrap: anywhere; }
+  .what .meta { font-size: 12.5px; color: var(--muted); overflow-wrap: anywhere; }
+  .what .pill-m { display: none; }
+  .acts { display: flex; align-items: center; gap: 8px; }
+  .pill { font-size: 12px; padding: 2px 9px; border-radius: 999px; white-space: nowrap; font-weight: 500; }
+  .pill.done { background: var(--good-soft); color: var(--good); }
+  .pill.late { background: var(--bad-soft); color: var(--bad); }
+  .pill.soon { background: var(--warn-soft); color: var(--warn); }
+  .pill.plan, .pill.learn, .pill.off { background: var(--surface-2); color: var(--muted); }
+  .check {
+    width: 44px; height: 44px; border-radius: 50%; border: 2px solid var(--line); background: var(--surface);
+    display: grid; place-items: center; flex: none; transition: transform .15s;
+  }
+  .check svg { width: 22px; height: 22px; stroke: var(--line); fill: none; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+  .check:hover svg { stroke: var(--good); }
+  .check[aria-pressed="true"] { background: var(--good); border-color: var(--good); }
+  .check[aria-pressed="true"] svg { stroke: var(--surface); }
+  .check:active { transform: scale(.92); }
+  .late-edit { grid-column: 1 / -1; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; padding-top: 6px; border-top: 1px dashed var(--line); }
+  .late-edit .err { color: var(--bad); font-size: 13px; width: 100%; }
+  .item.set { grid-template-columns: 64px minmax(0, 1fr) auto; }
+  .steps { grid-column: 2 / -1; list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+  .step { display: flex; align-items: center; gap: 10px; }
+  .step .check { width: 34px; height: 34px; }
+  .step .check svg { width: 17px; height: 17px; }
+  .step .sname { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+  .step .stime { font: 500 12px var(--f-num); color: var(--muted); }
+  .set-tag { font: 12px var(--f-display); color: var(--accent); letter-spacing: .04em; }
+  .note { font-size: 13px; color: var(--muted); margin: 0; }
+  .empty { text-align: center; padding: 28px 16px; color: var(--muted); }
+
+  /* stats */
+  .tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+  .tile { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 12px; }
+  .tile .v { font: 600 24px var(--f-num); font-variant-numeric: tabular-nums; }
+  .tile .k { font-size: 12.5px; color: var(--muted); }
+  .qstat { display: flex; flex-direction: column; gap: 10px; }
+  .qstat-h { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .qstat-h .name { font-weight: 700; font-size: 16px; margin-right: auto; }
+  .facts { display: flex; gap: 6px 18px; flex-wrap: wrap; font-size: 13.5px; }
+  .facts b { font-family: var(--f-num); font-weight: 600; }
+  .strip { width: 100%; height: auto; display: block; }
+  .strip .grid { stroke: var(--line); stroke-width: 1; }
+  .strip .axis { fill: var(--muted); font: 500 10px var(--f-num); }
+  .strip .band { fill: var(--accent-soft); }
+  .strip .medl { stroke: var(--accent); stroke-width: 2; stroke-dasharray: 4 3; }
+  .strip .dot { fill: var(--accent); fill-opacity: .6; stroke: var(--surface); stroke-width: 1.5; }
+  .strip .dot.recent { fill-opacity: 1; }
+  .strip .hit { fill: transparent; }
+  .strip .hit:hover + .dot, .strip .dot:hover { fill-opacity: 1; }
+  .week { display: flex; gap: 6px; align-items: center; }
+  .wd { width: 26px; text-align: center; font-size: 11px; color: var(--muted); display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .wd i { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--line); display: block; }
+  .wd i.y { background: var(--good); border-color: var(--good); }
+  .wd i.x { border-style: dashed; opacity: .5; }
+  .habitbar { display: flex; flex-direction: column; gap: 4px; font-size: 12.5px; color: var(--muted); }
+  .habitbar .bar > i { background: var(--accent); }
+  .tag { font-size: 12px; padding: 2px 9px; border-radius: 999px; background: var(--surface-2); color: var(--muted); white-space: nowrap; }
+  .tag.habit { background: var(--good-soft); color: var(--good); }
+  .tag.building { background: var(--accent-soft); color: var(--accent); }
+  .badges { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+  .badge { border: 1px solid var(--line); border-radius: 14px; padding: 12px; display: flex; flex-direction: column; gap: 2px; background: var(--surface); }
+  .badge .bn { font-family: var(--f-display); font-size: 17px; }
+  .badge .bd { font-size: 12.5px; color: var(--muted); }
+  .badge.locked { opacity: .5; border-style: dashed; background: transparent; }
+  .badge .seal { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: var(--xp-soft); color: var(--xp); font: 15px var(--f-display); }
+  .badge.locked .seal { background: var(--surface-2); color: var(--muted); }
+
+  /* quests view */
+  .form { display: flex; flex-direction: column; gap: 12px; }
+  .field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+  .field > span { font-size: 13px; color: var(--muted); font-weight: 500; }
+  .form-grid { display: grid; grid-template-columns: 80px minmax(0, 1fr); gap: 10px; }
+  .days { display: flex; gap: 4px; flex-wrap: wrap; }
+  .days label { position: relative; }
+  .days input { position: absolute; opacity: 0; inset: 0; }
+  .days span { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 50%; border: 1px solid var(--line); font-size: 13px; }
+  .days input:checked + span { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+  .days input:focus-visible + span { outline: 3px solid var(--accent); outline-offset: 2px; }
+  .check-line { display: flex; gap: 8px; align-items: flex-start; font-size: 14px; }
+  .check-line input { margin-top: 4px; }
+  .qrow { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+  .qrow:last-child { border-bottom: 0; }
+  .qrow .qn { flex: 1; min-width: 160px; }
+  .qrow .qn b { overflow-wrap: anywhere; }
+  .qrow.archived { opacity: .55; }
+  .packs { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+  .pack { border: 1px solid var(--line); border-radius: 14px; padding: 12px; display: flex; flex-direction: column; gap: 8px; background: var(--surface); }
+  .pack h3 { font-size: 17px; }
+  .pack ul { margin: 0; padding-left: 18px; font-size: 13px; color: var(--muted); }
+
+  /* prefs */
+  .pref { display: flex; justify-content: space-between; gap: 12px; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+  .pref:last-child { border-bottom: 0; }
+  .pref .pl { flex: 1; min-width: 200px; }
+  .pref .pl b { display: block; }
+  .pref .pl span { font-size: 13px; color: var(--muted); }
+
+  /* toasts */
+  #toasts {
+    position: fixed; z-index: 20; left: 0; right: 0; bottom: 0;
+    padding: 0 max(16px, env(safe-area-inset-right, 0px)) calc(16px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
+    display: flex; flex-direction: column; align-items: center; gap: 8px; pointer-events: none;
+  }
+  .toast {
+    pointer-events: auto; width: 100%; max-width: 520px; background: var(--ink); color: var(--bg);
+    border-radius: 14px; padding: 12px 14px; box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 8px;
+    animation: rise .25s ease-out;
+  }
+  .toast.alarm { background: var(--surface); color: var(--ink); border: 2px solid var(--warn); }
+  .toast.cheer { background: var(--xp-soft); color: var(--ink); border: 1px solid var(--xp); }
+  .toast .tt { font-family: var(--f-display); font-size: 18px; }
+  .toast .row .btn { min-height: 34px; padding: 4px 12px; }
+  .float-xp {
+    position: fixed; z-index: 30; pointer-events: none; font: 600 16px var(--f-num); color: var(--xp);
+    animation: floatup 1s ease-out forwards;
+  }
+  @keyframes rise { from { transform: translateY(12px); opacity: 0; } to { transform: none; opacity: 1; } }
+  @keyframes floatup { from { transform: translateY(0); opacity: 1; } to { transform: translateY(-40px); opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) {
+    .toast, .float-xp { animation: none; }
+    .bar > i, .xpbar > i, .check { transition: none; }
+  }
+
+  /* modal */
+  #modal { position: fixed; inset: 0; z-index: 40; background: rgba(0, 0, 0, .45); display: grid; place-items: center;
+    padding: 16px max(16px, env(safe-area-inset-right, 0px)) 16px max(16px, env(safe-area-inset-left, 0px)); }
+  .sheet { background: var(--surface); color: var(--ink); border-radius: 16px; padding: 18px; width: 100%; max-width: 560px; max-height: 90%; overflow: auto; display: flex; flex-direction: column; gap: 12px; }
+  .sheet textarea { width: 100%; min-height: 200px; font: 12px/1.5 var(--f-num); border: 1px solid var(--line); border-radius: 10px; padding: 10px; background: var(--bg); resize: vertical; }
+
+  @media (max-width: 620px) {
+    .hero { grid-template-columns: minmax(0, 1fr); }
+    .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .item { grid-template-columns: 54px minmax(0, 1fr) auto; gap: 4px 10px; }
+    .acts .pill { display: none; }
+    .what .pill-m { display: inline-block; margin-top: 3px; }
+    .xpbar { width: 70px; }
+  }
+</style>
+<!-- /wrapper-body -->
+</head>
+<body>
+<div class="shell">
+  <header class="top">
+    <div class="brand-row">
+      <div class="brand">
+        <svg class="brand-mark" viewBox="0 0 26 26" aria-hidden="true"><circle cx="13" cy="13" r="11" fill="none" stroke="var(--accent)" stroke-width="2.5"/><path d="M13 13 L13 5" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round"/><path d="M13 13 L19 16" stroke="var(--xp)" stroke-width="2.5" stroke-linecap="round"/></svg>
+        하루 퀘스트
+      </div>
+      <div class="lvl" id="lvl"></div>
+    </div>
+    <nav class="tabs" aria-label="화면">
+      <a href="#today" data-route="today">오늘</a>
+      <a href="#stats" data-route="stats">기록과 통계</a>
+      <a href="#quests" data-route="quests">퀘스트 관리</a>
+      <a href="#prefs" data-route="prefs">알람과 설정</a>
+    </nav>
+  </header>
+  <main id="view"></main>
+</div>
+<div id="toasts" aria-live="polite"></div>
+<div id="modal" hidden></div>
+
+<script>
+(function () {
+'use strict';
+
+/* ---------- small helpers ---------- */
+const $ = (s, r = document) => r.querySelector(s);
+const pad = n => String(n).padStart(2, '0');
+const DOW = ['일', '월', '화', '수', '목', '금', '토'];
+const ALLDAYS = [0, 1, 2, 3, 4, 5, 6];
+const KEY = 'haruQuest.v1';
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const uid = () => Math.random().toString(36).slice(2, 9) + Date.now().toString(36).slice(-4);
+const ymd = d => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+const parseDay = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
+const addDays = (s, n) => { const d = parseDay(s); d.setDate(d.getDate() + n); return ymd(d); };
+const dayDiff = (a, b) => Math.round((parseDay(b) - parseDay(a)) / 864e5);
+const dowOf = day => parseDay(day).getDay();
+const isWeekday = d => d >= 1 && d <= 5;
+const CHECK_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5 L10 17.5 L19 7"/></svg>';
+
+/* "Logical day": a day starts at settings.dayStart (default 04:00), so a 1 a.m. check still belongs to yesterday.
+   m = minutes since that start, 0..1439. */
+const DS = () => state.settings.dayStart * 60;
+const logicalDay = ts => ymd(new Date(ts - DS() * 60000));
+const minuteOf = ts => { const d = new Date(ts); let m = d.getHours() * 60 + d.getMinutes() - DS(); if (m < 0) m += 1440; return m; };
+const todayDay = () => logicalDay(Date.now());
+const nowMin = () => minuteOf(Date.now());
+const clockOf = m => (((Math.round(m) + DS()) % 1440) + 1440) % 1440;
+const clockStr = m => { const c = clockOf(m); return pad(Math.floor(c / 60)) + ':' + pad(c % 60); };
+const hhmmToM = s => { const [h, mi] = s.split(':').map(Number); let m = h * 60 + mi - DS(); if (m < 0) m += 1440; return m; };
+const tsFor = (day, m) => parseDay(day).getTime() + Math.round((DS() + m) * 60000);
+const fmtDay = day => { const d = parseDay(day); return (d.getMonth() + 1) + '월 ' + d.getDate() + '일 (' + DOW[d.getDay()] + ')'; };
+const dur = min => { min = Math.round(Math.abs(min)); if (min < 60) return min + '분'; const h = Math.floor(min / 60), r = min % 60; return h + '시간' + (r ? ' ' + r + '분' : ''); };
+const median = a => { if (!a.length) return null; const s = [...a].sort((x, y) => x - y), h = s.length >> 1; return s.length % 2 ? s[h] : (s[h - 1] + s[h]) / 2; };
+const stat = a => { if (!a.length) return { n: 0, med: null, spread: null }; const md = median(a); return { n: a.length, med: md, spread: Math.round(median(a.map(x => Math.abs(x - md)))) }; };
+const qById = id => state.quests.find(q => q.id === id);
+const qLabel = q => (q.emoji ? q.emoji + ' ' : '') + q.name;
+
+/* ---------- state ---------- */
+function defaultState() {
+  return {
+    v: 1,
+    settings: { dayStart: 4, grace: 10, alarmMode: 'late', maxSpread: 45, minSamples: 3, sound: true },
+    quests: [], sets: [], logs: [], bonuses: [], dayTags: {},
+    dismissed: { bundles: {}, times: {} },
+    alarms: { day: '', fired: {}, snooze: {}, skip: {} },
+    seenBadges: [], sample: false
+  };
+}
+let memoryStore = null;
+function load() {
+  let raw = null;
+  try { raw = localStorage.getItem(KEY); } catch (e) { raw = memoryStore; }
+  if (!raw) return null;
+  try {
+    const s = JSON.parse(raw), d = defaultState();
+    return Object.assign(d, s, {
+      settings: Object.assign(d.settings, s.settings || {}),
+      dismissed: Object.assign(d.dismissed, s.dismissed || {}),
+      alarms: Object.assign(d.alarms, s.alarms || {})
+    });
+  } catch (e) { return null; }
+}
+function save() {
+  const raw = JSON.stringify(state);
+  try { localStorage.setItem(KEY, raw); } catch (e) { memoryStore = raw; }
+}
+
+let state = load();
+let idx = null;
+const ui = { late: null, lateErr: '', edit: null, confirm: null, rename: null, modal: null, bundleName: '' };
+
+/* ---------- index of logs (rebuilt on every render) ---------- */
+function buildIndex() {
+  const byQ = new Map(), byDay = new Map();
+  for (const l of state.logs) {
+    const e = Object.assign({}, l, { day: logicalDay(l.ts), m: minuteOf(l.ts) });
+    if (!byQ.has(l.qid)) byQ.set(l.qid, []);
+    byQ.get(l.qid).push(e);
+    if (!byDay.has(e.day)) byDay.set(e.day, []);
+    byDay.get(e.day).push(e);
+  }
+  for (const a of byDay.values()) a.sort((x, y) => x.m - y.m);
+  for (const a of byQ.values()) a.sort((x, y) => x.ts - y.ts);
+  const today = todayDay();
+  const memo = new Map();
+  return {
+    byQ, byDay, today, memo,
+    doneOn(qid, day) { const a = byDay.get(day); return a ? a.find(e => e.qid === qid) || null : null; }
+  };
+}
+/* A quest added today after its usual time starts tomorrow: no red "late" and no alarm today. */
+const startsTomorrow = (q, p) => !!p && logicalDay(q.createdAt) === idx.today && p.m < minuteOf(q.createdAt);
+const activeOn = (q, day) => !q.archived && (q.days || ALLDAYS).includes(dowOf(day)) && day >= logicalDay(q.createdAt);
+
+/* ---------- the learning part ---------- */
+/* Past samples for one quest: last 60 days, skipping today and days marked as "different day".
+   rel = minutes after the first check of that day made by some other quest (the day's anchor). */
+function samplesFor(q) {
+  const key = 's:' + q.id;
+  if (idx.memo.has(key)) return idx.memo.get(key);
+  const out = [], from = addDays(idx.today, -60);
+  for (const e of idx.byQ.get(q.id) || []) {
+    if (e.day >= idx.today || e.day < from || state.dayTags[e.day]) continue;
+    const first = (idx.byDay.get(e.day) || []).find(x => x.qid !== q.id);
+    out.push({ day: e.day, m: e.m, dow: dowOf(e.day), rel: first && first.m < e.m ? e.m - first.m : null });
+  }
+  idx.memo.set(key, out);
+  return out;
+}
+
+/* Which past days look like the target day? Start from all days; split weekday/weekend
+   only when the data says they differ by 40+ minutes; narrow to one weekday the same way. */
+const SPLIT = 40;
+function groupFor(samples, dow) {
+  const min = state.settings.minSamples;
+  const wd = samples.filter(s => isWeekday(s.dow)), we = samples.filter(s => !isWeekday(s.dow));
+  const same = samples.filter(s => s.dow === dow);
+  let g = samples, label = '평소';
+  if (wd.length >= min && we.length >= min && Math.abs(median(wd.map(s => s.m)) - median(we.map(s => s.m))) >= SPLIT) {
+    if (isWeekday(dow)) { g = wd; label = '평일'; } else { g = we; label = '주말'; }
+  }
+  const mg = median(g.map(s => s.m));
+  if (same.length >= min && same.length < g.length && Math.abs(median(same.map(s => s.m)) - mg) >= SPLIT) {
+    g = same; label = DOW[dow] + '요일';
+  }
+  return { g, label };
+}
+
+function predict(q, day) {
+  const key = 'p:' + q.id + ':' + day;
+  if (idx.memo.has(key)) return idx.memo.get(key);
+  const r = predictRaw(q, day);
+  idx.memo.set(key, r);
+  return r;
+}
+function predictRaw(q, day) {
+  const S = state.settings, dow = dowOf(day);
+  const start = q.startTime ? hhmmToM(q.startTime) : null;
+  const samples = samplesFor(q);
+  const { g, label } = groupFor(samples, dow);
+  const abs = stat(g.map(s => s.m));
+  const rel = stat(g.filter(s => s.rel != null).map(s => s.rel));
+  const base = { n: samples.length, label, abs, rel };
+  if (q.lock && start != null) {
+    return Object.assign(base, { m: start, spread: 0, source: 'manual', confident: true, alarmable: true });
+  }
+  if (abs.n >= S.minSamples) {
+    // A relative rule ("12 minutes after the day's first check") wins when it is clearly steadier than the clock.
+    const useRel = rel.n >= S.minSamples && abs.spread >= 20 && rel.spread <= abs.spread * 0.6;
+    if (useRel) {
+      const anchor = (idx.byDay.get(day) || []).find(x => x.qid !== q.id);
+      if (anchor) {
+        return Object.assign(base, { m: anchor.m + rel.med, spread: rel.spread, source: 'rel', anchor,
+          confident: rel.spread <= S.maxSpread, alarmable: rel.spread <= S.maxSpread });
+      }
+    }
+    return Object.assign(base, { m: abs.med, spread: abs.spread, source: 'abs', relPending: useRel,
+      confident: abs.spread <= S.maxSpread, alarmable: abs.spread <= S.maxSpread });
+  }
+  if (start != null) return Object.assign(base, { m: start, spread: 0, source: 'start', confident: false, alarmable: true });
+  return null;
+}
+
+function rateOver(q, n) {
+  let act = 0, done = 0;
+  for (let i = 1; i <= n; i++) {
+    const d = addDays(idx.today, -i);
+    if (state.dayTags[d] || !activeOn(q, d)) continue;
+    act++;
+    if (idx.doneOn(q.id, d)) done++;
+  }
+  return { act, done, r: act ? done / act : 0 };
+}
+function habitInfo(q) {
+  const key = 'h:' + q.id;
+  if (idx.memo.has(key)) return idx.memo.get(key);
+  const logs = idx.byQ.get(q.id) || [];
+  const first = logs.length ? logs[0].day : null;
+  const since = first ? dayDiff(first, idx.today) + 1 : 0;
+  const r21 = rateOver(q, 21), r14 = rateOver(q, 14);
+  const week = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = addDays(idx.today, -i);
+    week.push({ d, active: activeOn(q, d) && !state.dayTags[d], done: !!idx.doneOn(q.id, d), today: i === 0 });
+  }
+  const p = predict(q, idx.today);
+  const learnedSpread = p && (p.source === 'abs' || p.source === 'rel') ? p.spread : (p && p.abs.n >= 3 ? p.abs.spread : null);
+  const isHabit = since >= 21 && r21.act >= 10 && r21.r >= 0.8 && learnedSpread != null && learnedSpread <= 30;
+  const res = { first, since, r21, r14, week, isHabit, spread: learnedSpread, count: logs.length };
+  idx.memo.set(key, res);
+  return res;
+}
+
+/* Quests done back to back, in the same order, within 30 minutes, on 80%+ of shared days -> suggest a set. */
+function bundleSuggestion() {
+  const cands = state.quests.filter(q => !q.archived && !q.setId).filter(q => {
+    const h = habitInfo(q); return h.r14.act >= 7 && h.r14.r >= 0.75 && h.count >= 10;
+  });
+  const edges = [];
+  for (const a of cands) for (const b of cands) {
+    if (a === b) continue;
+    let co = 0, ok = 0; const gaps = [];
+    for (let i = 1; i <= 21; i++) {
+      const d = addDays(idx.today, -i);
+      const la = idx.doneOn(a.id, d), lb = idx.doneOn(b.id, d);
+      if (!la || !lb) continue;
+      co++;
+      const gp = lb.m - la.m;
+      if (gp > 0 && gp <= 30) { ok++; gaps.push(gp); }
+    }
+    if (co >= 8 && ok / co >= 0.8) edges.push({ a: a.id, b: b.id, gap: median(gaps), co, ok });
+  }
+  edges.sort((x, y) => x.gap - y.gap);
+  const out = {}, inn = {};
+  for (const e of edges) {
+    if (out[e.a] || inn[e.b]) continue;
+    let c = e.b, cyc = false;
+    while (out[c]) { c = out[c].b; if (c === e.a) { cyc = true; break; } }
+    if (cyc) continue;
+    out[e.a] = e; inn[e.b] = e;
+  }
+  const chains = [];
+  for (const id in out) {
+    if (inn[id]) continue;
+    const ids = [id], gaps = [], days = [];
+    let c = id;
+    while (out[c]) { gaps.push(out[c].gap); days.push(out[c].ok); c = out[c].b; ids.push(c); }
+    chains.push({ ids, gaps, days: Math.min(...days) });
+  }
+  chains.sort((x, y) => y.ids.length - x.ids.length);
+  const now = Date.now();
+  return chains.find(c => {
+    const v = state.dismissed.bundles[c.ids.join('>')];
+    return !v || (v !== 'never' && v < now);
+  }) || null;
+}
+
+/* For a quest whose time the user fixed: if the records say otherwise by 20+ minutes, offer to move it. */
+function timeSuggestions() {
+  const out = [];
+  for (const q of state.quests) {
+    if (q.archived || !q.lock || !q.startTime) continue;
+    const p = predict(q, idx.today);
+    if (!p || p.abs.n < state.settings.minSamples || p.abs.spread > state.settings.maxSpread) continue;
+    const learned = clockStr(p.abs.med);
+    const diff = p.abs.med - hhmmToM(q.startTime);
+    if (Math.abs(diff) < 20 || state.dismissed.times[q.id] === learned) continue;
+    out.push({ q, learned, diff, label: p.label, n: p.abs.n });
+  }
+  return out;
+}
+
+/* ---------- XP, levels, badges ---------- */
+const totalXP = () => state.logs.reduce((s, l) => s + (l.xp || 10), 0) + state.bonuses.reduce((s, b) => s + b.xp, 0);
+const levelOf = xp => { const L = Math.floor(Math.sqrt(xp / 40)) + 1, cur = 40 * (L - 1) ** 2, next = 40 * L ** 2; return { L, cur, next, p: (xp - cur) / (next - cur) }; };
+const TITLES = [[1, '새싹'], [3, '견습 모험가'], [5, '꾸준러'], [8, '루틴 장인'], [12, '하루의 주인'], [18, '전설의 루티너']];
+const titleOf = L => TITLES.filter(t => L >= t[0]).pop()[1];
+
+const BADGES = [
+  { id: 'first', mark: '1', name: '첫 퀘스트', desc: '처음으로 체크했어요', test: c => c.logs >= 1 },
+  { id: 'week', mark: '7', name: '일주일', desc: '7일 동안 기록했어요', test: c => c.days >= 7 },
+  { id: 'perfect', mark: '◎', name: '완벽한 하루', desc: '그날 퀘스트를 모두 끝냈어요', test: c => c.perfect >= 1 },
+  { id: 'perfect7', mark: '◎7', name: '완벽한 하루 7번', desc: '모두 끝낸 날이 7일 쌓였어요', test: c => c.perfect >= 7 },
+  { id: 'ontime', mark: '⏱', name: '시간 지킴이', desc: '평소 시간에 맞춰 20번 했어요', test: c => c.ontime >= 20 },
+  { id: 'early', mark: '☀', name: '아침형', desc: '아침 7시 전에 10번 체크했어요', test: c => c.early >= 10 },
+  { id: 'habit', mark: '習', name: '첫 습관', desc: '퀘스트 하나가 습관이 됐어요', test: c => c.habits >= 1 },
+  { id: 'set', mark: '⛓', name: '첫 세트', desc: '습관을 한 세트로 묶었어요', test: c => c.sets >= 1 },
+  { id: 'comeback', mark: '↺', name: '다시 시작', desc: '3일 넘게 쉬었다가 돌아왔어요', test: c => c.comeback },
+  { id: 'd66', mark: '66', name: '66일', desc: '한 퀘스트를 66일째 이어 가요', test: c => c.d66 }
+];
+function badgeCtx() {
+  const days = [...idx.byDay.keys()].sort();
+  let comeback = false;
+  for (let i = 1; i < days.length; i++) if (dayDiff(days[i - 1], days[i]) > 3) comeback = true;
+  const habits = state.quests.filter(q => !q.archived && habitInfo(q).isHabit);
+  return {
+    logs: state.logs.length, days: days.length,
+    perfect: state.bonuses.filter(b => b.kind === 'perfect').length,
+    ontime: state.logs.filter(l => (l.xp || 10) > 10).length,
+    early: state.logs.filter(l => { const d = new Date(l.ts); return d.getHours() < 7 && d.getHours() >= state.settings.dayStart; }).length,
+    habits: habits.length, sets: state.sets.length, comeback,
+    d66: habits.some(q => habitInfo(q).since >= 66)
+  };
+}
+const earnedBadges = () => { const c = badgeCtx(); return BADGES.filter(b => b.test(c)).map(b => b.id); };
+
+/* ---------- checking ---------- */
+function recomputeBonuses(day) {
+  const before = state.bonuses.filter(b => b.day === day).map(b => b.kind + (b.key || ''));
+  state.bonuses = state.bonuses.filter(b => b.day !== day);
+  if (!state.dayTags[day]) {
+    const act = state.quests.filter(q => activeOn(q, day));
+    if (act.length >= 2 && act.every(q => idx.doneOn(q.id, day))) state.bonuses.push({ day, kind: 'perfect', xp: 30 });
+    for (const s of state.sets) {
+      const steps = s.questIds.map(qById).filter(q => q && activeOn(q, day));
+      if (steps.length >= 2 && steps.every(q => idx.doneOn(q.id, day))) state.bonuses.push({ day, kind: 'set', key: s.id, xp: 20 });
+    }
+  }
+  return state.bonuses.filter(b => b.day === day && !before.includes(b.kind + (b.key || '')));
+}
+
+function doCheck(qid, ts, sourceEl) {
+  const q = qById(qid); if (!q) return;
+  const day = logicalDay(ts);
+  if (idx.doneOn(qid, day)) return;
+  const m = minuteOf(ts);
+  const p = predict(q, day);
+  let xp = 10;
+  if (p && p.confident && p.source !== 'start' && Math.abs(m - p.m) <= Math.max(10, p.spread)) xp += 5;
+  state.logs.push({ id: uid(), qid, ts, xp });
+  idx = buildIndex();
+  const fresh = recomputeBonuses(day);
+  save();
+  floatXP(sourceEl, '+' + xp + ' XP' + (xp > 10 ? ' 제시간!' : ''));
+  for (const b of fresh) {
+    if (b.kind === 'perfect') cheer('완벽한 하루!', '오늘 퀘스트를 모두 끝냈어요. +30 XP');
+    if (b.kind === 'set') { const s = state.sets.find(x => x.id === b.key); cheer((s ? s.name : '세트') + ' 완료', '세트를 끝까지 해냈어요. +20 XP'); }
+  }
+  afterChange();
+}
+function doUncheck(qid, day) {
+  const e = idx.doneOn(qid, day); if (!e) return;
+  state.logs = state.logs.filter(l => l.id !== e.id);
+  idx = buildIndex();
+  recomputeBonuses(day);
+  save();
+  afterChange();
+}
+function afterChange() {
+  idx = buildIndex();
+  const earned = earnedBadges();
+  for (const id of earned) {
+    if (!state.seenBadges.includes(id)) {
+      state.seenBadges.push(id);
+      const b = BADGES.find(x => x.id === id);
+      if (!state.sample) cheer('배지 획득: ' + b.name, b.desc);
+    }
+  }
+  save();
+  render();
+}
+
+/* ---------- rendering ---------- */
+function route() { const h = (location.hash || '').slice(1); return ['today', 'stats', 'quests', 'prefs'].includes(h) ? h : 'today'; }
+
+function render() {
+  idx = buildIndex();
+  const r = route();
+  document.querySelectorAll('.tabs a').forEach(a => a.setAttribute('aria-current', a.dataset.route === r ? 'page' : 'false'));
+  renderLevel();
+  const v = $('#view');
+  if (r === 'today') v.innerHTML = viewToday();
+  else if (r === 'stats') v.innerHTML = viewStats();
+  else if (r === 'quests') v.innerHTML = viewQuests();
+  else v.innerHTML = viewPrefs();
+  renderModal();
+}
+
+function renderLevel() {
+  const xp = totalXP(), lv = levelOf(xp);
+  $('#lvl').innerHTML = '<span class="lvl-badge">Lv ' + lv.L + ' ' + esc(titleOf(lv.L)) + '</span>' +
+    '<div class="xpbar" role="progressbar" aria-label="다음 레벨까지" aria-valuenow="' + Math.round(lv.p * 100) + '" aria-valuemin="0" aria-valuemax="100"><i style="width:' + (lv.p * 100).toFixed(1) + '%"></i></div>' +
+    '<span class="xp-text num">' + xp + ' / ' + lv.next + ' XP</span>';
+}
+
+function todayItems() {
+  const day = idx.today, items = [], inSet = new Set();
+  for (const s of state.sets) {
+    const steps = s.questIds.map(qById).filter(q => q && activeOn(q, day));
+    if (!steps.length) continue;
+    steps.forEach(q => inSet.add(q.id));
+    const logs = steps.map(q => idx.doneOn(q.id, day));
+    const done = logs.every(Boolean), started = logs.some(Boolean);
+    const pred = predict(steps[0], day);
+    const firstLog = logs.filter(Boolean).sort((a, b) => a.m - b.m)[0];
+    items.push({ type: 'set', id: s.id, set: s, steps, logs, pred, done, started, sortM: started ? firstLog.m : (pred ? pred.m : null) });
+  }
+  for (const q of state.quests) {
+    if (inSet.has(q.id) || !activeOn(q, day)) continue;
+    const log = idx.doneOn(q.id, day), pred = predict(q, day);
+    items.push({ type: 'quest', id: q.id, q, log, pred, done: !!log, sortM: log ? log.m : (pred ? pred.m : null) });
+  }
+  items.sort((a, b) => (a.sortM == null ? 1e4 : a.sortM) - (b.sortM == null ? 1e4 : b.sortM));
+  return items;
+}
+
+function statusOf(pred, done, log) {
+  if (done) return { k: 'done', t: '✓ ' + clockStr(log.m) + ' 완료' };
+  if (state.dayTags[idx.today]) return { k: 'off', t: '☾ 쉬어 가는 날' };
+  if (!pred) return { k: 'learn', t: '… 시간 배우는 중' };
+  const d = nowMin() - pred.m, g = state.settings.grace;
+  if (d > g) return { k: 'late', t: '! ' + dur(d) + ' 지남' };
+  if (d >= -30) return { k: 'soon', t: d < 0 ? '⏰ ' + dur(-d) + ' 뒤' : '⏰ 지금' };
+  return { k: 'plan', t: '○ ' + dur(-d) + ' 뒤' };
+}
+
+function metaOf(q, p) {
+  const min = state.settings.minSamples;
+  if (!p) {
+    const n = samplesFor(q).length;
+    return '기록 모으는 중 ' + n + '/' + min + '번 · 시간을 정해 두면 그때부터 알려 드려요';
+  }
+  if (p.source === 'manual') return '직접 정한 시간';
+  if (p.source === 'start') return '처음 정한 시간 · 기록 모으는 중 ' + p.n + '/' + min + '번';
+  let t;
+  if (p.source === 'rel') t = '하루 첫 체크(' + esc(qLabel(qById(p.anchor.qid) || { name: '?' })) + ' ' + clockStr(p.anchor.m) + ')에서 ' + dur(p.rel.med) + ' 뒤 · 기록 ' + p.abs.n + '번';
+  else t = p.label + ' 기준 · 기록 ' + p.abs.n + '번';
+  if (p.relPending) t += ' · 오늘 첫 체크를 하면 더 정확해져요';
+  if (!p.alarmable) t += ' · 시간이 들쭉날쭉해서 알람은 쉬어요';
+  return t;
+}
+
+function whenCell(p, log, qid) {
+  const clock = log ? clockStr(log.m) : (p ? clockStr(p.m) : '--:--');
+  const sub = log ? '기록' : (p ? (p.spread ? '± ' + p.spread + '분' : (p.source === 'manual' ? '고정' : '처음 값')) : '배우는 중');
+  return '<button data-act="late-open" data-id="' + qid + '" aria-label="' + (log ? '기록한 시간 고치기' : '아까 했어요: 시간 넣고 체크') + '">' +
+    '<span class="clock">' + clock + '</span><span class="spread">' + sub + '</span></button>';
+}
+
+function lateEditor(qid, log) {
+  if (ui.late !== qid) return '';
+  const val = log ? clockStr(log.m) : clockStr(nowMin());
+  return '<div class="late-edit">' +
+    '<label class="small muted" for="late-time">' + (log ? '실제로 한 시간' : '아까 했다면 그 시간') + '</label>' +
+    '<input class="input num" type="time" id="late-time" value="' + val + '">' +
+    '<button class="btn primary sm" data-act="late-save" data-id="' + qid + '">' + (log ? '시간 고치기' : '이 시간으로 체크') + '</button>' +
+    (log ? '<button class="btn sm" data-act="toggle" data-id="' + qid + '">체크 취소</button>' : '') +
+    '<button class="btn ghost sm" data-act="late-cancel">닫기</button>' +
+    (ui.lateErr ? '<div class="err">' + esc(ui.lateErr) + '</div>' : '') + '</div>';
+}
+
+function itemHTML(it) {
+  if (it.type === 'quest') {
+    const s = !it.done && startsTomorrow(it.q, it.pred) ? { k: 'plan', t: '○ 내일부터' } : statusOf(it.pred, it.done, it.log);
+    return '<li class="item st-' + s.k + '">' + '<div class="when">' + whenCell(it.pred, it.log, it.id) + '</div>' +
+      '<div class="what"><div class="name">' + esc(qLabel(it.q)) + '</div><div class="meta">' + metaOf(it.q, it.pred) + '</div>' +
+      '<span class="pill pill-m ' + s.k + '">' + s.t + '</span></div>' +
+      '<div class="acts"><span class="pill ' + s.k + '">' + s.t + '</span>' +
+      '<button class="check" data-act="toggle" data-id="' + it.id + '" aria-pressed="' + it.done + '" aria-label="' + esc(it.q.name) + (it.done ? ' 체크 취소' : ' 체크') + '">' + CHECK_SVG + '</button></div>' +
+      lateEditor(it.id, it.log) + '</li>';
+  }
+  const doneN = it.logs.filter(Boolean).length;
+  const s = it.done ? { k: 'done', t: '✓ 세트 완료' } : (it.started ? { k: 'soon', t: '▶ 진행 중 ' + doneN + '/' + it.steps.length } : statusOf(it.pred, false, null));
+  const first = it.steps[0];
+  return '<li class="item set st-' + s.k + '">' +
+    '<div class="when">' + whenCell(it.pred, it.logs[0], first.id) + '</div>' +
+    '<div class="what"><div class="set-tag">세트 · ' + it.steps.length + '단계</div><div class="name">' + esc((it.set.emoji ? it.set.emoji + ' ' : '') + it.set.name) + '</div>' +
+    '<span class="pill pill-m ' + s.k + '">' + s.t + '</span></div>' +
+    '<div class="acts"><span class="pill ' + s.k + '">' + s.t + '</span></div>' +
+    '<ul class="steps">' + it.steps.map((q, i) => {
+      const l = it.logs[i];
+      return '<li class="step"><button class="check" data-act="toggle" data-id="' + q.id + '" aria-pressed="' + !!l + '" aria-label="' + esc(q.name) + (l ? ' 체크 취소' : ' 체크') + '">' + CHECK_SVG + '</button>' +
+        '<span class="sname">' + esc(qLabel(q)) + '</span><span class="stime">' + (l ? clockStr(l.m) : '') + '</span></li>';
+    }).join('') + '</ul>' + lateEditor(first.id, it.logs[0]) + '</li>';
+}
+
+function dialSVG(items) {
+  const C = 130, R = 104;
+  const pt = (clock, r) => { const a = clock / 1440 * 2 * Math.PI - Math.PI / 2; return [(C + r * Math.cos(a)).toFixed(1), (C + r * Math.sin(a)).toFixed(1)]; };
+  let s = '<svg class="dial" viewBox="0 0 260 260" role="img" aria-label="오늘 하루 24시간 시계">';
+  s += '<circle class="face" cx="' + C + '" cy="' + C + '" r="' + (R + 18) + '"/>';
+  const [nx1, ny1] = pt(22 * 60, R), [nx2, ny2] = pt(6 * 60, R);
+  s += '<path class="night" d="M' + nx1 + ' ' + ny1 + ' A' + R + ' ' + R + ' 0 0 1 ' + nx2 + ' ' + ny2 + '"><title>밤 22시~6시</title></path>';
+  for (let h = 0; h < 24; h++) {
+    const major = h % 6 === 0;
+    const [x1, y1] = pt(h * 60, R + 14), [x2, y2] = pt(h * 60, R + (major ? 4 : 9));
+    s += '<line class="tick' + (major ? ' major' : '') + '" x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '"/>';
+    if (major) { const [lx, ly] = pt(h * 60, R - 14); s += '<text class="lab" x="' + lx + '" y="' + ly + '" text-anchor="middle" dominant-baseline="central">' + h + '</text>'; }
+  }
+  const [dx1, dy1] = pt(DS(), R + 18), [dx2, dy2] = pt(DS(), R - 4);
+  s += '<line class="daystart" x1="' + dx1 + '" y1="' + dy1 + '" x2="' + dx2 + '" y2="' + dy2 + '"><title>하루가 시작되는 시각 ' + pad(state.settings.dayStart) + ':00</title></line>';
+  const marks = [];
+  for (const it of items) {
+    if (it.type === 'quest') {
+      const m = it.log ? it.log.m : it.pred ? it.pred.m : null;
+      if (m != null) marks.push({ m, k: statusOf(it.pred, it.done, it.log).k, t: qLabel(it.q) });
+    } else {
+      it.steps.forEach((q, i) => {
+        const l = it.logs[i], p = predict(q, idx.today);
+        const m = l ? l.m : p ? p.m : null;
+        if (m != null) marks.push({ m, k: l ? 'done' : statusOf(it.pred, false, null).k, t: qLabel(q) });
+      });
+    }
+  }
+  for (const mk of marks) {
+    const [x, y] = pt(clockOf(mk.m), R);
+    s += '<circle class="mk ' + mk.k + '" cx="' + x + '" cy="' + y + '" r="7"><title>' + esc(mk.t) + ' ' + clockStr(mk.m) + '</title></circle>';
+  }
+  const now = new Date(), nc = now.getHours() * 60 + now.getMinutes();
+  const [hx1, hy1] = pt(nc, 66), [hx2, hy2] = pt(nc, R - 24);
+  s += '<line class="hand" x1="' + hx1 + '" y1="' + hy1 + '" x2="' + hx2 + '" y2="' + hy2 + '"><title>지금</title></line><circle class="hub" cx="' + hx2 + '" cy="' + hy2 + '" r="4"/>';
+  s += '<text class="now" x="' + C + '" y="' + (C - 18) + '" text-anchor="middle">' + pad(now.getHours()) + ':' + pad(now.getMinutes()) + '</text>';
+  const next = items.filter(it => !it.done && it.pred && !state.dayTags[idx.today] && it.pred.m >= nowMin() - state.settings.grace).sort((a, b) => a.pred.m - b.pred.m)[0];
+  if (next) {
+    const name = next.type === 'set' ? next.set.name : next.q.name;
+    s += '<text class="sub" x="' + C + '" y="' + (C + 26) + '" text-anchor="middle">다음 · ' + clockStr(next.pred.m) + '</text>';
+    s += '<text class="next" x="' + C + '" y="' + (C + 44) + '" text-anchor="middle">' + esc(name.length > 12 ? name.slice(0, 11) + '…' : name) + '</text>';
+  } else {
+    s += '<text class="sub" x="' + C + '" y="' + (C + 30) + '" text-anchor="middle">' + (items.length && items.every(i => i.done) ? '오늘 퀘스트 끝!' : '남은 예정 없음') + '</text>';
+  }
+  return s + '</svg>';
+}
+
+function viewToday() {
+  const items = todayItems();
+  const day = idx.today, off = !!state.dayTags[day];
+  const allQ = items.reduce((n, it) => n + (it.type === 'set' ? it.steps.length : 1), 0);
+  const doneQ = items.reduce((n, it) => n + (it.type === 'set' ? it.logs.filter(Boolean).length : (it.done ? 1 : 0)), 0);
+  const xpToday = (idx.byDay.get(day) || []).reduce((s, l) => s + (l.xp || 10), 0) + state.bonuses.filter(b => b.day === day).reduce((s, b) => s + b.xp, 0);
+  let h = '';
+  if (state.sample) {
+    h += '<div class="suggest example"><h3>예시 데이터로 보고 있어요</h3><p>6주 동안 쓴 사람의 기록을 꾸며 넣었어요. 시간 학습, 알람, 세트 제안이 어떻게 보이는지 확인하고 내 퀘스트로 시작하세요.</p>' +
+      '<div class="row"><button class="btn primary" data-act="sample-clear">예시 지우고 내 퀘스트로 시작</button></div></div>';
+  }
+  h += '<section class="card hero">' + dialSVG(items) + '<div class="hero-side">' +
+    '<div><div class="muted small">오늘</div><div class="date">' + fmtDay(day) + '</div></div>' +
+    '<div class="progress"><div class="progress-top"><span>퀘스트 <b class="num">' + doneQ + '/' + allQ + '</b> 완료</span><span class="num muted">+' + xpToday + ' XP</span></div>' +
+    '<div class="bar"><i style="width:' + (allQ ? doneQ / allQ * 100 : 0) + '%"></i></div></div>' +
+    '<div><div class="muted small" id="daytype-l">오늘은 어떤 날인가요?</div><div class="chips" role="group" aria-labelledby="daytype-l">' +
+    '<button class="chip" data-act="daytag" data-v="" aria-pressed="' + !off + '">평소 같은 날</button>' +
+    '<button class="chip" data-act="daytag" data-v="off" aria-pressed="' + off + '">다른 날 (휴가·야근·아픈 날)</button></div>' +
+    '<p class="note" style="margin-top:6px">' + (off ? '오늘 기록은 평균에서 빠지고 알람도 쉬어요.' : '다른 날로 표시하면 그날 기록이 평균을 흔들지 않아요.') + '</p></div>' +
+    '</div></section>';
+
+  const b = bundleSuggestion();
+  if (b) {
+    const qs = b.ids.map(qById);
+    const startM = predict(qs[0], idx.today);
+    const c = startM ? clockOf(startM.m) : 480;
+    const defName = c < 660 ? '아침 세트' : c < 840 ? '점심 세트' : c < 1080 ? '오후 세트' : c < 1260 ? '저녁 세트' : '밤 세트';
+    h += '<div class="suggest"><h3>이건 이제 한 세트 같아요</h3><div class="chain">' +
+      qs.map((q, i) => esc(qLabel(q)) + (i < b.gaps.length ? ' <span class="gap">→ ' + Math.round(b.gaps[i]) + '분 →</span> ' : '')).join('') + '</div>' +
+      '<p class="small">최근 3주 중 ' + b.days + '일을 이 순서로 30분 안에 이어서 했어요. 묶으면 첫 번째 시간에 한 번만 알려 드리고, 끝까지 하면 보너스 20 XP를 드려요.</p>' +
+      '<div class="row"><label class="small muted" for="bundle-name">세트 이름</label><input class="input" id="bundle-name" value="' + esc(ui.bundleName || defName) + '" maxlength="20">' +
+      '<button class="btn primary" data-act="bundle-accept" data-ids="' + b.ids.join(',') + '">한 세트로 묶기</button>' +
+      '<button class="btn" data-act="bundle-later" data-ids="' + b.ids.join(',') + '">일주일 뒤에 다시</button>' +
+      '<button class="btn ghost" data-act="bundle-never" data-ids="' + b.ids.join(',') + '">묻지 않기</button></div></div>';
+  }
+  for (const t of timeSuggestions()) {
+    h += '<div class="suggest"><h3>' + esc(qLabel(t.q)) + ' 시간을 옮길까요?</h3>' +
+      '<p class="small">직접 정한 시간은 ' + t.q.startTime + '인데, ' + t.label + ' 기록 ' + t.n + '번을 보면 실제로는 <b class="num">' + t.learned + '</b>쯤 하셨어요 (' + dur(t.diff) + (t.diff > 0 ? ' 늦게' : ' 일찍') + ').</p>' +
+      '<div class="row"><button class="btn primary" data-act="time-accept" data-id="' + t.q.id + '" data-v="' + t.learned + '">' + t.learned + '로 옮기기</button>' +
+      '<button class="btn" data-act="time-auto" data-id="' + t.q.id + '">앞으로 기록 보고 알아서 맞추기</button>' +
+      '<button class="btn ghost" data-act="time-keep" data-id="' + t.q.id + '" data-v="' + t.learned + '">' + t.q.startTime + ' 그대로</button></div></div>';
+  }
+
+  h += '<section class="section-h"><h2>오늘의 퀘스트</h2><span class="small muted">시간을 누르면 "아까 했어요"로 기록할 수 있어요</span></section>';
+  if (!items.length) {
+    h += '<div class="card empty">오늘 할 퀘스트가 없어요.<br><a href="#quests">퀘스트 관리</a>에서 할 일을 추가하거나 묶음 예시를 골라 보세요.</div>';
+  } else {
+    h += '<ul class="list">' + items.map(itemHTML).join('') + '</ul>';
+  }
+  h += '<p class="note">알람은 이 화면이 열려 있을 때 울려요. 닫아도 울리게 하려면 <a href="#prefs">알람과 설정</a>에서 달력으로 내보내세요.</p>';
+  return h;
+}
+
+function stripSVG(q) {
+  const W = 640, H = 96, PL = 10, PR = 10, PT = 8, PB = 22;
+  const x = m => PL + m / 1440 * (W - PL - PR);
+  const from = addDays(idx.today, -30);
+  const logs = (idx.byQ.get(q.id) || []).filter(e => e.day >= from);
+  const ss = samplesFor(q);
+  const all = stat(ss.map(s => s.m));
+  let s = '<svg class="strip" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + esc(q.name) + ' 최근 30일 체크 시각">';
+  for (let k = 0; k <= 8; k++) {
+    const m = k * 180, gx = x(m).toFixed(1);
+    s += '<line class="grid" x1="' + gx + '" y1="' + PT + '" x2="' + gx + '" y2="' + (H - PB) + '"/>';
+    if (k % 2 === 0) s += '<text class="axis" x="' + gx + '" y="' + (H - 6) + '" text-anchor="' + (k === 0 ? 'start' : k === 8 ? 'end' : 'middle') + '">' + clockStr(m % 1440) + '</text>';
+  }
+  if (all.n >= state.settings.minSamples) {
+    const bx = x(Math.max(0, all.med - all.spread)), bw = Math.max(2, x(Math.min(1440, all.med + all.spread)) - bx);
+    s += '<rect class="band" x="' + bx.toFixed(1) + '" y="' + PT + '" width="' + bw.toFixed(1) + '" height="' + (H - PT - PB) + '" rx="4"/>';
+    s += '<line class="medl" x1="' + x(all.med).toFixed(1) + '" y1="' + PT + '" x2="' + x(all.med).toFixed(1) + '" y2="' + (H - PB) + '"/>';
+  }
+  for (const e of logs) {
+    const age = dayDiff(e.day, idx.today);
+    const cx = x(e.m).toFixed(1), cy = (PT + 5 + (30 - age) / 30 * (H - PT - PB - 10)).toFixed(1);
+    const label = fmtDay(e.day) + ' ' + clockStr(e.m) + (state.dayTags[e.day] ? ' (다른 날)' : '');
+    s += '<circle class="hit" cx="' + cx + '" cy="' + cy + '" r="9"><title>' + label + '</title></circle>';
+    s += '<circle class="dot' + (age <= 6 ? ' recent' : '') + '" cx="' + cx + '" cy="' + cy + '" r="4.5"><title>' + label + '</title></circle>';
+  }
+  return s + '</svg>';
+}
+
+function viewStats() {
+  const qs = state.quests.filter(q => !q.archived);
+  if (!qs.length) return '<div class="card empty">아직 퀘스트가 없어요. <a href="#quests">퀘스트 관리</a>에서 추가해 보세요.</div>';
+  let act = 0, done = 0, perfect = 0, xpWeek = 0;
+  for (let i = 0; i < 7; i++) {
+    const d = addDays(idx.today, -i);
+    if (state.dayTags[d]) continue;
+    for (const q of qs) if (activeOn(q, d)) { act++; if (idx.doneOn(q.id, d)) done++; }
+    if (state.bonuses.some(b => b.day === d && b.kind === 'perfect')) perfect++;
+    xpWeek += (idx.byDay.get(d) || []).reduce((s, l) => s + (l.xp || 10), 0) + state.bonuses.filter(b => b.day === d).reduce((s, b) => s + b.xp, 0);
+  }
+  const habits = qs.filter(q => habitInfo(q).isHabit).length;
+  let h = '<section class="section-h"><h2>최근 7일</h2><span class="small muted">"다른 날"로 표시한 날은 빼고 셉니다</span></section>';
+  h += '<div class="tiles">' +
+    '<div class="tile"><div class="v">' + (act ? Math.round(done / act * 100) : 0) + '%</div><div class="k">해낸 비율 (' + done + '/' + act + ')</div></div>' +
+    '<div class="tile"><div class="v">' + perfect + '일</div><div class="k">완벽한 하루</div></div>' +
+    '<div class="tile"><div class="v">' + xpWeek + '</div><div class="k">얻은 XP</div></div>' +
+    '<div class="tile"><div class="v">' + habits + '개</div><div class="k">습관이 된 퀘스트</div></div></div>';
+  h += '<section class="section-h"><h2>퀘스트별 시간</h2><span class="small muted">점 하나가 체크 한 번 · 위가 30일 전, 아래가 오늘 · 띠는 평소 시간 범위</span></section>';
+  for (const q of qs) {
+    const hi = habitInfo(q), p = predict(q, idx.today), ss = samplesFor(q);
+    const wd = stat(ss.filter(s => isWeekday(s.dow)).map(s => s.m)), we = stat(ss.filter(s => !isWeekday(s.dow)).map(s => s.m));
+    const min = state.settings.minSamples;
+    const tag = hi.isHabit ? '<span class="tag habit">습관 완성' + (hi.since >= 66 ? ' · 66일' : '') + '</span>'
+      : ss.length >= min ? '<span class="tag building">습관 만드는 중</span>' : '<span class="tag">시간 배우는 중 ' + ss.length + '/' + min + '</span>';
+    const facts = [];
+    if (p && (p.source === 'abs' || p.source === 'rel')) facts.push('오늘 예상 <b>' + clockStr(p.m) + '</b> ± ' + p.spread + '분');
+    else if (p && p.source === 'manual') facts.push('고정 시간 <b>' + q.startTime + '</b>');
+    if (wd.n >= min && we.n >= min && Math.abs(wd.med - we.med) >= SPLIT) facts.push('평일 <b>' + clockStr(wd.med) + '</b> · 주말 <b>' + clockStr(we.med) + '</b>');
+    if (p && p.rel && p.rel.n >= min && (p.source === 'rel' || p.relPending)) facts.push('하루 첫 체크 뒤 <b>' + dur(p.rel.med) + '</b>');
+    facts.push('최근 3주 <b>' + Math.round(hi.r21.r * 100) + '%</b> (' + hi.r21.done + '/' + hi.r21.act + ')');
+    h += '<section class="card qstat"><div class="qstat-h"><span class="name">' + esc(qLabel(q)) + '</span>' + tag + '</div>' +
+      '<div class="facts">' + facts.map(f => '<span>' + f + '</span>').join('') + '</div>' + stripSVG(q) +
+      '<div class="row" style="justify-content:space-between"><div class="week" aria-label="최근 7일">' + hi.week.map(w =>
+        '<span class="wd">' + DOW[dowOf(w.d)] + '<i class="' + (w.done ? 'y' : !w.active ? 'x' : '') + '" title="' + fmtDay(w.d) + (w.done ? ' 했음' : !w.active ? ' 쉬는 날' : w.today ? ' 아직' : ' 안 함') + '"></i></span>').join('') + '</div>' +
+      '<div class="habitbar" style="min-width:180px;flex:1;max-width:280px"><span>습관까지 ' + Math.min(hi.since, 66) + '/66일</span><div class="bar"><i style="width:' + Math.min(100, hi.since / 66 * 100) + '%"></i></div></div></div></section>';
+  }
+  const earned = earnedBadges();
+  h += '<section class="section-h"><h2>배지</h2><span class="small muted">' + earned.length + '/' + BADGES.length + '개</span></section><div class="badges">' +
+    BADGES.map(b => '<div class="badge' + (earned.includes(b.id) ? '' : ' locked') + '"><span class="seal">' + b.mark + '</span><span class="bn">' + b.name + '</span><span class="bd">' + b.desc + '</span></div>').join('') + '</div>';
+  h += '<p class="note">연속 기록이 끊겨도 점수는 깎이지 않아요. 습관 완성은 21일 넘게 하고, 최근 3주에 80% 이상 하고, 시간이 ±30분 안으로 일정할 때 붙어요. 66일은 습관이 자리 잡는 데 걸린다는 평균 기간이에요.</p>';
+  return h;
+}
+
+const PACKS = [
+  { name: '직장인', items: [['💧', '일어나서 물 한 잔', '06:50'], ['📰', '출근길 뉴스 10분', '07:40'], ['🧘', '점심 뒤 스트레칭', '12:50'], ['🏃', '퇴근 뒤 걷기 20분', '19:30'], ['📵', '자기 전 폰 내려놓기', '23:00']] },
+  { name: '학생', items: [['⏰', '같은 시간에 일어나기', '07:00'], ['📚', '등교 전 단어 20개', '07:30'], ['✏️', '숙제 끝내기', '17:00'], ['🔁', '배운 것 복습 15분', '21:00'], ['🛏️', '12시 전에 눕기', '23:40']] },
+  { name: '주부', items: [['☕', '나만의 커피 10분', '09:30'], ['🧺', '빨래 돌리기', '10:00'], ['🚶', '산책 20분', '15:00'], ['🍳', '저녁 준비 시작', '17:30'], ['📖', '자기 전 책 10쪽', '22:30']] },
+  { name: '취준생', items: [['⏰', '같은 시간에 일어나기', '07:30'], ['📝', '채용 공고 확인', '09:00'], ['💻', '자소서·포트폴리오 1시간', '10:00'], ['🗣️', '면접 답변 연습', '15:00'], ['🏃', '운동 30분', '18:00']] },
+  { name: '신앙과 배움', items: [['🙏', '아침 기도', '06:50'], ['📖', '성경 한 장', '07:00'], ['🔤', '영어 단어 20개', '12:30'], ['🎹', '피아노 연습', '21:00'], ['漢', '한자 다섯 자', '21:30']] }
+];
+
+function questForm() {
+  if (!ui.edit) return '<button class="btn primary" data-act="q-new">+ 새 퀘스트</button>';
+  const q = ui.edit === 'new' ? { name: '', emoji: '', startTime: '', lock: false, days: ALLDAYS } : qById(ui.edit);
+  const days = q.days || ALLDAYS;
+  return '<form class="card form" id="qform"><h3 style="font-size:19px">' + (ui.edit === 'new' ? '새 퀘스트' : '퀘스트 고치기') + '</h3>' +
+    '<div class="form-grid"><label class="field"><span>이모지</span><input class="input" id="qf-emoji" maxlength="4" value="' + esc(q.emoji) + '" placeholder="💧"></label>' +
+    '<label class="field"><span>할 일</span><input class="input" id="qf-name" required maxlength="40" value="' + esc(q.name) + '" placeholder="예: 일어나서 물 한 잔"></label></div>' +
+    '<label class="field"><span>처음 시간 (비워 두면 기록을 보고 배워요)</span><input class="input num" type="time" id="qf-time" value="' + esc(q.startTime || '') + '" style="max-width:160px"></label>' +
+    '<label class="check-line"><input type="checkbox" id="qf-lock"' + (q.lock ? ' checked' : '') + '><span>이 시간 고정하기<br><span class="small muted">끄면 기록이 ' + state.settings.minSamples + '번 쌓인 뒤부터 실제로 한 시간에 맞춰 알려 드려요. 켜도 시간이 많이 다르면 옮길지 물어봐요.</span></span></label>' +
+    '<div class="field"><span>하는 요일</span><div class="days">' + [1, 2, 3, 4, 5, 6, 0].map(d =>
+      '<label><input type="checkbox" id="qf-d' + d + '" value="' + d + '"' + (days.includes(d) ? ' checked' : '') + '><span>' + DOW[d] + '</span></label>').join('') + '</div></div>' +
+    '<div class="row"><button class="btn primary" type="submit">저장</button><button class="btn ghost" type="button" data-act="q-cancel">취소</button></div></form>';
+}
+
+function viewQuests() {
+  let h = '<section class="section-h"><h2>내 퀘스트</h2><span class="small muted">' + state.quests.filter(q => !q.archived).length + '개</span></section>';
+  h += questForm();
+  const qs = state.quests;
+  if (qs.length) {
+    h += '<div class="card">' + qs.map(q => {
+      const set = q.setId ? state.sets.find(s => s.id === q.setId) : null;
+      const daysTxt = (q.days || ALLDAYS).length === 7 ? '매일' : [1, 2, 3, 4, 5, 6, 0].filter(d => (q.days || ALLDAYS).includes(d)).map(d => DOW[d]).join('·');
+      const timeTxt = q.startTime ? (q.lock ? q.startTime + ' 고정' : q.startTime + '부터 배우기') : '기록 보고 배우기';
+      const conf = ui.confirm === 'del:' + q.id;
+      return '<div class="qrow' + (q.archived ? ' archived' : '') + '"><div class="qn"><b>' + esc(qLabel(q)) + '</b><div class="small muted">' + daysTxt + ' · ' + timeTxt + (set ? ' · ' + esc(set.name) + '에 묶임' : '') + (q.archived ? ' · 보관함' : '') + '</div></div>' +
+        '<div class="row"><button class="btn sm" data-act="q-edit" data-id="' + q.id + '">고치기</button>' +
+        '<button class="btn sm" data-act="q-archive" data-id="' + q.id + '">' + (q.archived ? '다시 꺼내기' : '보관') + '</button>' +
+        '<button class="btn sm danger" data-act="q-del" data-id="' + q.id + '">' + (conf ? '기록까지 지워요. 한 번 더 누르세요' : '삭제') + '</button></div></div>';
+    }).join('') + '</div>';
+  }
+  if (state.sets.length) {
+    h += '<section class="section-h"><h2>세트</h2></section><div class="card">' + state.sets.map(s => {
+      const names = s.questIds.map(qById).filter(Boolean).map(qLabel).map(esc).join(' → ');
+      const renaming = ui.rename === s.id;
+      return '<div class="qrow"><div class="qn">' + (renaming
+        ? '<div class="row"><label class="small muted" for="set-name">세트 이름</label><input class="input" id="set-name" maxlength="20" value="' + esc(s.name) + '"><button class="btn sm primary" data-act="set-rename-save" data-id="' + s.id + '">저장</button></div>'
+        : '<b>' + esc(s.name) + '</b>') + '<div class="small muted">' + names + '</div></div>' +
+        '<div class="row">' + (renaming ? '' : '<button class="btn sm" data-act="set-rename" data-id="' + s.id + '">이름 바꾸기</button>') +
+        '<button class="btn sm" data-act="set-unbundle" data-id="' + s.id + '">세트 풀기</button></div></div>';
+    }).join('') + '</div>';
+  }
+  h += '<section class="section-h"><h2>묶음 예시로 시작하기</h2><span class="small muted">처음 시간은 짐작값이에요. 기록이 쌓이면 실제 시간으로 바뀌어요</span></section><div class="packs">' +
+    PACKS.map((p, i) => '<div class="pack"><h3>' + p.name + '</h3><ul>' + p.items.map(it => '<li>' + it[0] + ' ' + esc(it[1]) + ' <span class="num">' + it[2] + '</span></li>').join('') + '</ul>' +
+      '<button class="btn sm" data-act="pack-add" data-i="' + i + '">이 묶음 추가</button></div>').join('') + '</div>';
+  return h;
+}
+
+function viewPrefs() {
+  const S = state.settings;
+  const perm = typeof Notification === 'undefined' ? 'none' : Notification.permission;
+  const permTxt = { granted: '허용됨', denied: '막혀 있어요. 브라우저 설정에서 이 페이지 알림을 허용해 주세요.', default: '아직 허용하지 않았어요', none: '이 브라우저는 알림을 지원하지 않아요' }[perm];
+  const opt = (id, cur, list) => '<select class="input" id="' + id + '" data-pref="' + id.replace('p-', '') + '">' + list.map(([v, t]) => '<option value="' + v + '"' + (String(cur) === String(v) ? ' selected' : '') + '>' + t + '</option>').join('') + '</select>';
+  let h = '<section class="section-h"><h2>알람</h2></section><div class="card">';
+  h += '<div class="pref"><div class="pl"><b>언제 알려 줄까요</b><span>"늦을 때만"이 덜 귀찮아요. 이미 한 일은 울리지 않아요.</span></div>' +
+    opt('p-alarmMode', S.alarmMode, [['late', '평소 시간보다 늦을 때만'], ['usual', '평소 시간이 되면 바로']]) + '</div>';
+  h += '<div class="pref"><div class="pl"><b>얼마나 늦으면</b><span>"늦을 때만"일 때 기다리는 시간</span></div>' +
+    opt('p-grace', S.grace, [[5, '5분'], [10, '10분'], [15, '15분'], [20, '20분'], [30, '30분']]) + '</div>';
+  h += '<div class="pref"><div class="pl"><b>휴대폰·PC 알림</b><span>' + permTxt + '</span></div><button class="btn" data-act="notify-ask"' + (perm === 'granted' || perm === 'none' ? ' disabled' : '') + '>알림 허용하기</button></div>';
+  h += '<div class="pref"><div class="pl"><b>알림 소리</b><span>화면이 열려 있을 때 짧게 울려요</span></div><div class="row">' +
+    opt('p-sound', S.sound ? '1' : '0', [['1', '켜기'], ['0', '끄기']]) + '<button class="btn sm" data-act="sound-test">들어 보기</button></div></div>';
+  h += '<div class="pref"><div class="pl"><b>달력으로 내보내기</b><span>배운 시간을 요일별 반복 일정(.ics)으로 만들어요. 휴대폰 달력에 넣으면 이 화면을 닫아도 알람이 울려요. 시간이 바뀌면 다시 내보내 주세요.</span></div><button class="btn" data-act="export-ics">달력 파일 만들기</button></div>';
+  h += '</div><section class="section-h"><h2>시간 배우기</h2></section><div class="card">';
+  h += '<div class="pref"><div class="pl"><b>하루가 시작되는 시각</b><span>이 시각 전에 한 일은 전날 기록으로 셉니다. 밤늦게 자는 분은 늦춰 주세요.</span></div>' +
+    opt('p-dayStart', S.dayStart, [0, 1, 2, 3, 4, 5, 6].map(v => [v, pad(v) + ':00'])) + '</div>';
+  h += '<div class="pref"><div class="pl"><b>배우기 시작하는 기록 수</b><span>이만큼 쌓이면 평소 시간을 계산해요</span></div>' +
+    opt('p-minSamples', S.minSamples, [[3, '3번'], [5, '5번'], [7, '7번']]) + '</div>';
+  h += '<div class="pref"><div class="pl"><b>알람을 쉬는 기준</b><span>시간 차이가 이보다 크면 들쭉날쭉하다고 보고 알람을 쉬어요</span></div>' +
+    opt('p-maxSpread', S.maxSpread, [[30, '±30분'], [45, '±45분'], [60, '±60분'], [90, '±90분']]) + '</div>';
+  h += '</div><section class="section-h"><h2>내 기록</h2></section><div class="card">';
+  h += '<div class="pref"><div class="pl"><b>백업</b><span>기록은 이 브라우저에만 저장돼요. 가끔 백업해 두세요.</span></div><div class="row"><button class="btn" data-act="export-json">백업 만들기</button><button class="btn" data-act="import-open">백업 불러오기</button></div></div>';
+  h += '<div class="pref"><div class="pl"><b>예시 데이터</b><span>6주치 예시 기록으로 바꿔서 기능을 둘러봐요. 지금 기록은 사라져요.</span></div><button class="btn" data-act="sample-load">' + (ui.confirm === 'sample' ? '지금 기록이 지워져요. 한 번 더 누르세요' : '예시 데이터 넣기') + '</button></div>';
+  h += '<div class="pref"><div class="pl"><b>전부 지우기</b><span>퀘스트, 기록, 배지를 모두 지워요</span></div><button class="btn danger" data-act="reset">' + (ui.confirm === 'reset' ? '되돌릴 수 없어요. 한 번 더 누르세요' : '전부 지우기') + '</button></div>';
+  h += '</div>';
+  return h;
+}
+
+function renderModal() {
+  const el = $('#modal');
+  const m = ui.modal;
+  if (!m) { el.hidden = true; el.innerHTML = ''; return; }
+  el.hidden = false;
+  if (m.kind === 'export') {
+    el.innerHTML = '<div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-t"><h2 id="sheet-t" style="font-size:22px">' + esc(m.title) + '</h2>' +
+      '<p class="note">' + esc(m.help) + '</p><textarea id="export-text" readonly>' + esc(m.text) + '</textarea>' +
+      '<div class="row"><button class="btn primary" data-act="file-save">파일로 받기</button><button class="btn" data-act="file-copy">내용 복사</button><button class="btn ghost" data-act="modal-close">닫기</button></div>' +
+      '<p class="note" id="export-msg"></p></div>';
+  } else {
+    el.innerHTML = '<div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-t"><h2 id="sheet-t" style="font-size:22px">백업 불러오기</h2>' +
+      '<p class="note">백업 파일을 고르거나, 백업 내용을 아래에 붙여 넣으세요. 지금 기록은 백업 내용으로 바뀌어요.</p>' +
+      '<input type="file" id="import-file" accept=".json,application/json">' +
+      '<textarea id="import-text" placeholder="{ &quot;v&quot;: 1, ... }"></textarea>' +
+      '<div class="row"><button class="btn primary" data-act="import-do">불러오기</button><button class="btn ghost" data-act="modal-close">닫기</button></div>' +
+      '<p class="note" id="import-msg"></p></div>';
+  }
+}
+
+/* ---------- toasts, sound, notifications ---------- */
+function toast(html, cls, ms) {
+  const t = document.createElement('div');
+  t.className = 'toast ' + (cls || '');
+  t.innerHTML = html;
+  $('#toasts').appendChild(t);
+  if (ms) setTimeout(() => t.remove(), ms);
+  return t;
+}
+function cheer(title, body) { toast('<div class="tt">' + esc(title) + '</div><div class="small">' + esc(body) + '</div>', 'cheer', 4200); }
+function floatXP(el, text) {
+  const f = document.createElement('div');
+  f.className = 'float-xp';
+  f.textContent = text;
+  const r = el && el.getBoundingClientRect ? el.getBoundingClientRect() : { left: innerWidth / 2, top: innerHeight / 2, width: 0 };
+  f.style.left = Math.max(8, Math.min(innerWidth - 140, r.left + r.width / 2 - 40)) + 'px';
+  f.style.top = (r.top - 8) + 'px';
+  document.body.appendChild(f);
+  setTimeout(() => f.remove(), 1100);
+}
+let actx = null;
+document.addEventListener('pointerdown', () => { if (!actx) { try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { actx = null; } } }, { passive: true });
+function beep() {
+  if (!actx || !state.settings.sound) return;
+  try {
+    const t0 = actx.currentTime;
+    [[880, 0], [1175, .18]].forEach(([f, dt]) => {
+      const o = actx.createOscillator(), g = actx.createGain();
+      o.frequency.value = f; o.type = 'sine';
+      g.gain.setValueAtTime(0.0001, t0 + dt);
+      g.gain.exponentialRampToValueAtTime(0.25, t0 + dt + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + dt + 0.25);
+      o.connect(g).connect(actx.destination);
+      o.start(t0 + dt); o.stop(t0 + dt + 0.3);
+    });
+  } catch (e) { /* sound is optional */ }
+}
+
+function fireAlarm(it, lateBy) {
+  const name = it.type === 'set' ? it.set.name : qLabel(it.q);
+  const when = clockStr(it.pred.m);
+  const body = it.pred.source === 'manual' || it.pred.source === 'start'
+    ? when + '에 하기로 한 일이에요.'
+    : (lateBy > 0 ? '평소엔 ' + when + '쯤 하셨는데 아직이에요.' : '평소 이 시간쯤 하던 일이에요.');
+  const extra = it.type === 'set' ? ' ' + it.steps.map(q => q.name).join(' → ') : '';
+  const t = toast('<div class="tt">' + esc(name) + '</div><div class="small">' + esc(body + extra) + '</div>' +
+    '<div class="row">' + (it.type === 'quest' ? '<button class="btn primary" data-act="alarm-done" data-id="' + it.id + '">했어요</button>' : '<a class="btn primary" href="#today" data-act="alarm-close">세트 보러 가기</a>') +
+    '<button class="btn" data-act="alarm-snooze" data-id="' + it.id + '">10분 뒤에</button>' +
+    '<button class="btn ghost" data-act="alarm-skip" data-id="' + it.id + '">오늘은 쉬기</button></div>', 'alarm');
+  t.dataset.alarm = it.id;
+  beep();
+  try {
+    if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+      const n = new Notification('하루 퀘스트 · ' + name, { body: body + extra, tag: 'hq-' + it.id });
+      n.onclick = () => { window.focus(); n.close(); };
+    }
+  } catch (e) { /* in-page toast is enough */ }
+}
+
+function tick() {
+  if (!state) return;
+  idx = buildIndex();
+  const day = idx.today;
+  const A = state.alarms;
+  if (A.day !== day) { state.alarms = { day, fired: {}, snooze: {}, skip: {} }; save(); }
+  if (state.dayTags[day]) return;
+  const nm = nowMin(), S = state.settings, due = [];
+  for (const it of todayItems()) {
+    if (it.done || (it.type === 'set' && it.started)) continue;
+    const p = it.pred;
+    if (!p || !p.alarmable || state.alarms.skip[it.id]) continue;
+    if (startsTomorrow(it.type === 'set' ? it.steps[0] : it.q, p)) continue;
+    let at = S.alarmMode === 'usual' ? p.m : p.m + S.grace;
+    if (p.source === 'manual' || p.source === 'start') at = p.m;
+    if (state.alarms.snooze[it.id]) at = state.alarms.snooze[it.id];
+    if (nm >= at && nm < at + 120 && state.alarms.fired[it.id] !== at) {
+      state.alarms.fired[it.id] = at;
+      due.push({ it, late: nm - p.m });
+    }
+  }
+  if (!due.length) return;
+  save();
+  due.slice(0, 2).forEach(d => fireAlarm(d.it, d.late));
+  if (due.length > 2) {
+    const rest = due.slice(2).map(d => d.it.type === 'set' ? d.it.set.name : d.it.q.name).join(', ');
+    toast('<div class="tt">그 밖에 ' + (due.length - 2) + '개</div><div class="small">' + esc(rest) + '도 평소 시간이 지났어요.</div>' +
+      '<div class="row"><a class="btn" href="#today" data-act="alarm-close">오늘 화면 보기</a></div>', 'alarm');
+  }
+}
+
+/* ---------- export / import ---------- */
+function icsText(s) { return String(s).replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\n/g, '\\n'); }
+function icsFold(line) {
+  const enc = new TextEncoder();
+  let out = '', cur = '', bytes = 0;
+  for (const ch of line) {
+    const b = enc.encode(ch).length;
+    if (bytes + b > 73) { out += cur + '\r\n '; cur = ''; bytes = 1; }
+    cur += ch; bytes += b;
+  }
+  return out + cur;
+}
+function buildICS() {
+  const BY = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'];
+  const fmt = d => d.getFullYear() + pad(d.getMonth() + 1) + pad(d.getDate()) + 'T' + pad(d.getHours()) + pad(d.getMinutes()) + '00';
+  const stamp = new Date().toISOString().replace(/[-:]/g, '').slice(0, 15) + 'Z';
+  const L = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Haru Quest//KO', 'CALSCALE:GREGORIAN', 'X-WR-CALNAME:하루 퀘스트'];
+  const units = [];
+  for (const s of state.sets) {
+    const steps = s.questIds.map(qById).filter(q => q && !q.archived);
+    if (steps.length) units.push({ key: 's' + s.id, title: s.name, desc: steps.map(q => q.name).join(' → '), q: steps[0] });
+  }
+  for (const q of state.quests) if (!q.archived && !q.setId) units.push({ key: 'q' + q.id, title: qLabel(q), desc: '하루 퀘스트', q });
+  let n = 0;
+  const tomorrow = addDays(idx.today, 1);
+  for (const u of units) {
+    const byTime = {};
+    for (let i = 0; i < 7; i++) {
+      const d = addDays(tomorrow, i);
+      if (!(u.q.days || ALLDAYS).includes(dowOf(d))) continue;
+      const p = predict(u.q, d);
+      if (!p || !p.alarmable) continue;
+      const t = clockStr(p.m);
+      (byTime[t] = byTime[t] || []).push(new Date(tsFor(d, p.m)));
+    }
+    for (const t in byTime) {
+      const ds = byTime[t].sort((a, b) => a - b);
+      n++;
+      L.push('BEGIN:VEVENT', 'UID:' + u.key + '-' + t.replace(':', '') + '@haru-quest', 'DTSTAMP:' + stamp, 'DTSTART:' + fmt(ds[0]), 'DURATION:PT10M',
+        'RRULE:FREQ=WEEKLY;BYDAY=' + ds.map(d => BY[d.getDay()]).join(','), 'SUMMARY:' + icsText(u.title), 'DESCRIPTION:' + icsText(u.desc),
+        'BEGIN:VALARM', 'ACTION:DISPLAY', 'DESCRIPTION:' + icsText(u.title), 'TRIGGER:PT0M', 'END:VALARM', 'END:VEVENT');
+    }
+  }
+  L.push('END:VCALENDAR');
+  return { text: L.map(icsFold).join('\r\n') + '\r\n', n };
+}
+function downloadText(name, mime, text) {
+  try {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([text], { type: mime }));
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
+    return true;
+  } catch (e) { return false; }
+}
+const SAFE_ID = /^[A-Za-z0-9_-]{1,40}$/;
+function validImport(o) {
+  return o && Array.isArray(o.quests) && Array.isArray(o.logs) &&
+    o.quests.every(q => q && SAFE_ID.test(q.id) && typeof q.name === 'string') &&
+    o.logs.every(l => l && SAFE_ID.test(l.id) && SAFE_ID.test(l.qid) && typeof l.ts === 'number') &&
+    (!o.sets || (Array.isArray(o.sets) && o.sets.every(s => s && SAFE_ID.test(s.id) && Array.isArray(s.questIds))));
+}
+function applyImport(text) {
+  let o;
+  try { o = JSON.parse(text); } catch (e) { return '백업 내용을 읽지 못했어요. 파일 전체를 그대로 붙여 넣었는지 확인해 주세요.'; }
+  if (!validImport(o)) return '하루 퀘스트 백업 형식이 아니에요. quests와 logs가 들어 있는 파일인지 확인해 주세요.';
+  const d = defaultState();
+  state = Object.assign(d, o, { settings: Object.assign(d.settings, o.settings || {}), dismissed: Object.assign(d.dismissed, o.dismissed || {}), alarms: d.alarms });
+  state.sample = false;
+  state.sets = state.sets || [];
+  state.bonuses = Array.isArray(state.bonuses) ? state.bonuses : [];
+  for (const q of state.quests) {
+    if (q.startTime && !/^\d{2}:\d{2}$/.test(q.startTime)) q.startTime = null;
+    q.days = Array.isArray(q.days) ? q.days.filter(d => ALLDAYS.includes(d)) : ALLDAYS.slice();
+    if (!q.days.length) q.days = ALLDAYS.slice();
+    if (typeof q.createdAt !== 'number') q.createdAt = Date.now();
+  }
+  save();
+  ui.modal = null;
+  render();
+  cheer('불러왔어요', '퀘스트 ' + state.quests.length + '개, 기록 ' + state.logs.length + '개');
+  return '';
+}
+
+/* ---------- sample data: six weeks of a believable routine ---------- */
+function rng(seed) { return () => { seed = (seed * 1664525 + 1013904223) % 4294967296; return seed / 4294967296; }; }
+function loadSample() {
+  const keep = state ? state.settings : defaultState().settings;
+  state = defaultState();
+  state.settings = keep;
+  state.sample = true;
+  const today = todayDay();
+  const created = tsFor(addDays(today, -43), 0);
+  const mk = (emoji, name, o) => {
+    o = o || {};
+    const q = { id: uid(), emoji, name, startTime: o.startTime || null, lock: !!o.lock, days: o.days || ALLDAYS.slice(), createdAt: o.createdAt || created, archived: false, setId: null };
+    state.quests.push(q); return q;
+  };
+  const water = mk('💧', '일어나서 물 한 잔'), pray = mk('🙏', '아침 기도'), bible = mk('📖', '성경 한 장');
+  const eng = mk('🔤', '영어 단어 20개', { days: [1, 2, 3, 4, 5] }), walk = mk('🏃', '걷기 20분');
+  const piano = mk('🎹', '피아노 연습', { days: [2, 4, 6], startTime: '21:00' });
+  const diary = mk('✍️', '감사 일기 세 줄', { startTime: '22:00', lock: true });
+  const hanja = mk('漢', '한자 다섯 자', { createdAt: tsFor(addDays(today, -2), 0), startTime: '13:00' });
+  const r = rng(20261108), g = () => (r() + r() + r() + r() - 2) * 1.7;
+  const off = [addDays(today, -12), addDays(today, -27)];
+  off.forEach(d => { state.dayTags[d] = 'off'; });
+  const now = Date.now();
+  const add = (q, day, clockMin) => {
+    const m = ((Math.round(clockMin) - DS()) % 1440 + 1440) % 1440;
+    const ts = tsFor(day, m);
+    if (ts > now) return;
+    state.logs.push({ id: uid(), qid: q.id, ts, xp: 10 + (r() < 0.55 ? 5 : 0) });
+  };
+  for (let i = 42; i >= 0; i--) {
+    const day = addDays(today, -i), dw = dowOf(day), wk = isWeekday(dw);
+    if (off.includes(day)) { if (r() < 0.6) add(water, day, 9 * 60 + 40 + g() * 20); continue; }
+    let t = (wk ? 6 * 60 + 40 + g() * 8 : 8 * 60 + 20 + g() * 20) + 2 + r() * 2;
+    if (r() < 0.93) add(water, day, t);
+    t += 5 + g() * 1.5; if (r() < 0.9) add(pray, day, t);
+    t += 9 + g() * 2.5; if (r() < 0.86) add(bible, day, t);
+    if (wk && r() < 0.8) add(eng, day, 12 * 60 + 25 + g() * 9);
+    if (r() < 0.72) add(walk, day, wk ? 19 * 60 + 40 + g() * 14 : 10 * 60 + 30 + g() * 22);
+    if ([2, 4, 6].includes(dw) && r() < 0.75) add(piano, day, 21 * 60 + 10 + g() * 12);
+    if (r() < 0.8) add(diary, day, 22 * 60 + 40 + g() * 14);
+    if (i <= 1) add(hanja, day, 13 * 60 + 5 + g() * 10);
+  }
+  idx = buildIndex();
+  for (const d of idx.byDay.keys()) recomputeBonuses(d);
+  idx = buildIndex();
+  state.seenBadges = earnedBadges();
+  state.alarms = { day: today, fired: {}, snooze: {}, skip: {} };
+  save();
+}
+
+/* ---------- events ---------- */
+const actions = {
+  'toggle'(b) {
+    const qid = b.dataset.id, day = idx.today;
+    ui.late = null; ui.lateErr = '';
+    if (idx.doneOn(qid, day)) doUncheck(qid, day); else doCheck(qid, Date.now(), b);
+  },
+  'late-open'(b) { ui.late = ui.late === b.dataset.id ? null : b.dataset.id; ui.lateErr = ''; render(); const i = $('#late-time'); if (i) i.focus(); },
+  'late-cancel'() { ui.late = null; ui.lateErr = ''; render(); },
+  'late-save'(b) {
+    const qid = b.dataset.id, v = ($('#late-time') || {}).value;
+    if (!v) { ui.lateErr = '시간을 넣어 주세요.'; render(); return; }
+    const m = hhmmToM(v);
+    if (m > nowMin()) { ui.lateErr = '아직 오지 않은 시간이에요. 하루는 ' + pad(state.settings.dayStart) + ':00에 시작해요.'; render(); return; }
+    const ts = tsFor(idx.today, m), e = idx.doneOn(qid, idx.today);
+    ui.late = null; ui.lateErr = '';
+    if (e) { const l = state.logs.find(x => x.id === e.id); l.ts = ts; idx = buildIndex(); recomputeBonuses(idx.today); save(); afterChange(); }
+    else doCheck(qid, ts, b);
+  },
+  'daytag'(b) {
+    const d = idx.today;
+    if (b.dataset.v) state.dayTags[d] = b.dataset.v; else delete state.dayTags[d];
+    idx = buildIndex(); recomputeBonuses(d); save(); render();
+  },
+  'bundle-accept'(b) {
+    const ids = b.dataset.ids.split(','), name = (($('#bundle-name') || {}).value || '').trim() || '나의 세트';
+    const s = { id: uid(), name, emoji: '', questIds: ids, createdAt: Date.now() };
+    state.sets.push(s);
+    ids.forEach(id => { const q = qById(id); if (q) q.setId = s.id; });
+    ui.bundleName = '';
+    idx = buildIndex(); recomputeBonuses(idx.today);
+    cheer('세트가 생겼어요', name + ' · ' + ids.length + '단계');
+    afterChange();
+  },
+  'bundle-later'(b) { state.dismissed.bundles[b.dataset.ids.split(',').join('>')] = Date.now() + 7 * 864e5; save(); render(); },
+  'bundle-never'(b) { state.dismissed.bundles[b.dataset.ids.split(',').join('>')] = 'never'; save(); render(); },
+  'time-accept'(b) { const q = qById(b.dataset.id); q.startTime = b.dataset.v; save(); render(); cheer('시간을 옮겼어요', qLabel(q) + ' · ' + b.dataset.v); },
+  'time-auto'(b) { const q = qById(b.dataset.id); q.lock = false; save(); render(); },
+  'time-keep'(b) { state.dismissed.times[b.dataset.id] = b.dataset.v; save(); render(); },
+  'sample-clear'() { const keep = state.settings; state = defaultState(); state.settings = keep; save(); ui.edit = null; location.hash = '#quests'; render(); },
+  'sample-load'() {
+    if (ui.confirm !== 'sample') { ui.confirm = 'sample'; render(); return; }
+    ui.confirm = null; loadSample(); location.hash = '#today'; render();
+  },
+  'reset'() {
+    if (ui.confirm !== 'reset') { ui.confirm = 'reset'; render(); return; }
+    ui.confirm = null; state = defaultState(); save(); location.hash = '#quests'; render();
+  },
+  'q-new'() { ui.edit = 'new'; render(); const i = $('#qf-name'); if (i) i.focus(); },
+  'q-edit'(b) { ui.edit = b.dataset.id; render(); window.scrollTo({ top: 0 }); const i = $('#qf-name'); if (i) i.focus(); },
+  'q-cancel'() { ui.edit = null; render(); },
+  'q-archive'(b) {
+    const q = qById(b.dataset.id); q.archived = !q.archived;
+    if (q.archived && q.setId) unbundle(q.setId);
+    save(); render();
+  },
+  'q-del'(b) {
+    const id = b.dataset.id;
+    if (ui.confirm !== 'del:' + id) { ui.confirm = 'del:' + id; render(); return; }
+    ui.confirm = null;
+    const q = qById(id);
+    if (q && q.setId) unbundle(q.setId);
+    state.quests = state.quests.filter(x => x.id !== id);
+    state.logs = state.logs.filter(l => l.qid !== id);
+    idx = buildIndex();
+    const days = new Set(state.bonuses.map(x => x.day)); days.forEach(recomputeBonuses);
+    save(); render();
+  },
+  'set-unbundle'(b) { unbundle(b.dataset.id); save(); render(); },
+  'set-rename'(b) { ui.rename = b.dataset.id; render(); const i = $('#set-name'); if (i) i.focus(); },
+  'set-rename-save'(b) { const s = state.sets.find(x => x.id === b.dataset.id); const v = (($('#set-name') || {}).value || '').trim(); if (s && v) s.name = v; ui.rename = null; save(); render(); },
+  'pack-add'(b) {
+    if (state.sample) { const keep = state.settings; state = defaultState(); state.settings = keep; }
+    const p = PACKS[+b.dataset.i]; let n = 0;
+    for (const [emoji, name, time] of p.items) {
+      if (state.quests.some(q => q.name === name && !q.archived)) continue;
+      state.quests.push({ id: uid(), emoji, name, startTime: time, lock: false, days: ALLDAYS.slice(), createdAt: Date.now(), archived: false, setId: null });
+      n++;
+    }
+    save(); render();
+    cheer(p.name + ' 묶음 추가', n ? n + '개를 넣었어요. 필요 없는 건 보관하거나 지우세요.' : '이미 다 들어 있어요.');
+  },
+  'notify-ask'() {
+    if (typeof Notification === 'undefined') return;
+    try {
+      const r = Notification.requestPermission(res => render());
+      if (r && r.then) r.then(() => render(), () => render());
+    } catch (e) { render(); }
+  },
+  'sound-test'() { if (!actx) { try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { } } const s = state.settings.sound; state.settings.sound = true; beep(); state.settings.sound = s; },
+  'export-ics'() {
+    const r = buildICS();
+    ui.modal = { kind: 'export', title: '달력 파일', filename: 'haru-quest.ics', mime: 'text/calendar',
+      help: r.n ? '반복 일정 ' + r.n + '개를 만들었어요. 파일을 받아 휴대폰이나 구글 캘린더에서 열면 들어가요. 파일을 받을 수 없으면 내용을 복사해서 .ics 파일로 저장하세요.' : '아직 알람을 걸 만큼 시간이 정해진 퀘스트가 없어요. 처음 시간을 정하거나 기록을 더 모아 주세요.',
+      text: r.text };
+    renderModal();
+  },
+  'export-json'() {
+    ui.modal = { kind: 'export', title: '백업', filename: 'haru-quest-backup-' + idx.today + '.json', mime: 'application/json',
+      help: '이 내용이 있으면 다른 기기나 브라우저에서 그대로 이어서 쓸 수 있어요.', text: JSON.stringify(state) };
+    renderModal();
+  },
+  'import-open'() { ui.modal = { kind: 'import' }; renderModal(); },
+  'import-do'() {
+    const t = ($('#import-text') || {}).value || '';
+    const msg = applyImport(t);
+    if (msg) $('#import-msg').textContent = msg;
+  },
+  'file-save'() {
+    const m = ui.modal;
+    const ok = downloadText(m.filename, m.mime, m.text);
+    $('#export-msg').textContent = ok ? m.filename + ' 파일을 받았어요. 받기가 안 됐다면 내용 복사를 써 주세요.' : '여기서는 파일을 받을 수 없어요. 내용 복사를 써 주세요.';
+  },
+  'file-copy'() {
+    const ta = $('#export-text'), msg = $('#export-msg');
+    const fallback = () => { ta.focus(); ta.select(); msg.textContent = '전체 선택했어요. 복사(Ctrl+C 또는 길게 눌러 복사)해 주세요.'; };
+    try { navigator.clipboard.writeText(ta.value).then(() => { msg.textContent = '복사했어요.'; }, fallback); } catch (e) { fallback(); }
+  },
+  'modal-close'() { ui.modal = null; renderModal(); },
+  'alarm-done'(b) { b.closest('.toast').remove(); idx = buildIndex(); if (!idx.doneOn(b.dataset.id, idx.today)) doCheck(b.dataset.id, Date.now(), b); },
+  'alarm-snooze'(b) { state.alarms.snooze[b.dataset.id] = nowMin() + 10; save(); b.closest('.toast').remove(); },
+  'alarm-skip'(b) { state.alarms.skip[b.dataset.id] = true; save(); b.closest('.toast').remove(); },
+  'alarm-close'(b) { b.closest('.toast').remove(); }
+};
+function unbundle(setId) {
+  state.sets = state.sets.filter(s => s.id !== setId);
+  state.quests.forEach(q => { if (q.setId === setId) q.setId = null; });
+  state.bonuses = state.bonuses.filter(b => !(b.kind === 'set' && b.key === setId));
+}
+
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-act]');
+  if (!b || b.disabled) return;
+  const fn = actions[b.dataset.act];
+  if (fn) { if (b.tagName === 'BUTTON') e.preventDefault(); fn(b, e); }
+});
+document.addEventListener('input', e => { if (e.target.id === 'bundle-name') ui.bundleName = e.target.value; });
+document.addEventListener('change', e => {
+  const t = e.target;
+  if (t.dataset && t.dataset.pref) {
+    const k = t.dataset.pref, S = state.settings;
+    if (k === 'alarmMode') S.alarmMode = t.value;
+    else if (k === 'sound') S.sound = t.value === '1';
+    else S[k] = Number(t.value);
+    save(); render();
+  }
+  if (t.id === 'import-file' && t.files && t.files[0]) {
+    const fr = new FileReader();
+    fr.onload = () => { $('#import-text').value = fr.result; };
+    fr.readAsText(t.files[0]);
+  }
+});
+document.addEventListener('submit', e => {
+  if (e.target.id !== 'qform') return;
+  e.preventDefault();
+  const name = $('#qf-name').value.trim();
+  if (!name) return;
+  const days = ALLDAYS.filter(d => $('#qf-d' + d).checked);
+  const data = { name, emoji: $('#qf-emoji').value.trim(), startTime: $('#qf-time').value || null, lock: $('#qf-lock').checked && !!$('#qf-time').value, days: days.length ? days : ALLDAYS.slice() };
+  if (ui.edit === 'new') {
+    if (state.sample) { const keep = state.settings; state = defaultState(); state.settings = keep; }
+    state.quests.push(Object.assign({ id: uid(), createdAt: Date.now(), archived: false, setId: null }, data));
+  } else {
+    Object.assign(qById(ui.edit), data);
+  }
+  ui.edit = null;
+  save(); render();
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && ui.modal) { ui.modal = null; renderModal(); } });
+window.addEventListener('hashchange', () => { ui.confirm = null; render(); window.scrollTo({ top: 0 }); });
+
+const busy = () => { const a = document.activeElement; return ui.late || ui.edit || ui.rename || ui.modal || (a && /INPUT|SELECT|TEXTAREA/.test(a.tagName)); };
+setInterval(() => { tick(); if (!busy()) render(); }, 30000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) { tick(); if (!busy()) render(); } });
+
+if (!state) { state = defaultState(); loadSample(); }
+render();
+tick();
+})();
+</script>
+<!-- /wrapper-end -->
+</body>
+</html>

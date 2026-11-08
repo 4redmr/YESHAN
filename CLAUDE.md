@@ -4,12 +4,20 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this repo is
 
-A single personal project, `millionaire-advice/`: "억만장자의 아침 서신" (The Chairman's Morning Letter), a static HTML page that opens automatically every day at 07:00 and at every logon on the owner's computer. There is no build step, package manager, linter, or test suite.
+Personal projects. The main one is `millionaire-advice/`: "억만장자의 아침 서신" (The Chairman's Morning Letter), a static HTML page that opens automatically every day at 07:00 and at every logon on the owner's computer. There is no build step, package manager, linter, or test suite. `habit-quest/` (below) and `local-trust-app/` are separate side projects.
 
 - `index.html` is fully self-contained (inline CSS/JS; Google Fonts with serif fallbacks). Preview it by opening the file in a browser.
 - `install-windows.bat` → `install-windows.ps1` registers a Task Scheduler task named `MillionaireAdvice` (daily 07:00 trigger + at-logon trigger with a 20s delay) that opens `index.html` in Edge/Chrome `--app` mode, falling back to `explorer.exe`. `uninstall-windows.bat` removes it.
 - `install-mac.sh` writes a launchd agent `com.yeshan.millionaire-advice` (`RunAtLoad` + 07:00). `--uninstall` removes it.
 - Both installers store the **absolute path** of `index.html`, so moving the folder requires reinstalling (README tells the user this).
+
+## habit-quest/
+
+"하루 퀘스트": a habit app prototype. `index.html` is self-contained (inline CSS/JS, Google Fonts with fallbacks, data in `localStorage` under `haruQuest.v1`). Checking a quest records its time; the app learns each quest's usual time (median, ± median absolute deviation, split by weekday/weekend or a single weekday when they differ by 40+ minutes, or relative to the day's first check when that is steadier), alarms when the user is late, awards XP/badges, and suggests bundling quests done back to back into a set. `README.md` lists every idea, built or planned. On first load it seeds six weeks of example data (`loadSample`) marked as examples.
+
+- A day starts at `settings.dayStart` (default 04:00); times are stored as epoch ms and converted with `logicalDay`/`minuteOf`.
+- The page must work inside the claude.ai artifact frame too: no `alert`/`confirm`/`prompt` (use the two-click confirm pattern), downloads always paired with a copy-text fallback, every `localStorage` access in try/catch.
+- A copy is published as a claude.ai artifact. Generate it by deleting the wrapper lines (`<!doctype html>`, `<html>`, `<head>`, the charset and viewport metas, the `<!-- /wrapper-* -->` markers, `</head>`, `<body>`, `</body>`, `</html>`), and republish after changes.
 
 ## Constraints that are easy to break
 
