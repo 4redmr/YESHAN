@@ -1448,10 +1448,9 @@ const ANIMALS = {
     return limb('hind', 44, 1, d, 'b') + limb('fore', 90, 1, d, 'a') + '<g class="tail wag">' + thick('M30 52 C20 46 18 34 24 26', f, 7) + '</g>' +
       '<path d="M28 56 C28 44 46 42 62 44 C76 46 88 42 96 42 L106 54 C112 64 108 74 100 78 C90 82 72 80 58 80 C44 80 30 72 28 56Z" fill="' + f + '"/>' +
       '<ellipse cx="60" cy="54" rx="11" ry="6" fill="#fff4e4" stroke="none"/>' + limb('hind', 52, 1, f, 'a', true) + limb('fore', 97, 1, f, 'b', true) +
-      '<path d="M94 40 C90 26 100 18 112 20 C120 22 124 28 125 33 L138 36 C143 40 141 48 134 49 L121 50 C114 56 101 54 96 48Z" fill="' + f + '"/>' +
+      '<path d="M94 40 C90 26 100 18 112 20 C120 22 124 28 125 33 L138 36 C143 40 141 48 134 49 C126 51 117 54 108 54 C100 54 95 49 94 40Z" fill="' + f + '"/>' +
       '<path d="M122 42 C128 46 134 48 138 46" fill="none" stroke-width="1.8"/><ellipse cx="139" cy="38" rx="3.6" ry="3" fill="' + INK + '"/>' +
-      '<path d="M104 24 C96 26 93 40 98 50 C105 48 109 36 108 26Z" fill="#a6714d"/>' + eyes(112, 121, 31) + cheek(117, 42) +
-      '<path d="M126 49 q2 6 6 1" fill="#f6a6a6" stroke-width="1.4"/>';
+      '<path d="M104 24 C96 26 93 40 98 50 C105 48 109 36 108 26Z" fill="#a6714d"/>' + eyes(112, 121, 31) + cheek(117, 42);
   } },
   bear: { top: [109, 25], eye: [115, 35], neck: [94, 53], draw: () => {
     const f = '#c8936a', d = '#b17d55';
