@@ -313,9 +313,18 @@
     <div class="modes" id="welcomeModes"></div>
   </section>
 
+  <section class="card" id="backupNudge" hidden>
+    <h2>💾 기록을 지켜 주세요</h2>
+    <p id="backupNudgeText" style="margin:0"></p>
+    <div class="row">
+      <button class="primary" id="backupNow">지금 백업하기</button>
+      <button id="backupLater">나중에</button>
+    </div>
+  </section>
+
   <section class="card" id="install" hidden>
     <h2>홈 화면에 설치하기</h2>
-    <p id="installText">버튼을 누르면 홈 화면에 앱처럼 추가돼요. 인터넷이 없어도 열려요.</p>
+    <p id="installText">버튼을 누르면 홈 화면에 앱처럼 추가돼요. 인터넷이 없어도 열리고, 기록도 더 안전하게 지켜져요.</p>
     <div class="row">
       <button class="primary" id="installBtn">홈 화면에 추가</button>
       <button id="installClose">나중에</button>
@@ -603,7 +612,8 @@
     <div class="helpbox" id="help-backup" hidden>
       <ul>
         <li>기록은 <b>이 휴대폰에만</b> 저장돼요. 앱을 지우면 기록도 사라져요.</li>
-        <li><b>백업 저장</b> → 카톡 "나에게 보내기"나 구글 드라이브에 보관해요. 일주일에 한 번이면 충분해요.</li>
+        <li><b>백업 저장</b> → 카톡 "나에게 보내기"나 구글 드라이브에 보관해요. 일주일에 한 번이면 충분해요. 7일이 지나면 홈에서 한 번 알려 드려요.</li>
+        <li>홈 화면에 설치해 두면 기록이 더 안전해요. 특히 아이폰은 설치하지 않고 오래 열지 않으면 기록이 지워질 수 있어요.</li>
         <li>새 휴대폰에서는 <b>백업 불러오기</b>로 그 파일을 고르면 기록, 할 일, 모드, 메모장이 돌아와요.</li>
         <li>새 버전이 안 보이면 앱을 완전히 껐다가 두 번 다시 열어 보세요.</li>
       </ul>
@@ -846,6 +856,7 @@ function render() {
   renderToday();
   renderHistory();
   renderFriend();
+  renderBackupNudge();
   $('nudge').hidden = !!records[dateKey(now)] || nowMin < toMin(settings.remindAt);
 }
 
@@ -2339,12 +2350,29 @@ function renderBackupInfo() {
   $('backupInfo').textContent = '마지막 백업: ' + (days <= 0 ? '오늘' : days + '일 전') + (days >= 7 ? ' · 백업할 때가 됐어요' : '');
 }
 
+// Records live only on this phone, so after 7 days without a backup (or a few days of records and
+// none yet) the home tab asks once a day; 나중에 hides it until tomorrow.
+function renderBackupNudge() {
+  const today = dateKey(new Date()), days = Object.keys(records).length, last = settings.lastBackup;
+  const since = last ? Math.round((new Date(today) - new Date(last)) / 864e5) : null;
+  const due = last ? since >= 7 : days >= 3;
+  $('backupNudge').hidden = !due || settings.backupSnooze === today;
+  $('backupNudgeText').textContent = last
+    ? '마지막 백업이 ' + since + '일 전이에요. 기록은 이 휴대폰에만 있어서, 가끔 백업해 두면 휴대폰을 바꿔도 되살릴 수 있어요.'
+    : days + '일치 기록이 쌓였어요. 기록은 이 휴대폰에만 있어서, 백업해 두면 휴대폰을 바꿔도 되살릴 수 있어요.';
+}
+$('backupNow').onclick = () => $('backupBtn').click();
+$('backupLater').onclick = () => { settings.backupSnooze = dateKey(new Date()); store('ft.settings', settings); renderBackupNudge(); };
+// Ask the browser to keep this site's storage instead of clearing it when space runs low.
+if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
+
 $('backupBtn').onclick = async () => {
   const today = dateKey(new Date());
   const data = { app: 'namun-sigan', version: 1, savedAt: new Date().toISOString(), settings, records, overrides, memo: load('ft.memo', '') };
   const file = new File([JSON.stringify(data)], 'namun-sigan-backup-' + today.replace(/-/g, '') + '.txt', { type: 'text/plain' });
   if (!await shareOrDownload(file)) return;
   settings.lastBackup = today;
+  renderBackupNudge();
   store('ft.settings', settings);
   renderBackupInfo();
   toast('백업 파일을 만들었어요');
@@ -2563,7 +2591,7 @@ window.addEventListener('appinstalled', () => { $('install').hidden = true; toas
 
 const ios = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 if (ios) {
-  $('installText').textContent = 'Safari 아래쪽 공유 버튼(□↑)을 누르고 "홈 화면에 추가"를 고르면 앱처럼 쓸 수 있어요.';
+  $('installText').textContent = 'Safari 아래쪽 공유 버튼(□↑)을 누르고 "홈 화면에 추가"를 골라 주세요. 아이폰은 설치하지 않고 오래 열지 않으면 기록이 지워질 수 있어요.';
   $('installBtn').hidden = true;
   showInstall();
 }
