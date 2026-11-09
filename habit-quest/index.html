@@ -8,6 +8,18 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans+KR:wght@400;500;700&display=swap">
+<!-- pwa:start -->
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#eef1ec" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0f1311" media="(prefers-color-scheme: dark)">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="하루 퀘스트">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<style>:root { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }</style>
+<!-- pwa:end -->
 <style>
   /* Layout: one column (max 760px). A 24-hour dial of today sits on top, the day's quests run below it in time order. */
   :root {
@@ -337,6 +349,27 @@
 </div>
 <div id="toasts" aria-live="polite"></div>
 <div id="modal" hidden></div>
+<!-- pwa:start -->
+<script>
+/* Home-screen app support. The main script reads window.hqPWA when it is present. */
+(function () {
+  var hq = window.hqPWA = {
+    prompt: null, reg: null,
+    hosted: /^https?:$/.test(location.protocol),
+    standalone: (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true
+  };
+  window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); hq.prompt = e; document.dispatchEvent(new Event('hq-pwa')); });
+  window.addEventListener('appinstalled', function () { hq.prompt = null; document.dispatchEvent(new Event('hq-pwa')); });
+  if ('serviceWorker' in navigator && hq.hosted) {
+    var had = !!navigator.serviceWorker.controller;
+    navigator.serviceWorker.addEventListener('controllerchange', function () { if (had) document.dispatchEvent(new Event('hq-update')); had = true; });
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('sw.js').then(function (reg) { hq.reg = reg; }).catch(function () {});
+    });
+  }
+})();
+</script>
+<!-- pwa:end -->
 
 <script>
 (function () {
@@ -382,7 +415,7 @@ function defaultState() {
     v: 1,
     settings: { dayStart: 4, grace: 10, alarmMode: 'late', maxSpread: 45, minSamples: 3, sound: true },
     quests: [], sets: [], logs: [], bonuses: [], dayTags: {},
-    dismissed: { bundles: {}, times: {} },
+    dismissed: { bundles: {}, times: {}, install: false },
     alarms: { day: '', fired: {}, snooze: {}, skip: {} },
     seenBadges: [], sample: false
   };
@@ -853,6 +886,12 @@ function viewToday() {
     h += '<div class="suggest example"><h3>예시 데이터로 보고 있어요</h3><p>6주 동안 쓴 사람의 기록을 꾸며 넣었어요. 시간 학습, 알람, 세트 제안이 어떻게 보이는지 확인하고 내 퀘스트로 시작하세요.</p>' +
       '<div class="row"><button class="btn primary" data-act="sample-clear">예시 지우고 내 퀘스트로 시작</button></div></div>';
   }
+  const ik = installInfo();
+  if ((ik === 'prompt' || ik === 'ios') && !state.dismissed.install) {
+    h += '<div class="suggest"><h3>홈 화면에 추가할까요?</h3><p class="small">' + (ik === 'ios' ? IOS_STEPS + ' 그러면 앱처럼 바로 열려요.' : '아이콘을 누르면 주소창 없이 앱처럼 바로 열려요. 인터넷이 없어도 열려요.') + '</p>' +
+      '<div class="row">' + (ik === 'prompt' ? '<button class="btn primary" data-act="install">홈 화면에 추가</button>' : '') +
+      '<button class="btn ghost" data-act="install-dismiss">' + (ik === 'ios' ? '알겠어요' : '괜찮아요') + '</button></div></div>';
+  }
   h += '<section class="card hero">' + dialSVG(items) + '<div class="hero-side">' +
     '<div><div class="muted small">오늘</div><div class="date">' + fmtDay(day) + '</div></div>' +
     '<div class="progress"><div class="progress-top"><span>퀘스트 <b class="num">' + doneQ + '/' + allQ + '</b> 완료</span><span class="num muted">+' + xpToday + ' XP</span></div>' +
@@ -1027,7 +1066,12 @@ function viewPrefs() {
   const perm = typeof Notification === 'undefined' ? 'none' : Notification.permission;
   const permTxt = { granted: '허용됨', denied: '막혀 있어요. 브라우저 설정에서 이 페이지 알림을 허용해 주세요.', default: '아직 허용하지 않았어요', none: '이 브라우저는 알림을 지원하지 않아요' }[perm];
   const opt = (id, cur, list) => '<select class="input" id="' + id + '" data-pref="' + id.replace('p-', '') + '">' + list.map(([v, t]) => '<option value="' + v + '"' + (String(cur) === String(v) ? ' selected' : '') + '>' + t + '</option>').join('') + '</select>';
-  let h = '<section class="section-h"><h2>알람</h2></section><div class="card">';
+  const ik = installInfo();
+  let h = '<section class="section-h"><h2>홈 화면 앱</h2></section><div class="card"><div class="pref"><div class="pl"><b>' +
+    (ik === 'installed' ? '설치됨' : '홈 화면에 추가') + '</b>' + installHTML(ik) + '</div>' +
+    (ik === 'prompt' ? '<button class="btn primary" data-act="install">홈 화면에 추가</button>' : '') +
+    (ik === 'elsewhere' ? '<button class="btn" data-act="copy-url">주소 복사</button>' : '') + '</div></div>';
+  h += '<section class="section-h"><h2>알람</h2></section><div class="card">';
   h += '<div class="pref"><div class="pl"><b>언제 알려 줄까요</b><span>"늦을 때만"이 덜 귀찮아요. 이미 한 일은 울리지 않아요.</span></div>' +
     opt('p-alarmMode', S.alarmMode, [['late', '평소 시간보다 늦을 때만'], ['usual', '평소 시간이 되면 바로']]) + '</div>';
   h += '<div class="pref"><div class="pl"><b>얼마나 늦으면</b><span>"늦을 때만"일 때 기다리는 시간</span></div>' +
@@ -1069,6 +1113,25 @@ function renderModal() {
       '<div class="row"><button class="btn primary" data-act="import-do">불러오기</button><button class="btn ghost" data-act="modal-close">닫기</button></div>' +
       '<p class="note" id="import-msg"></p></div>';
   }
+}
+
+/* ---------- home-screen install ---------- */
+const APP_URL = 'https://4redmr.github.io/YESHAN/';
+function installInfo() {
+  const p = window.hqPWA, ua = navigator.userAgent;
+  const ios = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && 'ontouchend' in document);
+  if (p && p.standalone) return 'installed';
+  if (!p || !p.hosted) return 'elsewhere';
+  if (p.prompt) return 'prompt';
+  return ios ? 'ios' : 'manual';
+}
+const IOS_STEPS = 'Safari 아래쪽의 공유 버튼(네모에 위쪽 화살표)을 누르고 "홈 화면에 추가"를 고르세요.';
+function installHTML(kind) {
+  if (kind === 'installed') return '<span>홈 화면 앱으로 열려 있어요.</span>';
+  if (kind === 'prompt') return '<span>버튼 한 번이면 휴대폰이나 PC에 앱처럼 깔려요.</span>';
+  if (kind === 'ios') return '<span>' + IOS_STEPS + ' 다른 브라우저로 열었다면 Safari에서 이 주소를 열어 주세요.</span>';
+  if (kind === 'manual') return '<span>브라우저 메뉴(⋮ 또는 공유)에서 "홈 화면에 추가"나 "앱 설치"를 누르세요.</span>';
+  return '<span>홈 화면에 깔려면 이 주소에서 여세요: <a href="' + APP_URL + '" target="_blank" rel="noopener">' + APP_URL + '</a><br>기록은 여는 곳마다 따로 저장돼요. 여기 기록을 옮기려면 아래 "백업 만들기"로 복사한 뒤 새 주소에서 "백업 불러오기"에 붙여 넣으세요.</span>';
 }
 
 /* ---------- toasts, sound, notifications ---------- */
@@ -1122,12 +1185,16 @@ function fireAlarm(it, lateBy) {
     '<button class="btn ghost" data-act="alarm-skip" data-id="' + it.id + '">오늘은 쉬기</button></div>', 'alarm');
   t.dataset.alarm = it.id;
   beep();
+  notify('하루 퀘스트 · ' + name, body + extra, 'hq-' + it.id);
+}
+function notify(title, body, tag) {
   try {
-    if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
-      const n = new Notification('하루 퀘스트 · ' + name, { body: body + extra, tag: 'hq-' + it.id });
-      n.onclick = () => { window.focus(); n.close(); };
-    }
-  } catch (e) { /* in-page toast is enough */ }
+    if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
+    const reg = window.hqPWA && window.hqPWA.reg;
+    if (reg && reg.showNotification) { reg.showNotification(title, { body, tag, icon: 'icons/icon-192.png' }); return; }
+    const n = new Notification(title, { body, tag });
+    n.onclick = () => { window.focus(); n.close(); };
+  } catch (e) { /* the in-page card is enough */ }
 }
 
 function tick() {
@@ -1415,6 +1482,18 @@ const actions = {
     const fallback = () => { ta.focus(); ta.select(); msg.textContent = '전체 선택했어요. 복사(Ctrl+C 또는 길게 눌러 복사)해 주세요.'; };
     try { navigator.clipboard.writeText(ta.value).then(() => { msg.textContent = '복사했어요.'; }, fallback); } catch (e) { fallback(); }
   },
+  'install'() {
+    const p = window.hqPWA;
+    if (!p || !p.prompt) { render(); return; }
+    p.prompt.prompt();
+    p.prompt.userChoice.then(c => { p.prompt = null; if (c && c.outcome === 'accepted') cheer('홈 화면에 추가했어요', '이제 아이콘으로 바로 열 수 있어요.'); render(); }, () => render());
+  },
+  'install-dismiss'() { state.dismissed.install = true; save(); render(); },
+  'copy-url'() {
+    try { navigator.clipboard.writeText(APP_URL).then(() => cheer('주소를 복사했어요', APP_URL), () => cheer('주소를 길게 눌러 복사해 주세요', APP_URL)); }
+    catch (e) { cheer('주소를 길게 눌러 복사해 주세요', APP_URL); }
+  },
+  'reload'() { location.reload(); },
   'modal-close'() { ui.modal = null; renderModal(); },
   'alarm-done'(b) { b.closest('.toast').remove(); idx = buildIndex(); if (!idx.doneOn(b.dataset.id, idx.today)) doCheck(b.dataset.id, Date.now(), b); },
   'alarm-snooze'(b) { state.alarms.snooze[b.dataset.id] = nowMin() + 10; save(); b.closest('.toast').remove(); },
@@ -1466,6 +1545,10 @@ document.addEventListener('submit', e => {
   save(); render();
 });
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && ui.modal) { ui.modal = null; renderModal(); } });
+document.addEventListener('hq-pwa', () => { if (!busy()) render(); });
+document.addEventListener('hq-update', () => {
+  toast('<div class="tt">새 버전이 준비됐어요</div><div class="small">다시 열면 바뀐 화면이 보여요.</div><div class="row"><button class="btn primary" data-act="reload">지금 새로고침</button></div>', 'cheer');
+});
 window.addEventListener('hashchange', () => { ui.confirm = null; render(); window.scrollTo({ top: 0 }); });
 
 const busy = () => { const a = document.activeElement; return ui.late || ui.edit || ui.rename || ui.modal || (a && /INPUT|SELECT|TEXTAREA/.test(a.tagName)); };

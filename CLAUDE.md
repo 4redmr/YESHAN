@@ -17,7 +17,8 @@ Personal projects. The main one is `millionaire-advice/`: "억만장자의 아�
 
 - A day starts at `settings.dayStart` (default 04:00); times are stored as epoch ms and converted with `logicalDay`/`minuteOf`.
 - The page must work inside the claude.ai artifact frame too: no `alert`/`confirm`/`prompt` (use the two-click confirm pattern), downloads always paired with a copy-text fallback, every `localStorage` access in try/catch.
-- A copy is published as a claude.ai artifact. Generate it by deleting the wrapper lines (`<!doctype html>`, `<html>`, `<head>`, the charset and viewport metas, the `<!-- /wrapper-* -->` markers, `</head>`, `<body>`, `</body>`, `</html>`), and republish after changes.
+- It is an installable web app: `manifest.webmanifest`, `sw.js` (offline cache; bump `VERSION` when shell files change), and `icons/`. `.github/workflows/habit-quest-pages.yml` deploys only `habit-quest/` to GitHub Pages (https://4redmr.github.io/YESHAN/) on pushes to `main`; Pages source must be set to "GitHub Actions".
+- A copy is published as a claude.ai artifact (https://claude.ai/artifact/Mv7eSVPqcHpRAFABjpiy1j). Generate it by deleting the wrapper lines (`<!doctype html>`, `<html>`, `<head>`, the charset and viewport metas, the `<!-- /wrapper-* -->` markers, `</head>`, `<body>`, `</body>`, `</html>`) and every `<!-- pwa:start -->`…`<!-- pwa:end -->` block (the artifact frame cannot install or run a service worker), and republish after changes. Without `window.hqPWA`, the page points users to the Pages URL for installing.
 
 ## Constraints that are easy to break
 
