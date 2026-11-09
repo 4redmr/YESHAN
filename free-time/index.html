@@ -195,6 +195,11 @@
   .tabbar button b { display: block; font-size: 22px; font-weight: 400; }
   .tabbar button.on { color: var(--accent); font-weight: 700; }
   .tabbar button[hidden] { display: none; }
+  /* Free Netlify sites get a "Powered by Netlify" badge pinned to the bottom corner, so on
+     netlify.app the tab bar, page end and toasts sit above a strip it can use. */
+  body.netlify .tabbar { padding-bottom: calc(60px + env(safe-area-inset-bottom)); }
+  body.netlify main { padding-bottom: calc(144px + env(safe-area-inset-bottom)) !important; }
+  body.netlify .toast { bottom: calc(144px + env(safe-area-inset-bottom)); }
   .room { position: relative; height: min(300px, 44vh); min-height: 250px; border-radius: 22px; overflow: hidden; border: 2.5px solid #333; background: #fffaf2; }
   .scene { position: absolute; inset: 0; }
   .scene svg { width: 100%; height: 100%; display: block; }
@@ -2201,6 +2206,7 @@ document.addEventListener('click', e => {
 }, true);
 // Tabs: 홈 holds the friend's room (or the plain 나의 시간 card) and the tasks; 기록, 꾸미기 and
 // 설정 hold everything else. 나의 시간 친구 can be turned off in 설정 for the plain text look.
+if (/\.netlify\.app$/.test(location.hostname)) document.body.classList.add('netlify');
 function showTab(name) {
   for (const t of document.querySelectorAll('.tab')) t.hidden = t.id !== 'tab-' + name;
   for (const b of $('tabbar').children) b.classList.toggle('on', b.dataset.tab === name);

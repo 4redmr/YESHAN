@@ -55,6 +55,7 @@ The owner is a beginner who builds only by talking to Claude, often from a phone
 - Before any deploy that might change the address: have them back up on the phone first (설정 → 백업 → 백업 저장 → 카카오톡 나와의 채팅) and never delete the installed app.
 - Steps live on the Notion page 🚀 사이트에 올리는 순서: unzip → Projects → drop the `free-time` folder on "Upload your project files" → Project configuration → Change project name → namun-sigan. Later updates: namun-sigan → Deploys → drop the new folder.
 - Ask for a screenshot at each step; Netlify's screens change and may be in Korean or English.
+- On the free plan Netlify pins a "Powered by Netlify" badge to the bottom corner and only a paid plan removes it; don't send the user to upgrade. The app already lifts its tab bar on netlify.app (`body.netlify`); keep anything clickable out of the bottom 60px there.
 
 ## Money and the workplace
 
