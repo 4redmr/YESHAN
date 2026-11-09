@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+    <!-- coin -->
+    <path android:fillColor="@color/icon_coin"
+        android:pathData="M54,30a24,24 0,1 1,0 48a24,24 0,1 1,0 -48z" />
+    <!-- inner rim -->
+    <path android:fillColor="#00000000" android:strokeColor="#18223A" android:strokeWidth="2.5" android:strokeAlpha="0.35"
+        android:pathData="M54,35a19,19 0,1 1,0 38a19,19 0,1 1,0 -38z" />
+    <!-- play triangle -->
+    <path android:fillColor="#18223A"
+        android:pathData="M48,44 L64,54 L48,64 Z" />
+    <!-- strike -->
+    <path android:fillColor="#00000000" android:strokeColor="#B9382F" android:strokeWidth="4.5" android:strokeLineCap="round"
+        android:pathData="M40,68 L68,40" />
+</vector>

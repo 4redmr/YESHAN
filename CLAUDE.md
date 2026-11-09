@@ -11,6 +11,16 @@ A single personal project, `millionaire-advice/`: "억만장자의 아침 서신
 - `install-mac.sh` writes a launchd agent `com.yeshan.millionaire-advice` (`RunAtLoad` + 07:00). `--uninstall` removes it.
 - Both installers store the **absolute path** of `index.html`, so moving the folder requires reinstalling (README tells the user this).
 
+## notube-android/ (노튜브 저금통)
+
+An Android app (Kotlin, Jetpack Compose, minSdk 26) that turns YouTube-free time into YouTube watch time: 10 minutes away from YouTube earns 1 minute of viewing, and YouTube is blocked when the wallet is empty. Its own `README.md` describes the rules, permissions and code layout.
+
+- Build and test from `notube-android/`: `./gradlew testDebugUnitTest assembleDebug lintDebug`. Needs an Android SDK (set `sdk.dir` in a git-ignored `local.properties`).
+- The core logic is pure Kotlin with unit tests: `Engine.kt`, `Ledger.kt`, `Rules.kt`. Add a test for every rule change. Anti-abuse behaviour (the escape pass, the 24-hour rule cooldown, signed backups) is intentional, so don't loosen it.
+- It syncs a daily row to the Notion database **📵 노튜브 기록** (`collection://3a81c7d1-ce75-483b-9fd8-f57b5cac451c`, on 회장님과의 동행). The 하루 퀘스트 artifact reads that database to award XP. Keep the property names in `NotionSync.kt` and the database in step.
+- `notube-android/.claude/skills/second-opinion` holds the "다른 AI 검토" workflow. Skills only load from the repo root, so follow that file by hand when asked for a second opinion.
+- Never commit APKs or `local.properties`.
+
 ## Constraints that are easy to break
 
 - `install-windows.ps1` must stay **ASCII-only**: Windows PowerShell 5.1 misreads a UTF-8 file without a BOM, so put no Korean text in it.

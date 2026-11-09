@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 삭제 방지 용도라 휴대폰 제어 정책은 하나도 쓰지 않아요 -->
+<device-admin>
+    <uses-policies />
+</device-admin>
