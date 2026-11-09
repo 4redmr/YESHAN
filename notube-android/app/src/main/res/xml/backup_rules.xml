@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 기록(notube.xml)만 백업해요. 노션 연결 키(notion.xml)는 include에 없어서 자동으로 빠져요 -->
+<full-backup-content>
+    <include domain="sharedpref" path="notube.xml" />
+</full-backup-content>

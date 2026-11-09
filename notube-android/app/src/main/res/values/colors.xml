@@ -1,0 +1,12 @@
+<resources>
+    <color name="bg">#E9EDF3</color>
+    <color name="icon_bg">#18223A</color>
+    <color name="icon_coin">#F0B840</color>
+    <color name="w_bg">#FFFFFF</color>
+    <color name="w_ink">#18223A</color>
+    <color name="w_muted">#5E6A80</color>
+    <color name="w_coin">#C98A0B</color>
+    <color name="w_go">#2D7A58</color>
+    <color name="w_stop">#B9382F</color>
+    <color name="w_track">#D3DAE6</color>
+</resources>
