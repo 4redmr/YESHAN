@@ -132,6 +132,10 @@ class Ledger(
     var protectionOffSince: Long? = null,
     var protectionOffTotalMs: Long = 0,
     var activity: Activity? = null,
+    /** 휴대폰의 '자동 날짜 및 시간'이 켜져 있는지. 꺼져 있으면 시계를 바꿔 우회할 수 있어서 탈출권·규칙 적용·이자를 멈춰요. */
+    var clockTrusted: Boolean = true,
+    /** 마지막 정산 때의 휴대폰 가동 시간(ms, SystemClock.elapsedRealtime). 시계가 뒤로 바뀌었을 때 기준점으로 써요. */
+    var lastSyncUptime: Long = 0,
     /** yyyy-MM-dd -> 그날 받은 대체 활동 보너스(분). */
     val activityBonusByDay: MutableMap<String, Double> = mutableMapOf(),
 ) {
@@ -251,6 +255,8 @@ class Ledger(
         put("notes", JSONArray().apply { notes.forEach { put(JSONObject().put("t", it.time).put("k", it.kind).put("x", it.text)) } })
         put("protOff", protectionOffSince ?: JSONObject.NULL)
         put("protOffTotal", protectionOffTotalMs)
+        put("clockTrusted", clockTrusted)
+        put("lastSyncUptime", lastSyncUptime)
         put("activity", activity?.let { JSONObject().put("n", it.name).put("s", it.start).put("w", it.watchedBase) } ?: JSONObject.NULL)
         put("actBonus", JSONObject().apply { activityBonusByDay.forEach { (k, v) -> put(k, v) } })
     }.toString()
@@ -297,6 +303,8 @@ class Ledger(
             }
             l.protectionOffSince = if (o.isNull("protOff")) null else o.optLong("protOff").takeIf { it > 0 }
             l.protectionOffTotalMs = o.optLong("protOffTotal")
+            l.clockTrusted = o.optBoolean("clockTrusted", true)
+            l.lastSyncUptime = o.optLong("lastSyncUptime")
             if (!o.isNull("activity")) o.optJSONObject("activity")?.let { l.activity = Activity(it.getString("n"), it.getLong("s"), it.optLong("w")) }
             // v1(보상 상점 버전)에서 넘어온 경우: 예전 코인을 분으로 그대로 옮기고, 시작 선물을 줘요.
             l.bonus = o.optDouble("bonus", 0.0)

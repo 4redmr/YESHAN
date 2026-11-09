@@ -67,8 +67,20 @@ object Engine {
         l.streakStart = now
     }
 
-    fun process(l: Ledger, events: List<Ev>, now: Long, zone: ZoneId = ZoneId.systemDefault()) {
+    /**
+     * @param sinceLastSyncMs 지난 정산 뒤 실제로 흐른 시간(휴대폰 가동 시간 기준, 사용자가 못 바꿔요). 모르면 null.
+     */
+    fun process(l: Ledger, events: List<Ev>, now: Long, zone: ZoneId = ZoneId.systemDefault(), sinceLastSyncMs: Long? = null) {
         if (!l.started) return
+        // 시계를 뒤로 돌렸으면: 미래 시각에 멈춰 있지 않게 바로잡아요 (그대로 두면 그동안의 시청이 무시돼요).
+        // 새 시계로 '지난 정산 시점'이 언제인지 계산해서 그 뒤 기록부터 읽어요.
+        if (l.lastEventTime > now + 2 * MIN) {
+            note(l, now, "clock", "휴대폰 시계가 뒤로 바뀐 걸 감지했어요")
+            l.lastEventTime = (sinceLastSyncMs?.let { now - it } ?: now).coerceAtMost(now) - 1
+            l.ytOpenSince = l.ytOpenSince?.let { kotlin.math.min(it, now) }
+            l.ytPausedAt = l.ytPausedAt?.let { kotlin.math.min(it, now) }
+            l.streakStart = l.streakStart?.let { kotlin.math.min(it, now) }
+        }
         for (e in events.sortedBy { it.time }) {
             // 이 이벤트 전에 적용될 규칙 변경이 있으면 먼저 적용 (규칙마다 시작 시각이 있어서 거슬러 적용되지 않아요)
             applyPendingRules(l, e.time, zone)
@@ -107,6 +119,8 @@ object Engine {
         val today = Ledger.dayOf(now, zone)
         if (l.bankDay.isEmpty()) { l.bankDay = today.toString(); l.bankHeld = l.bank; return }
         var day = java.time.LocalDate.parse(l.bankDay)
+        // 시계를 앞뒤로 바꿔 이자를 여러 번 받지 못하게: 자동 시간이 꺼져 있거나, 날짜가 거꾸로 가면 그대로 둬요
+        if (!l.clockTrusted || today.isBefore(day)) return
         while (day.isBefore(today)) {
             day = day.plusDays(1)
             val interest = l.bankHeld * BANK_DAILY_RATE
@@ -250,7 +264,27 @@ object Engine {
 
     fun note(l: Ledger, now: Long, kind: String, text: String) {
         l.notes.add(0, Note(now, kind, text))
-        while (l.notes.size > 150) l.notes.removeAt(l.notes.size - 1)
+        // 넘치면 활동·시작 같은 가벼운 기록부터 지우고, 탈출권·규칙·보호 기록은 최대한 남겨요
+        while (l.notes.size > 300) {
+            val i = l.notes.indexOfLast { it.kind == "activity" || it.kind == "start" }
+            l.notes.removeAt(if (i >= 0) i else l.notes.size - 1)
+        }
+    }
+
+    /**
+     * [from]~[to] 동안의 사용 기록을 확인할 수 없을 때 (앱이 오래 꺼져 있었거나 권한이 꺼져 있었는데
+     * 휴대폰이 보관하는 기간이 지남): 그 구간은 적립하지 않고, 참기 기록은 [to]부터 새로 시작해요.
+     */
+    fun markUnverified(l: Ledger, from: Long, to: Long, zone: ZoneId = ZoneId.systemDefault()) {
+        if (to <= from) return
+        if (l.ytOpenSince != null) { if (l.ytPausedAt == null) l.ytPausedAt = from; finalizeYt(l, zone) }
+        val s = l.streakStart
+        if (s != null && s < to) { breakStreak(l, max(s, from), zone) }
+        if (l.streakStart == null || l.streakStart!! < to) l.streakStart = to
+        l.ytVisible.clear()
+        l.graceUsed = 0
+        l.lastEventTime = max(l.lastEventTime, to)
+        note(l, to, "protect", "사용 기록을 확인할 수 없는 ${(to - from) / HOUR}시간은 적립하지 않았어요")
     }
 
     private fun hhmmOf(t: Long, zone: ZoneId): String {
@@ -266,6 +300,7 @@ object Engine {
         val weekStart = today.minusDays((today.dayOfWeek.value - 1).toLong())
         val days = l.passes.map { Ledger.dayOf(it, zone) }
         return when {
+            !l.clockTrusted -> "휴대폰 설정의 '자동 날짜 및 시간'을 켜야 쓸 수 있어요"
             l.passActiveUntil(now) != null -> "이미 탈출권이 열려 있어요"
             l.blockRuleNow(now, zone) != null -> "'${l.blockRuleNow(now, zone)!!.name}' 규칙 시간에는 쓸 수 없어요"
             days.any { it == today } -> "오늘은 이미 썼어요. 내일 다시 쓸 수 있어요"
@@ -291,24 +326,36 @@ object Engine {
 
     // ----- 규칙 변경 (느슨하게 바꾸는 건 하루 뒤) -----
 
-    private val LOOSE = setOf(Effect.FREE, Effect.DOUBLE)
+    /** 자동 날짜·시간이 꺼져 있어서 느슨한 규칙 변경을 받지 않았다는 뜻. */
+    const val REFUSED_CLOCK = -1L
+
     private val STRICT = setOf(Effect.BLOCK, Effect.NO_EARN)
 
-    /** 이 변경이 규칙을 느슨하게 만드는지 (자유 시간 늘리기, 금지 시간 줄이기 등). */
+    /**
+     * 이 변경이 규칙을 느슨하게 만드는지. 일주일을 분 단위로 비교해요:
+     * - 금지·적립 쉬기 규칙이 덮던 시간이 하나라도 빠지면 느슨해진 것
+     * - 자유 시간·2배 적립 규칙이 덮는 시간이 하나라도 늘면 느슨해진 것
+     * 그래서 금지 시간을 늘리거나 자유 시간을 줄이는 건 엄격한 변경(바로 적용)이에요.
+     */
     fun isLoosening(old: Rule?, new: Rule?): Boolean {
         if (old == null && new == null) return false
         if (old != null && old.sameContent(new)) return false
-        val newLoose = new != null && new.enabled && new.effect in LOOSE
-        val oldStrict = old != null && old.enabled && old.effect in STRICT
-        return newLoose || oldStrict
+        for (e in Effect.ALL) {
+            val oc = RuleMath.weekCoverage(old?.takeIf { it.effect == e })
+            val nc = RuleMath.weekCoverage(new?.takeIf { it.effect == e })
+            val loosened = if (e in STRICT) oc.indices.any { oc[it] && !nc[it] } else nc.indices.any { nc[it] && !oc[it] }
+            if (loosened) return true
+        }
+        return false
     }
 
     /**
      * 규칙 추가·수정([new]) 또는 삭제([new] = null) 요청.
      * 엄격하게 바꾸는 건 바로 적용, 느슨하게 바꾸는 건 24시간 뒤 적용. 모두 기록에 남아요.
-     * @return 바로 적용됐으면 null, 대기 중이면 적용 시각.
+     * @return 바로 적용됐으면 null, 대기 중이면 적용 시각, 시계를 믿을 수 없어 거절했으면 [REFUSED_CLOCK].
      */
     fun requestRuleChange(l: Ledger, ruleId: String, new: Rule?, now: Long, zone: ZoneId = ZoneId.systemDefault()): Long? {
+        if (!l.clockTrusted && isLoosening(l.rules.firstOrNull { it.id == ruleId && it.current }, new)) return REFUSED_CLOCK
         val old = l.rules.firstOrNull { it.id == ruleId && it.current }
         val name = (new ?: old)?.name ?: "규칙"
         l.pendingRules.removeAll { it.ruleId == ruleId } // 같은 규칙의 이전 대기 요청은 새 요청으로 바꿔요
@@ -331,6 +378,7 @@ object Engine {
     }
 
     fun applyPendingRules(l: Ledger, now: Long, zone: ZoneId = ZoneId.systemDefault()) {
+        if (!l.clockTrusted) return // 시계를 앞당겨 24시간을 건너뛰지 못하게
         val due = l.pendingRules.filter { it.at <= now }.sortedBy { it.at }
         for (p in due) {
             val old = l.rules.firstOrNull { it.id == p.ruleId && it.current }
@@ -388,9 +436,14 @@ object Engine {
     }
 
     /** 활동을 끝내고 보너스를 줘요. 활동 중 유튜브를 봤으면 보너스 없음. @return 받은 보너스(분) */
-    fun stopActivity(l: Ledger, now: Long, zone: ZoneId = ZoneId.systemDefault()): Double {
+    fun stopActivity(l: Ledger, now: Long, zone: ZoneId = ZoneId.systemDefault(), verified: Boolean = true): Double {
         val a = l.activity ?: return 0.0
         l.activity = null
+        // 보호가 꺼져 있었거나 지금 꺼져 있으면 유튜브를 봤는지 확인할 수 없어서 보너스 없음
+        if (!verified || l.protectionOffSince != null || l.notes.any { it.kind == "protect" && it.time >= a.start }) {
+            note(l, now, "activity", "${a.name} ${max(0, now - a.start) / MIN}분 · 보호가 꺼져 있어서 보너스 없음")
+            return 0.0
+        }
         val dur = max(0, now - a.start)
         // 활동 중에 본 유튜브: 날짜별 시청 합계가 늘었는지로 봐요 (10초 미만으로 잠깐 연 것도 잡혀요)
         var watched = -a.watchedBase

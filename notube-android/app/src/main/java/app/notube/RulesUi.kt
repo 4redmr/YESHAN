@@ -46,7 +46,11 @@ fun MyRules(s: Ledger, now: Long) {
     fun request(block: () -> Long?) = scope.launch {
         val at = kotlinx.coroutines.withContext(Dispatchers.IO) { block() }
         android.widget.Toast.makeText(ctx,
-            if (at != null) "느슨하게 바꾸는 변경이라 ${fmtDate(at)}부터 적용돼요" else "바로 적용했어요",
+            when {
+                at == Engine.REFUSED_CLOCK -> "휴대폰 설정의 '자동 날짜 및 시간'을 켜야 규칙을 느슨하게 바꿀 수 있어요"
+                at != null -> "느슨하게 바꾸는 변경이라 ${fmtDate(at)}부터 적용돼요"
+                else -> "바로 적용했어요"
+            },
             android.widget.Toast.LENGTH_LONG).show()
     }
     var editing by remember { mutableStateOf<Rule?>(null) }

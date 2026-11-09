@@ -193,6 +193,7 @@ fun App() {
 @Composable
 fun ResetButton() {
     val p = LocalPal.current
+    val ctx = LocalContext.current
     val scope = rememberCoroutineScope()
     var ask by remember { mutableStateOf(false) }
     TextButton(onClick = { ask = true }, modifier = Modifier.fillMaxWidth()) {
@@ -205,7 +206,10 @@ fun ResetButton() {
         confirmButton = {
             TextButton(onClick = {
                 ask = false
-                scope.launch(Dispatchers.IO) { Repo.reset() }
+                scope.launch {
+                    val ok = withContext(Dispatchers.IO) { Repo.reset() }
+                    if (!ok) android.widget.Toast.makeText(ctx, "보호(사용 시간 접근)가 꺼져 있으면 다시 시작할 수 없어요. 먼저 권한을 켜 주세요", android.widget.Toast.LENGTH_LONG).show()
+                }
             }) { Text("다시 시작", color = p.stop, fontWeight = FontWeight.Bold) }
         },
         dismissButton = { TextButton(onClick = { ask = false }) { Text("취소", color = p.muted) } },
@@ -545,7 +549,7 @@ fun History(s: Ledger) {
                 }
             } +
             // 규칙 변경·탈출권·보호 꺼짐 등은 지울 수 없는 기록으로 함께 보여줘요
-            s.notes.map { Row3(it.time, it.text, when (it.kind) { "pass" -> "탈출권"; "rule" -> "규칙"; "protect" -> "보호"; "activity" -> "활동"; else -> "알림" }, it.kind == "activity") })
+            s.notes.map { Row3(it.time, it.text, when (it.kind) { "pass" -> "탈출권"; "rule" -> "규칙"; "protect" -> "보호"; "admin" -> "삭제 방지"; "clock" -> "시계"; "activity" -> "활동"; else -> "알림" }, it.kind == "activity") })
             .sortedByDescending { it.t }.take(40)
     }
     Column(

@@ -15,14 +15,16 @@ class GuardAdmin : DeviceAdminReceiver() {
         "삭제 방지를 끄면 노튜브 저금통을 지울 수 있게 돼요. 끈 기록은 앱에 남아요. " +
             "정말 필요할 때만 끄세요."
 
-    override fun onDisabled(context: Context, intent: Intent) {
-        Repo.init(context)
-        Repo.addNote("protect", "삭제 방지 꺼짐")
-    }
+    override fun onDisabled(context: Context, intent: Intent) = record(context, "삭제 방지 꺼짐")
 
-    override fun onEnabled(context: Context, intent: Intent) {
-        Repo.init(context)
-        Repo.addNote("protect", "삭제 방지 켜짐")
+    override fun onEnabled(context: Context, intent: Intent) = record(context, "삭제 방지 켜짐")
+
+    /** 저장은 메인 스레드를 막지 않게 따로 해요. */
+    private fun record(context: Context, text: String) {
+        val pending = goAsync()
+        Thread {
+            try { Repo.init(context); Repo.addNote("admin", text) } finally { pending.finish() }
+        }.start()
     }
 
     companion object {

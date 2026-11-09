@@ -188,6 +188,19 @@ object RuleMath {
         return max(0, (to - from) - freeMs)
     }
 
+    /** 일주일(월 00:00부터)을 분 단위로 나눠, [r]이 켜지는 분을 표시해요. 규칙끼리 포함 관계를 비교할 때 써요. */
+    fun weekCoverage(r: Rule?): BooleanArray {
+        val week = 7 * 1440
+        val a = BooleanArray(week)
+        if (r == null || !r.enabled) return a
+        val len = if (r.allDay) 1440 else (r.endMin - r.startMin + 1440) % 1440
+        for (d in r.days) {
+            val base = (d - 1) * 1440 + r.startMin
+            for (i in 0 until len) a[(base + i) % week] = true
+        }
+        return a
+    }
+
     fun isActive(rules: List<Rule>, effect: String, t: Long, zone: ZoneId) =
         windowsFor(rules, effect, t, t + 1, zone).isNotEmpty()
 }

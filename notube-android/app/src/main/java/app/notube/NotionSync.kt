@@ -75,6 +75,7 @@ object NotionSync {
     }
 
     /** 어제·오늘 줄을 올려요. 실패하면 이유를 돌려줘요 (성공이면 null). 네트워크를 쓰니 백그라운드에서 부르세요. */
+    @Synchronized // 수동 '지금 보내기'와 백그라운드 작업이 겹쳐 같은 날 줄을 두 번 만들지 않게
     fun sync(ctx: Context, l: Ledger): String? {
         val token = token(ctx) ?: return "노션 연결 키가 없어요"
         val zone = ZoneId.systemDefault()
@@ -97,7 +98,10 @@ object NotionSync {
         return err
     }
 
-    private class NotionError(msg: String) : Exception(msg)
+    private class NotionError(val status: Int, val body: String, msg: String) : Exception(msg)
+
+    /** 노션에서 그 줄이 지워졌거나(휴지통) 없어진 경우에만 true. 바쁨·서버 오류 때 새로 만들면 줄이 중복돼요. */
+    private fun rowGone(e: NotionError) = e.status == 404 || (e.status == 400 && e.body.contains("archived"))
 
     private fun upsert(ctx: Context, token: String, day: LocalDate, props: JSONObject) {
         val cache = JSONObject(prefs(ctx).getString("pages", "{}") ?: "{}")
@@ -110,6 +114,7 @@ object NotionSync {
             try {
                 call(token, "PATCH", "/pages/$pageId", JSONObject().put("properties", props))
             } catch (e: NotionError) {
+                if (!rowGone(e)) throw e
                 // 노션에서 그 줄을 지웠으면 새로 만들어요
                 cache.remove(day.toString()); pageId = null
             }
@@ -142,7 +147,7 @@ object NotionSync {
             val text = (if (code in 200..299) c.inputStream else c.errorStream)?.use { it.readBytes().decodeToString() } ?: "{}"
             if (code !in 200..299) {
                 val msg = try { JSONObject(text).optString("message") } catch (_: Exception) { "" }
-                throw NotionError(when (code) {
+                throw NotionError(code, text, when (code) {
                     401 -> "연결 키가 맞지 않아요. 다시 붙여넣어 주세요"
                     403, 404 -> "노션에서 '📵 노튜브 기록'에 연결(통합)을 추가해 주세요"
                     429 -> "노션이 잠시 바빠요. 조금 뒤에 다시 보낼게요"
