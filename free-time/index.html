@@ -1,0 +1,2615 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>나의 시간</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&family=Gowun+Dodum&display=swap">
+<link rel="icon" type="image/png" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="theme-color" content="#101114">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="나의 시간">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<style>
+  :root {
+    --bg: #101114; --card: #1a1c21; --line: #2a2d34; --text: #eceae4; --muted: #9a9890;
+    --accent: #d8b45a; --work: #5b7fbf; --commute: #8a6fb5; --sleep: #3d4a5c; --free: #d8b45a;
+    --manual: #6f95d6; --edit: #e08a3c;
+  }
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) {
+      --bg: #f7f5ef; --card: #ffffff; --line: #e4e0d5; --text: #22211d; --muted: #77746a;
+      --accent: #a67c1c; --work: #4c6fae; --commute: #7d62a8; --sleep: #b9c2cf; --free: #c99a2e;
+      --manual: #3d64a8; --edit: #b85f12;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 16px/1.5 "Gowun Dodum", -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  }
+  /* Hand-written font for titles, the big number and the friend card. */
+  h1, h2, .big, .hand { font-family: "Gaegu", "Gowun Dodum", sans-serif; font-weight: 700; }
+  main { max-width: 560px; margin: 0 auto; padding: max(24px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(48px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)); }
+  h1 { font-size: 26px; margin: 0 0 4px; }
+  .sub { color: var(--muted); font-size: 14px; margin: 0 0 20px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 18px; margin-bottom: 14px; }
+  .big { font-size: 52px; font-weight: 700; color: var(--accent); line-height: 1.1; font-variant-numeric: tabular-nums; }
+  .label { color: var(--muted); font-size: 13px; }
+  .bar { display: flex; height: 14px; border-radius: 7px; overflow: hidden; margin: 14px 0 8px; background: var(--line); }
+  .bar span { display: block; height: 100%; }
+  .legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 13px; color: var(--muted); }
+  .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  label { display: block; font-size: 13px; color: var(--muted); }
+  input, textarea {
+    width: 100%; margin-top: 4px; padding: 9px 10px; font: inherit; color: var(--text);
+    background: var(--bg); border: 1px solid var(--line); border-radius: 9px;
+  }
+  textarea { resize: vertical; min-height: 60px; }
+  .row { display: flex; gap: 8px; align-items: center; margin-top: 12px; }
+  .check { display: flex; gap: 8px; align-items: center; font-size: 14px; color: var(--text); margin-top: 12px; }
+  .check input { width: auto; margin: 0; }
+  button {
+    font: inherit; padding: 10px 14px; border-radius: 9px; border: 1px solid var(--line);
+    background: var(--bg); color: var(--text); cursor: pointer;
+  }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #17150f; font-weight: 600; flex: 1; }
+  h2 { font-size: 21px; margin: 0 0 12px; }
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; text-align: center; }
+  .stats b { display: block; font-size: 17px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  ul { list-style: none; margin: 0; padding: 0; }
+  li { border-top: 1px solid var(--line); padding: 10px 0; display: flex; gap: 10px; }
+  li:first-child { border-top: 0; }
+  li .d { min-width: 74px; color: var(--muted); font-size: 13px; }
+  li .h { min-width: 52px; font-weight: 600; color: var(--accent); font-variant-numeric: tabular-nums; }
+  li .n { flex: 1; font-size: 14px; word-break: break-all; }
+  li button { padding: 2px 8px; font-size: 12px; color: var(--muted); }
+  .empty { color: var(--muted); font-size: 14px; }
+  #install[hidden], #nudge[hidden], #ovBox[hidden], #ovTimes[hidden], #ovBadge[hidden] { display: none; }
+  #ovBadge { display: inline-block; margin-top: 8px; padding: 3px 10px; border-radius: 20px; font-size: 13px;
+    background: color-mix(in srgb, var(--accent) 18%, transparent); color: var(--text); }
+  #nudge { margin: 0 0 10px; padding: 8px 12px; border-radius: 9px; font-size: 14px;
+    background: color-mix(in srgb, var(--accent) 18%, transparent); color: var(--text); }
+  .hint { margin: 10px 0 0; font-size: 13px; color: var(--muted); }
+  .row button { flex: 1; }
+  .step { margin: 4px 0 8px; font-size: 13px; color: var(--muted); }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+  .chip { border-radius: 20px; padding: 7px 14px; }
+  .chip.on { background: var(--accent); border-color: var(--accent); color: #17150f; font-weight: 600; }
+  .chip.ghost { color: var(--muted); border-style: dashed; }
+  .chips.editing .chip.act::after { content: " ✕"; color: #c0504d; }
+  .mins { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+  .mins button { padding: 12px 0; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .used { margin-top: 16px; }
+  .used li { align-items: center; }
+  .used .name { min-width: 64px; font-size: 14px; }
+  #used .name { min-width: 112px; }
+  .used .track { flex: 1; height: 8px; border-radius: 4px; background: var(--line); overflow: hidden; }
+  .used .track span { display: block; height: 100%; background: var(--accent); }
+  .used .m { min-width: 64px; text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .sumline { display: flex; justify-content: space-between; margin-top: 12px; padding-top: 12px;
+    border-top: 1px solid var(--line); font-size: 14px; color: var(--muted); }
+  .sumline b { color: var(--text); font-variant-numeric: tabular-nums; }
+  details summary { cursor: pointer; margin-top: 12px; }
+  .tasks li { display: block; border-top: 0; padding: 0; }
+  .task { color: var(--text); width: 100%; display: flex; align-items: center; gap: 10px; text-align: left; padding: 14px; margin-top: 8px; border-radius: 12px; }
+  .task .tname { flex: 1; font-size: 17px; font-weight: 600; word-break: break-all; }
+  .task .ttime { font-size: 15px; }
+  .task .ttime { color: var(--muted); font-variant-numeric: tabular-nums; }
+  .task .ticon { width: 30px; height: 30px; flex: none; border-radius: 50%; display: grid; place-items: center; background: var(--line); font-size: 13px; }
+  .task.running { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, var(--card)); }
+  .task.running .ttime { color: var(--accent); font-weight: 700; }
+  .task.running .ticon { background: var(--accent); color: #17150f; }
+  .tasks li.editing { display: flex; gap: 8px; align-items: center; }
+  .tasks li.editing .task { flex: 1; }
+  .tasks .tdel { flex: none; margin-top: 8px; padding: 14px 16px; border-radius: 12px; color: #c0504d; font-weight: 600; }
+  #focus[hidden], #memoClearRow[hidden] { display: none; }
+  #focus { position: sticky; top: 0; z-index: 5; margin: 0 -16px 14px; padding: max(10px, env(safe-area-inset-top)) 16px 12px;
+    background: var(--bg); border-bottom: 1px solid var(--line); }
+  #focus .ftop { display: flex; align-items: center; gap: 12px; }
+  #focus .fname { font-size: 14px; color: var(--muted); }
+  #focus .ftime { font-size: 40px; font-weight: 700; color: var(--accent); line-height: 1.1; font-variant-numeric: tabular-nums; }
+  #focus .fgoal { font-size: 13px; color: var(--muted); margin-top: 6px; }
+  #focus .fbar { height: 6px; border-radius: 3px; background: var(--line); overflow: hidden; margin-top: 8px; }
+  #focus .fbar span { display: block; height: 100%; width: 0; background: var(--accent); transition: width .5s; }
+  #focus button { margin-left: auto; flex: none; padding: 10px 16px; }
+  #memoBox summary { margin: 0; display: flex; align-items: baseline; gap: 8px; list-style: none; }
+  #memoBox summary::-webkit-details-marker { display: none; }
+  #memoBox summary h2 { margin: 0; }
+  #memoPreview { flex: 1; min-width: 0; font-size: 13px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #memoBox[open] #memoPreview { display: none; }
+  #memo { min-height: 160px; margin-top: 12px; }
+  #editDlg { width: min(92vw, 420px); padding: 18px; border: 1px solid var(--line); border-radius: 14px;
+    background: var(--card); color: var(--text); }
+  #editDlg::backdrop { background: rgba(0, 0, 0, .5); }
+  #editDlg h2 { margin-bottom: 4px; }
+  #editDlg { max-height: 88vh; overflow-y: auto; }
+  .src { display: inline-block; margin-left: 6px; padding: 0 6px; border-radius: 9px; font-size: 11px; font-weight: 600; vertical-align: 1px; }
+  .src-timer { color: var(--muted); padding: 0; }
+  .src-manual { color: var(--manual); background: color-mix(in srgb, var(--manual) 16%, transparent); }
+  .src-edit { color: var(--edit); background: color-mix(in srgb, var(--edit) 16%, transparent); }
+  .srclegend { margin: 8px 0 0; font-size: 12px; color: var(--muted); }
+  .srclegend span { margin-right: 10px; }
+  #logList li { display: block; border-top: 1px solid var(--line); padding: 6px 0; font-size: 13px; color: var(--muted); }
+  #logList li:first-child { border-top: 0; }
+  #logList b { color: var(--text); font-weight: 600; }
+  #logList .why { color: var(--edit); }
+  #reasonText { margin-top: 8px; }
+  .erow { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
+  .erow span { flex: 1; font-weight: 600; }
+  .erow input { width: 96px; margin: 0; text-align: right; }
+  #install p { margin: 0; font-size: 14px; color: var(--muted); }
+  #install .row { margin-top: 10px; }
+  #welcome[hidden] { display: none; }
+  .modes .mwrap { position: relative; display: grid; }
+  .modes .mdel { position: absolute; top: 4px; right: 4px; padding: 0 7px; border-radius: 50%; font-size: 12px; line-height: 20px; color: var(--muted); }
+  .modes .madd { border-style: dashed; color: var(--muted); }
+  #modeDlg { width: min(92vw, 420px); padding: 18px; border: 1px solid var(--line); border-radius: 14px; background: var(--card); color: var(--text); }
+  #modeDlg::backdrop { background: rgba(0, 0, 0, .5); }
+  #askDlg { width: min(92vw, 420px); padding: 18px; border: 1px solid var(--line); border-radius: 14px; background: var(--card); color: var(--text); }
+  #askDlg::backdrop { background: rgba(0, 0, 0, .5); }
+  #askDlg h2 { margin-bottom: 8px; }
+  #modeIcons .chip { font-size: 20px; padding: 4px 10px; }
+  .modes { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+  .modes button { padding: 14px 8px; border-radius: 12px; font-weight: 600; line-height: 1.3; }
+  .modes button small { display: block; font-weight: 400; font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .modes button.on { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 16%, var(--card)); }
+  #dayBox > summary { list-style: none; margin: 0; }
+  .wrow { border-top: 1px solid var(--line); margin-top: 12px; padding-top: 10px; }
+  .whead { display: flex; align-items: center; gap: 8px; font-size: 14px; }
+  .whead .hint { flex: 1; }
+  .whead button { margin-left: auto; padding: 4px 10px; font-size: 13px; }
+  .wdays { gap: 6px; margin: 8px 0 0; }
+  .wdays .chip { width: 38px; padding: 6px 0; text-align: center; }
+  .wt { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+  .wt input { margin: 0; }
+  .wrow .chips.wbi { margin: 8px 0 0; align-items: center; font-size: 13px; color: var(--muted); }
+  /* The friend's room: one hand-drawn picture with the friend walking across it. Its colours
+     are the picture's own, so it looks the same in the dark theme. */
+  .roomcard { padding: 0; border: 0; background: none; }
+  .roomtop { position: absolute; top: 8px; left: 0; right: 0; z-index: 2; text-align: center; color: #333; line-height: 1.1; pointer-events: none; }
+  .roomtop small { display: block; font-size: 16px; }
+  .roomtop b { display: block; font-size: 40px; color: #c48a1c; }
+  .roomtop small#roomBadge { font-size: 15px; color: #8a6a2c; }
+  .room .bubble { top: 100px; font-size: 17px; }
+  @media (max-height: 700px) {
+    #room { height: 228px; min-height: 0; }
+    .roomtop small { font-size: 14px; } .roomtop b { font-size: 30px; }
+    #room .bubble { top: 72px; font-size: 15px; padding: 2px 10px; }
+    .walker { width: 100px; height: 75px; margin-left: -50px; bottom: 18px; }
+  }
+  .roomstars { position: absolute; right: 10px; bottom: 8px; z-index: 2; background: #fff; color: #333; border: 2px solid #333; border-radius: 12px; padding: 0 9px; font-size: 17px; }
+  .starpop { position: absolute; right: 16px; bottom: 34px; z-index: 3; color: #c48a1c; font-size: 22px; font-weight: 700; animation: pop 1.6s ease-out forwards; pointer-events: none; }
+  @keyframes pop { 0% { opacity: 0; transform: translateY(10px); } 15% { opacity: 1; } 100% { opacity: 0; transform: translateY(-40px); } }
+  /* Four tabs along the bottom: 홈 for every day, the rest for now and then. */
+  main { padding-bottom: calc(84px + env(safe-area-inset-bottom)) !important; }
+  .tabbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 6; display: flex; justify-content: center; background: var(--card); border-top: 1px solid var(--line);
+    padding: 4px max(8px, env(safe-area-inset-left)) max(6px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-right)); }
+  .tabbar button { flex: 1; max-width: 140px; border: 0; background: none; padding: 6px 0 2px; font-size: 12px; color: var(--muted); line-height: 1.2; }
+  .tabbar button b { display: block; font-size: 22px; font-weight: 400; }
+  .tabbar button.on { color: var(--accent); font-weight: 700; }
+  .tabbar button[hidden] { display: none; }
+  /* Free Netlify sites get a "Powered by Netlify" badge pinned to the bottom corner, so on
+     netlify.app the tab bar, page end and toasts sit above a strip it can use. */
+  body.netlify .tabbar { padding-bottom: calc(60px + env(safe-area-inset-bottom)); }
+  body.netlify main { padding-bottom: calc(144px + env(safe-area-inset-bottom)) !important; }
+  body.netlify .toast { bottom: calc(144px + env(safe-area-inset-bottom)); }
+  .room { position: relative; height: min(300px, 44vh); min-height: 250px; border-radius: 22px; overflow: hidden; border: 2.5px solid #333; background: #fffaf2; }
+  .scene { position: absolute; inset: 0; }
+  .scene svg { width: 100%; height: 100%; display: block; }
+  .bubble { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); z-index: 2; width: max-content; max-width: 86%;
+    background: #fff; color: #333; border: 2.5px solid #333; border-radius: 16px; padding: 3px 14px; font-size: 19px; line-height: 1.3; text-align: center; }
+  .walker { position: absolute; left: 50%; bottom: 26px; width: 124px; height: 93px; margin-left: -62px; z-index: 1; animation: walk 20s ease-in-out infinite; }
+  .pet { width: 100%; height: 100%; padding: 0; border: 0; background: none; }
+  .pet svg { width: 100%; height: 100%; overflow: visible; }
+  .pet.hop { animation: hop .5s; }
+  @keyframes walk {
+    0% { transform: translateX(-80px); } 36% { transform: translateX(80px); } 44% { transform: translateX(80px); }
+    46% { transform: translateX(80px) scaleX(-1); } 82% { transform: translateX(-80px) scaleX(-1); } 90% { transform: translateX(-80px) scaleX(-1); }
+    92%, 100% { transform: translateX(-80px); } }
+  @keyframes hop { 50% { transform: translateY(-16px); } }
+  .walker .leg { transform-box: fill-box; transform-origin: 50% 0; animation: swing .7s ease-in-out infinite alternate; }
+  .walker .leg.b { animation-delay: -.7s; }
+  @keyframes swing { from { transform: rotate(20deg); } to { transform: rotate(-20deg); } }
+  .walker .body { animation: bob .35s ease-in-out infinite alternate; }
+  @keyframes bob { to { transform: translateY(-2px); } }
+  .walker .tail { transform-box: fill-box; transform-origin: 100% 100%; animation: tail 1.4s ease-in-out infinite alternate; }
+  .walker .tail.wag { animation-duration: .25s; }
+  @keyframes tail { from { transform: rotate(-8deg); } to { transform: rotate(10deg); } }
+  .walker .eyes { transform-box: fill-box; transform-origin: center; animation: blink 3.5s infinite; }
+  @keyframes blink { 0%, 92%, 100% { transform: scaleY(1); } 96% { transform: scaleY(.1); } }
+  .walker .walk-rabbit .body { animation: rhop .7s ease-in-out infinite; }
+  .walker .walk-rabbit .leg { animation: none; }
+  @keyframes rhop { 0%, 100% { transform: translateY(0); } 45% { transform: translateY(-14px) rotate(-4deg); } }
+  .walker .walk-chick .body { transform-box: fill-box; transform-origin: 50% 100%; animation: waddle .5s ease-in-out infinite alternate; }
+  .walker .walk-chick .leg { animation-duration: .5s; }
+  @keyframes waddle { from { transform: rotate(-5deg); } to { transform: rotate(5deg); } }
+  .walker .wing { transform-box: fill-box; transform-origin: 20% 30%; animation: flap .5s ease-in-out infinite alternate; }
+  @keyframes flap { to { transform: rotate(-14deg); } }
+  @media (prefers-reduced-motion: reduce) { .walker, .walker * { animation: none !important; } }
+  #probe { position: absolute; width: 0; height: 0; visibility: hidden; }
+  .homes { display: grid; gap: 8px; margin-top: 10px; }
+  .homes button { display: flex; align-items: center; justify-content: space-between; gap: 8px; text-align: left; font-family: "Gaegu", "Gowun Dodum", sans-serif; font-size: 19px; padding: 8px 14px; }
+  .homes button small { color: var(--muted); font-size: 16px; white-space: nowrap; }
+  .homes button.here { border: 2px solid var(--accent); background: color-mix(in srgb, var(--accent) 16%, var(--card)); }
+  .homes button.next small { color: var(--accent); font-weight: 700; }
+  .homes button.locked { opacity: .55; }
+  #friendCard .sumline, #friendCard summary, .shop button { font-family: "Gaegu", "Gowun Dodum", sans-serif; font-size: 18px; }
+  #friendCard .sumline { font-size: 17px; gap: 8px; }
+  #friendCard .sumline { flex-wrap: wrap; }
+  .shop button span { word-break: keep-all; }
+  #petKinds .chip { display: inline-flex; align-items: center; gap: 4px; font-family: "Gaegu", sans-serif; font-size: 17px; padding: 3px 12px 3px 4px; }
+  #petKinds svg { width: 44px; height: 33px; }
+  .shop { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 10px; }
+  .shop h3 { grid-column: 1 / -1; margin: 10px 0 0; font: 700 19px "Gaegu", "Gowun Dodum", sans-serif; }
+  .shop p { grid-column: 1 / -1; margin: 0; font-size: 13px; color: var(--muted); }
+  .shop button { padding: 8px 4px; line-height: 1.15; }
+  .shop button svg { display: block; width: 54px; height: 44px; margin: 0 auto 4px; padding: 4px; border-radius: 10px; background: #fffaf2; }
+  .shop button small { display: block; color: var(--muted); }
+  .shop button.owned { border-color: var(--accent); border-width: 2px; }
+  .shop button.on { background: color-mix(in srgb, var(--accent) 16%, var(--card)); }
+  .task { position: relative; overflow: hidden; }
+  .task .tbar { position: absolute; left: 0; bottom: 0; height: 4px; background: var(--accent); opacity: .7; }
+  .task.done .ttime { color: var(--accent); }
+  #streak { margin: 12px 0 0; font-size: 15px; font-weight: 600; }
+  .calhead { display: flex; align-items: center; justify-content: space-between; margin-top: 16px; }
+  .calhead b { font-size: 15px; }
+  .calhead button { padding: 4px 12px; }
+  .cal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-top: 8px; }
+  .cal .dh { text-align: center; font-size: 12px; color: var(--muted); }
+  .cal button { aspect-ratio: 1; padding: 2px; border-radius: 8px; font-size: 13px; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; line-height: 1.1; font-variant-numeric: tabular-nums; }
+  .cal button small { font-size: 10px; color: var(--muted); }
+  .cal button.lv1 { background: color-mix(in srgb, var(--accent) 18%, var(--bg)); }
+  .cal button.lv2 { background: color-mix(in srgb, var(--accent) 38%, var(--bg)); }
+  .cal button.lv3 { background: color-mix(in srgb, var(--accent) 62%, var(--bg)); }
+  .cal button.lv3 small, .cal button.lv2 small { color: var(--text); }
+  .cal button.today { outline: 2px solid var(--accent); }
+  .cal .empty { visibility: hidden; }
+  #monthSum { margin: 8px 0 0; font-size: 13px; color: var(--muted); }
+  #taskDlg { width: min(92vw, 420px); padding: 18px; border: 1px solid var(--line); border-radius: 14px; background: var(--card); color: var(--text); }
+  #taskDlg::backdrop { background: rgba(0, 0, 0, .5); }
+  #ovList li { display: flex; align-items: center; gap: 8px; border-top: 1px solid var(--line); padding: 8px 0; font-size: 14px; }
+  #ovList li span { flex: 1; }
+  #dayBox > summary::-webkit-details-marker { display: none; }
+  #dayBox > summary h2 { margin: 0 0 4px; }
+  #daySummary { font-size: 13px; color: var(--muted); }
+  #dayBox[open] #dayHint { display: none; }
+  .sub a { color: var(--accent); text-decoration: none; margin-left: 8px; }
+  .helpbtn { float: right; width: 26px; height: 26px; padding: 0; border-radius: 50%; font-size: 13px; font-weight: 700;
+    color: var(--muted); line-height: 24px; margin-left: 8px; }
+  .helpbtn.on { background: var(--accent); border-color: var(--accent); color: #17150f; }
+  .helpbox { clear: both; margin: 8px 0 12px; padding: 10px 12px 10px 4px; border-radius: 10px;
+    background: color-mix(in srgb, var(--accent) 9%, var(--card)); }
+  .helpbox[hidden] { display: none; }
+  .helpbox ul { margin: 0; padding-left: 22px; list-style: disc; }
+  .helpbox li { display: list-item; border-top: 0; padding: 3px 0; font-size: 14px; color: var(--muted); line-height: 1.55; }
+  .helpbox b { color: var(--text); }
+  .helpbox .hh { list-style: none; margin: 6px 0 0 -14px; color: var(--text); font-weight: 600; }
+  .toast { position: fixed; left: 50%; bottom: calc(84px + env(safe-area-inset-bottom)); z-index: 10; transform: translateX(-50%); background: var(--text); color: var(--bg);
+    padding: 8px 14px; border-radius: 20px; font-size: 14px; opacity: 0; transition: opacity .2s; pointer-events: none; }
+  .toast.on { opacity: 1; }
+</style>
+</head>
+<body>
+<main>
+  <h1>오늘 나의 시간</h1>
+  <p class="sub"><span id="today"></span><a href="#" id="guideLink">📖 사용법</a></p>
+
+  <div id="focus" hidden>
+    <div class="ftop">
+      <div><div class="fname" id="fName"></div><div class="ftime" id="fTime">0:00</div></div>
+      <button class="primary" id="fStop">⏸ 멈추기</button>
+    </div>
+    <div class="fbar" id="fBarWrap"><span id="fBar"></span></div>
+    <div class="fgoal" id="fGoal"></div>
+  </div>
+
+  <div class="tab" id="tab-home">
+  <section class="card" id="welcome" hidden>
+    <h2>👋 반가워요! 나에게 맞는 모드를 골라 주세요</h2>
+    <p class="hint" style="margin:0">고르면 화면의 이름이 나에게 맞게 바뀌어요. 나중에 "나의 하루"에서 언제든 바꿀 수 있어요.</p>
+    <div class="modes" id="welcomeModes"></div>
+  </section>
+
+  <section class="card" id="backupNudge" hidden>
+    <h2>💾 기록을 지켜 주세요</h2>
+    <p id="backupNudgeText" style="margin:0"></p>
+    <div class="row">
+      <button class="primary" id="backupNow">지금 백업하기</button>
+      <button id="backupLater">나중에</button>
+    </div>
+  </section>
+
+  <section class="card" id="install" hidden>
+    <h2>홈 화면에 설치하기</h2>
+    <p id="installText">버튼을 누르면 홈 화면에 앱처럼 추가돼요. 인터넷이 없어도 열리고, 기록도 더 안전하게 지켜져요.</p>
+    <div class="row">
+      <button class="primary" id="installBtn">홈 화면에 추가</button>
+      <button id="installClose">나중에</button>
+    </div>
+  </section>
+
+  <div class="helpbox" id="help-start" hidden>
+      <ul>
+        <li><b>나의 시간</b>은 회사·학교처럼 바쁜 시간과 오가는 시간을 빼고, 잠들 때까지 남은 <b>내가 주인인 시간</b>이에요. 쉬든 공부하든 다 괜찮아요.</li>
+        <li><b>나의 하루</b>에 일어나는 시간, 잠드는 시간, 바쁜 시간, 오가는 시간을 한 번만 넣으면 기억해요.</li>
+        <li>화면 맨 아래 탭으로 옮겨 다녀요. <b>🏠 홈</b>에서 할 일을 누르고, <b>📊 기록</b>에서 쌓인 기록을 보고, <b>🛍️ 꾸미기</b>에서 친구를 꾸미고, <b>⚙️ 설정</b>에서 나의 하루와 알림을 정해요.</li>
+        <li>맨 위 친구 방은 할 일을 기록할수록 별이 쌓이는 곳이에요. 오른쪽 아래에 지금 가진 별이 보여요. 설정의 <b>친구 보기</b>를 끄면 글자로만 보여요.</li>
+        <li>각 칸 오른쪽 위의 <b>?</b>를 누르면 그 칸의 사용법이 나와요.</li>
+        <li>휴대폰 홈 화면에 설치하면 앱처럼 쓸 수 있어요. 아이폰은 Safari의 공유(□↑) → "홈 화면에 추가"예요.</li>
+      </ul>
+    </div>
+
+  <section class="card roomcard" id="friendHome">
+    <div class="room" id="room">
+      <div class="scene" id="scene"></div>
+      <div class="roomtop hand"><small>지금부터 잠들 때까지 남은 나의 시간</small><b id="roomLeft">–</b><small id="roomBadge"></small></div>
+      <div class="bubble hand" id="friendSay"></div>
+      <div class="roomstars hand" id="roomStars">⭐ 0</div>
+      <div class="walker"><button class="pet" id="pet" aria-label="친구 쓰다듬기"><span id="petFace"></span></button></div>
+    </div>
+  </section>
+
+  <section class="card" id="mainCard">
+    <button class="helpbtn" data-help="start" aria-label="사용법 보기">?</button>
+    <div class="label">지금부터 잠들 때까지, 나의 시간</div>
+    <div class="big" id="left">–</div>
+    <div class="label" id="leftNote"></div>
+    <div id="ovBadge" hidden></div>
+    <div class="bar" id="bar"></div>
+    <div class="legend">
+      <span><i style="background:var(--sleep)"></i>잠 <b id="lgSleep"></b></span>
+      <span><i style="background:var(--work)"></i><span data-l="busy">근무</span> <b id="lgWork"></b></span>
+      <span><i style="background:var(--commute)"></i><span data-l="go">출퇴근</span> <b id="lgCommute"></b></span>
+      <span><i style="background:var(--free)"></i>나의 시간 <b id="lgFree"></b></span>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>할 일 <button class="helpbtn" data-help="tasks" aria-label="사용법 보기">?</button></h2>
+    <div class="helpbox" id="help-tasks" hidden>
+      <ul>
+        <li><span class="hh">⏱ 시간 재기</span></li>
+        <li>할 일을 <b>한 번 누르면 시작</b>, <b>한 번 더 누르면 멈춤</b>이에요. 다른 할 일을 누르면 앞의 일은 저절로 멈춰요.</li>
+        <li>화면을 끄거나 앱을 닫아도 <b>시간은 계속 재고 있어요.</b></li>
+        <li><span class="hh">✏️ 추가 · 고치기 · 빼기</span></li>
+        <li><b>+ 할 일 추가</b>로 만들어요. <b>편집</b> → 할 일을 누르면 이름, 하루 목표, 집중 목표를 고쳐요. 이름을 바꾸면 지난 기록도 같이 바뀌어요.</li>
+        <li><b>✕</b>는 목록에서 빼기예요. 지난 기록은 남아요.</li>
+        <li><span class="hh">🎯 집중 알림</span></li>
+        <li>목표 시간(기본 25분, 휴식은 없음)이 되면 무음·진동·소리로 한 번 알려 줘요. 앱이 열려 있을 때만 울려요. 바꾸려면 아래 <b>⚙️ 설정</b> 탭의 <b>집중 알림 설정</b>이에요.</li>
+        <li><span class="hh">🛠 깜빡했거나 잘못 잰 때</span></li>
+        <li>시작을 깜빡했으면 <b>깜빡했나요? 시간 직접 더하기</b>, 방금 것을 빼려면 <b>되돌리기</b>, 분을 고치려면 <b>기록 고치기</b>를 눌러요.</li>
+        <li>켜 둔 채 잠들었으면 다음에 앱을 열 때 "실제로 몇 분 했나요?"라고 물어봐요. 오래 켜 두었을 때 묻는 간격은 설정의 <b>집중 알림 설정</b>에서 바꿔요.</li>
+        <li><span class="hh">📊 기록 탭</span></li>
+        <li>오늘 무엇을 몇 분 했는지, 카톡·노션으로 보내기, 달력과 지난 기록은 아래 <b>📊 기록</b> 탭에 있어요.</li>
+      </ul>
+    </div>
+    <p id="nudge" hidden>알림 시간이 지났어요. 아직 오늘 기록이 없어요.</p>
+    <p class="step" id="taskHint">누르면 시간 재기 시작, 한 번 더 누르면 멈춰요.</p>
+    <ul class="tasks" id="tasks"></ul>
+    <div class="row">
+      <button id="taskAdd">+ 할 일 추가</button>
+      <button id="taskEdit">편집</button>
+    </div>
+    <details id="manual">
+      <summary class="hint">깜빡했나요? 시간 직접 더하기</summary>
+      <div class="chips" id="acts" style="margin-top:10px"></div>
+      <div class="mins" id="mins">
+        <button data-m="5">+5분</button><button data-m="10">+10분</button><button data-m="15">+15분</button>
+        <button data-m="30">+30분</button><button data-m="60">+1시간</button>
+      </div>
+    </details>
+    <div class="sumline"><span>오늘 쓴 시간 <b id="usedSum">0분</b></span><span>오늘 전체 나의 시간 <b id="freeSum">–</b></span></div>
+    <div class="row">
+      <button id="undo">되돌리기</button>
+      <button id="editToday">기록 고치기</button>
+    </div>
+  </section>
+  </div>
+
+  <div class="tab" id="tab-log" hidden>
+  <section class="card">
+    <h2>오늘 기록</h2>
+    <ul class="used" id="used"></ul>
+    <p class="srclegend" id="srcLegend"><span class="src src-timer">⏱</span>타이머로 잼 <span class="src src-manual">✋ 직접</span>직접 더함 <span class="src src-edit">✏️ 고침</span>고친 기록</p>
+    <label style="margin-top:14px">오늘 한 줄 (선택)<textarea id="note" placeholder="예: 아침 기도가 특히 좋았다"></textarea></label>
+    <div class="row"><button class="primary" id="shareBtn">기록 보내기</button></div>
+    <div class="row"><button id="toNotion">노션에 저장하기</button></div>
+    <details id="notionSetup">
+      <summary class="hint">노션 연결 설정</summary>
+      <label style="margin-top:8px">노션 기록 페이지 주소<input type="url" id="notionUrl" placeholder="https://www.notion.so/..."></label>
+      <p class="hint">노션에서 기록 데이터베이스를 열고 공유 → 링크 복사로 얻은 주소를 붙여넣으세요. "노션에 저장하기"를 누르면 오늘 기록이 복사되고 그 페이지가 열려요. 오늘 줄의 원하는 칸에 붙여넣으면 끝이에요.</p>
+    </details>
+  </section>
+
+  <section class="card">
+    <h2>기록 한눈에 <button class="helpbtn" data-help="stats" aria-label="사용법 보기">?</button></h2>
+    <div class="helpbox" id="help-stats" hidden>
+      <ul>
+        <li><b>최근 7일</b>: 하루 평균 나의 시간, 7일 합계, 기록한 날, 할 일별 합계예요.</li>
+        <li><b>🔥 연속 기록</b>: 며칠째 이어서 기록하고 있는지 알려 줘요.</li>
+        <li><b>달력</b>: 많이 한 날일수록 진한 색이에요. ‹ › 로 지난 달을 보고, 날짜를 누르면 그날 기록을 고쳐요.</li>
+      </ul>
+    </div>
+    <p class="step" style="margin:0 0 8px">최근 7일</p>
+    <div class="stats">
+      <div><b id="avg">–</b><span class="label">하루 평균 쓴 시간</span></div>
+      <div><b id="sum">–</b><span class="label">7일 동안 쓴 시간</span></div>
+      <div><b id="days">0</b><span class="label">기록한 날</span></div>
+    </div>
+    <ul class="used" id="weekActs"></ul>
+    <p id="streak"></p>
+    <div class="calhead"><button id="calPrev" aria-label="지난 달">‹</button><b id="calTitle"></b><button id="calNext" aria-label="다음 달">›</button></div>
+    <div class="cal" id="cal"></div>
+    <p id="monthSum"></p>
+  </section>
+
+  <section class="card">
+    <h2>지난 기록 <button class="helpbtn" data-help="history" aria-label="사용법 보기">?</button></h2>
+    <div class="helpbox" id="help-history" hidden>
+      <ul>
+        <li>날짜 옆 <b>고치기</b>로 그날 할 일마다 분을 고치고, 고친 이유를 남길 수 있어요. 그날 기록을 모두 지울 수도 있어요.</li>
+        <li>고치기 창의 <b>이 날 변경 기록 보기</b>에서 언제, 무엇을, 왜 고쳤는지 볼 수 있어요.</li>
+      </ul>
+    </div>
+    <ul id="list"></ul>
+  </section>
+
+  <section class="card">
+    <details id="memoBox">
+      <summary><h2>📝 메모장</h2><span id="memoPreview"></span><button class="helpbtn" data-help="memo" aria-label="사용법 보기">?</button></summary>
+    <div class="helpbox" id="help-memo" hidden>
+      <ul>
+        <li>떠오른 생각이나 나중에 할 일을 적는 곳이에요. 매일 기록과 따로라서 <b>지우기 전까지 그대로</b> 남아요.</li>
+        <li>오늘 기록에만 붙는 짧은 메모는 할 일 칸의 <b>오늘 한 줄</b>에 적어요.</li>
+      </ul>
+    </div>
+      <textarea id="memo" placeholder="떠오른 생각, 나중에 할 일… 지우기 전까지 그대로 남아요."></textarea>
+      <div class="row" id="memoClearRow"><button id="memoClear">메모 지우기</button></div>
+    </details>
+  </section>
+  </div>
+
+  <div class="tab" id="tab-deco" hidden>
+  <section class="card" id="friendCard">
+    <h2><span id="friendTitle">나의 시간 친구</span> <button class="helpbtn" data-help="friend" aria-label="사용법 보기">?</button></h2>
+    <div class="helpbox" id="help-friend" hidden>
+      <ul>
+        <li>할 일 시간을 재거나 기록하면 <b>1분에 별 ⭐ 1개</b>가 쌓여요.</li>
+        <li>모은 별로 <b>별 상점</b>에서 친구 옷과 방 물건을 사요. 산 물건은 방 곳곳에 놓이고, 산 옷은 눌러서 입히고 벗겨요.</li>
+        <li>집마다 <b>그 집에만 놓는 꾸미기 물건</b>이 따로 있어요. 이사하면 새 물건이 나와요.</li>
+        <li>기록한 날이 쌓일수록 친구와 더 친해져요. 목표는 없어요. 5분만 기록해도 별을 받아요.</li>
+        <li>별을 모아 <b>이사하기</b>에서 단칸방 → 원룸 → 내 집 → 아파트 → 땅 → 산 → 마을까지 한 칸씩 넓혀 가요. 전에 살던 집에는 <b>놀러 가기</b>로 언제든 돌아가요.</li>
+        <li><b>친구 바꾸기</b>에서 동물과 이름을 바꿔요. 바꿔도 별과 물건은 그대로예요.</li>
+        <li>기록을 지우거나 줄이면 별도 같이 줄어요.</li>
+      </ul>
+    </div>
+    <div class="sumline"><span>내 별 <b id="stars">⭐ 0</b></span><span id="friendDays"></span></div>
+    <details id="shopBox" open>
+      <summary class="hint">⭐ 별 상점</summary>
+      <div class="shop" id="shop"></div>
+    </details>
+    <details id="homeBox">
+      <summary class="hint">🏠 이사하기</summary>
+      <p class="hint" style="margin:8px 0 0">별을 모아 한 칸씩 더 넓은 곳으로 이사해요.</p>
+      <div class="homes" id="homes"></div>
+    </details>
+    <details id="friendSet">
+      <summary class="hint">친구 바꾸기</summary>
+      <div class="chips" id="petKinds" style="margin:10px 0 0"></div>
+      <label>이름<input id="petName" maxlength="10" placeholder="예: 나비"></label>
+    </details>
+  </section>
+  </div>
+
+  <div class="tab" id="tab-set" hidden>
+  <section class="card">
+    <h2>보기</h2>
+    <label class="check"><input type="checkbox" id="showFriend">나의 시간 친구 보기</label>
+    <p class="hint" style="margin:8px 0 0">끄면 친구 방 대신 글자로 된 나의 시간이 보여요. 별과 꾸민 물건은 그대로 남아요.</p>
+  </section>
+
+  <section class="card">
+    <div class="helpbox" id="help-day" hidden>
+      <ul>
+        <li><span class="hh">🧩 모드</span></li>
+        <li>모드에 맞게 "근무·출퇴근", "수업·등하교" 같은 이름이 바뀌어요. <b>모드마다 시간을 따로 기억해요.</b></li>
+        <li><b>+ 모드 추가</b>로 나만의 모드(예: 🍼 육아, 💪 알바)를 만들고, ✕로 지워요. 지워도 기록과 통계는 그대로예요.</li>
+        <li><span class="hh">📆 요일마다 다를 때</span></li>
+        <li>펼친 뒤 아래 <b>요일마다</b>를 열어요. 시간이 같은 요일끼리 한 줄이에요. <b>요일을 누르면 그 줄로 옮겨 가요.</b></li>
+        <li>토요일만 짧게 일하면 <b>+ 다른 시간 추가</b>를 누르고 [토]를 누른 뒤 시간을 골라요.</li>
+        <li>2주에 한 번이면 그 줄의 <b>격주</b>에 체크하고, 이번 주에 일정이 있는지 한 번만 골라요. 다음부터는 앱이 번갈아 계산해요.</li>
+        <li><span class="hh">🌴 오늘만 다르게</span></li>
+        <li>반차·연차·여행처럼 하루만 바뀔 때 눌러요. <b>날짜</b>를 바꾸면 다른 날도 미리 정하고, <b>이 날의 모드</b>로 그날만 다른 모드를 써요.</li>
+        <li>그날이 지나면 저절로 원래대로 돌아와요. 미리 정해 둔 날은 맨 아래에서 고치거나 ✕로 취소해요.</li>
+      </ul>
+    </div>
+    <details id="dayBox">
+      <summary><h2>나의 하루 <span class="hint" id="dayHint" style="font-weight:400">· 눌러서 모드 고치기</span><button class="helpbtn" data-help="day" aria-label="사용법 보기">?</button></h2><div id="daySummary"></div></summary>
+      <p class="step" style="margin-top:12px">모드</p>
+      <div class="modes" id="dayModes"></div>
+      <div class="grid" style="margin-top:12px">
+        <label>일어나는 시간<input type="time" id="wake"></label>
+        <label>잠드는 시간<input type="time" id="sleep"></label>
+        <label><span data-l="start">출근</span> 시간<input type="time" id="workStart"></label>
+        <label><span data-l="end">퇴근</span> 시간<input type="time" id="workEnd"></label>
+        <label><span data-l="in">출근길</span> (분)<input type="number" id="commuteIn" min="0" step="5" inputmode="numeric"></label>
+        <label><span data-l="out">퇴근길</span> (분)<input type="number" id="commuteOut" min="0" step="5" inputmode="numeric"></label>
+      </div>
+      <label class="check"><input type="checkbox" id="noFixed">정해진 바쁜 시간이 없어요 (육아·집안일처럼 하루가 들쭉날쭉해요)</label>
+      <p class="hint" style="margin:4px 0 0">켜면 일어나서 잠들 때까지가 모두 나의 시간이에요. 특별한 날은 "오늘만 다르게"로 정해요.</p>
+      <details id="weeklyBox">
+        <summary class="hint">📆 요일마다 (쉬는 날 · 다른 시간 · 격주)</summary>
+        <p class="hint" style="margin:6px 0 0">시간이 같은 요일끼리 한 줄이에요. 요일을 누르면 그 줄로 옮겨 가요.</p>
+        <div id="weeklyRows"></div>
+        <div class="row"><button id="wAdd">+ 다른 시간 추가</button></div>
+      </details>
+    </details>
+    <div class="row"><button id="ovBtn">오늘만 다르게</button></div>
+    <div id="ovBox" hidden>
+      <label style="margin-top:14px">날짜 <span class="hint">(여행처럼 다른 날도 미리 정할 수 있어요)</span><input type="date" id="ovDate"></label>
+      <p class="step" style="margin-top:12px">이 날의 모드</p>
+      <div class="modes" id="ovModes"></div>
+      <p class="step" style="margin-top:12px"><span id="ovHintText"></span> 그날 하루만 바뀌어요. 다음 날은 원래대로 돌아가요.</p>
+      <div class="chips" id="ovPresets">
+        <button class="chip" data-ov="am">오전</button>
+        <button class="chip" data-ov="pm">오후</button>
+        <button class="chip" data-ov="off">쉬는 날</button>
+        <button class="chip ghost" data-ov="reset">원래대로</button>
+      </div>
+      <div class="grid" id="ovTimes">
+        <label><span id="ovStartLabel">시작</span><input type="time" id="ovStart"></label>
+        <label><span id="ovEndLabel">끝</span><input type="time" id="ovEnd"></label>
+      </div>
+      <p class="step" id="ovListTitle" style="margin-top:14px">미리 정해 둔 날</p>
+      <ul id="ovList"></ul>
+    </div>
+  </section>
+
+  <section class="card" id="focusSet">
+    <h2>🎯 집중 알림 설정</h2>
+      <p class="step" style="margin-top:10px">기본 목표 시간 <span class="hint">(할 일마다 따로 정하려면 편집 → 할 일 누르기)</span></p>
+      <div class="chips" id="goalChips">
+        <button class="chip" data-goal="0">없음</button><button class="chip" data-goal="15">15분</button>
+        <button class="chip" data-goal="25">25분</button><button class="chip" data-goal="50">50분</button>
+      </div>
+      <p class="step">목표 시간이 되면</p>
+      <div class="chips" id="alertChips">
+        <button class="chip" data-alert="silent">무음</button><button class="chip" data-alert="vibrate">진동</button>
+        <button class="chip" data-alert="sound">소리</button>
+      </div>
+      <p class="step">오래 켜 두면 "아직 하는 중이에요?" 물어보기</p>
+      <div class="chips" id="longChips">
+        <button class="chip" data-long="180">3시간마다</button><button class="chip" data-long="300">5시간마다</button>
+        <button class="chip" data-long="0">묻지 않기</button>
+      </div>
+      <label class="check"><input type="checkbox" id="keepAwake">재는 동안 화면 켜 두기 (알림을 놓치지 않아요)</label>
+      <label class="check"><input type="checkbox" id="statusNotif">재는 동안 휴대폰 알림창에 표시하기</label>
+      <p class="hint" style="margin:8px 0 0">알림은 앱이 열려 있을 때만 울려요. 진동은 아이폰에서는 되지 않아요. 앱을 닫아도 시간은 계속 재고 있어요.</p>
+  </section>
+
+  <section class="card">
+    <h2>매일 기록 알림 <button class="helpbtn" data-help="remind" aria-label="사용법 보기">?</button></h2>
+    <div class="helpbox" id="help-remind" hidden>
+      <ul>
+        <li>알림 시간을 고르고 <b>휴대폰 캘린더에 추가</b>나 <b>구글 캘린더에 추가</b>를 누르면, 매일 그 시간에 캘린더가 알려 줘요.</li>
+        <li>시간을 바꾸면 캘린더의 예전 일정은 지워 주세요.</li>
+      </ul>
+    </div>
+    <label>알림 시간<input type="time" id="remindAt"></label>
+    <div class="row">
+      <button id="icsBtn">휴대폰 캘린더에 추가</button>
+      <button id="gcalBtn">구글 캘린더에 추가</button>
+    </div>
+    <label class="check"><input type="checkbox" id="notifyOn">앱이 열려 있을 때도 알림 받기</label>
+    <p class="hint">캘린더에 한 번 추가해 두면 매일 그 시간에 휴대폰이 울려요. 알림 시간을 바꿨다면 캘린더의 예전 일정은 지우고 다시 추가하세요.</p>
+  </section>
+
+  <section class="card">
+    <h2>백업 <button class="helpbtn" data-help="backup" aria-label="사용법 보기">?</button></h2>
+    <div class="helpbox" id="help-backup" hidden>
+      <ul>
+        <li>기록은 <b>이 휴대폰에만</b> 저장돼요. 앱을 지우면 기록도 사라져요.</li>
+        <li><b>백업 저장</b> → 카톡 "나에게 보내기"나 구글 드라이브에 보관해요. 일주일에 한 번이면 충분해요. 7일이 지나면 홈에서 한 번 알려 드려요.</li>
+        <li>홈 화면에 설치해 두면 기록이 더 안전해요. 특히 아이폰은 설치하지 않고 오래 열지 않으면 기록이 지워질 수 있어요.</li>
+        <li>새 휴대폰에서는 <b>백업 불러오기</b>로 그 파일을 고르면 기록, 할 일, 모드, 메모장이 돌아와요.</li>
+        <li>새 버전이 안 보이면 앱을 완전히 껐다가 두 번 다시 열어 보세요.</li>
+      </ul>
+    </div>
+    <p class="hint" id="backupInfo" style="margin:0 0 4px"></p>
+    <p class="hint" style="margin:0">기록은 이 휴대폰에만 저장돼요. 백업 파일을 카톡 "나에게 보내기"나 구글 드라이브에 저장해 두면, 앱을 지우거나 휴대폰을 바꿔도 되살릴 수 있어요.</p>
+    <div class="row">
+      <button class="primary" id="backupBtn">백업 저장</button>
+      <button id="restoreBtn">백업 불러오기</button>
+    </div>
+    <input type="file" id="restoreFile" accept=".txt,.json,text/plain,application/json" hidden>
+    <div class="row">
+      <button id="csv">엑셀용 표로 내보내기</button>
+    </div>
+  </section>
+  </div>
+</main>
+<nav class="tabbar" id="tabbar">
+  <button data-tab="home" class="on"><b>🏠</b>홈</button>
+  <button data-tab="log"><b>📊</b>기록</button>
+  <button data-tab="deco" id="decoTab"><b>🛍️</b>꾸미기</button>
+  <button data-tab="set"><b>⚙️</b>설정</button>
+</nav>
+    <svg id="probe" aria-hidden="true"></svg>
+<dialog id="askDlg">
+  <h2 id="askTitle"></h2>
+  <p id="askText" style="white-space:pre-line;margin:0 0 4px"></p>
+  <div id="askBody"></div>
+  <div class="row">
+    <button id="askNo">취소</button>
+    <button class="primary" id="askYes">확인</button>
+  </div>
+</dialog>
+<dialog id="modeDlg">
+  <h2>나만의 모드 만들기</h2>
+  <label>모드 이름<input type="text" id="modeName" maxlength="10" placeholder="예: 육아, 알바, 교회 봉사"></label>
+  <div class="grid" style="margin-top:10px">
+    <label>바쁜 시간 이름<input type="text" id="modeBusy" maxlength="8" placeholder="예: 육아, 알바"></label>
+    <label>오가는 시간 이름<input type="text" id="modeGo" maxlength="8" placeholder="예: 이동"></label>
+  </div>
+  <p class="step" style="margin-top:12px">아이콘</p>
+  <div class="chips" id="modeIcons"></div>
+  <p class="hint" style="margin:0">만든 모드는 "나의 하루"와 "오늘만 다르게"에서 고를 수 있어요. 시간은 모드마다 따로 기억해요.</p>
+  <div class="row">
+    <button id="modeCancel">취소</button>
+    <button class="primary" id="modeSave">만들기</button>
+  </div>
+</dialog>
+<dialog id="taskDlg">
+  <h2>할 일 고치기</h2>
+  <label>이름<input type="text" id="taskName" maxlength="15"></label>
+  <label style="margin-top:10px">하루 목표 (분, 없으면 0)<input type="number" id="taskGoal" min="0" step="5" inputmode="numeric"></label>
+  <p class="hint" style="margin:6px 0 0">목표를 정하면 할 일 아래에 막대가 차오르고, 다 채우면 ✅가 붙어요. 이름을 바꾸면 지난 기록의 이름도 같이 바뀌어요.</p>
+  <label style="margin-top:10px">한 번 잴 때 집중 목표 (알림)
+    <select id="taskFocus" style="width:100%;margin-top:4px;padding:9px 10px;font:inherit;color:var(--text);background:var(--bg);border:1px solid var(--line);border-radius:9px">
+      <option value="">기본값 따르기</option><option value="0">없음</option><option value="15">15분</option><option value="25">25분</option><option value="50">50분</option>
+    </select>
+  </label>
+  <div class="row">
+    <button id="taskCancel">취소</button>
+    <button class="primary" id="taskSave">저장</button>
+  </div>
+</dialog>
+<dialog id="editDlg">
+  <h2 id="editTitle"></h2>
+  <p class="hint" style="margin:0">분 단위로 고쳐 주세요. 0으로 하면 지워져요.</p>
+  <div id="editRows"></div>
+  <p class="step" style="margin-top:14px">고친 이유 (선택)</p>
+  <div class="chips" id="reasonChips" style="margin-bottom:0">
+    <button class="chip">멈추는 걸 깜빡함</button><button class="chip">시작을 깜빡함</button>
+    <button class="chip">잠들어 버렸어요</button><button class="chip">잘못 누름</button>
+  </div>
+  <input type="text" id="reasonText" maxlength="40" placeholder="직접 적기 (예: 중간에 전화 받음)">
+  <details id="logBox">
+    <summary class="hint">이 날 변경 기록 보기</summary>
+    <ul id="logList"></ul>
+  </details>
+  <div class="row">
+    <button id="editCancel">취소</button>
+    <button class="primary" id="editSave">저장</button>
+  </div>
+  <div class="row"><button id="editDelete">이 날 기록 모두 지우기</button></div>
+</dialog>
+<div class="toast" id="toast"></div>
+
+<script>
+const $ = id => document.getElementById(id);
+const FIELDS = ['wake', 'sleep', 'workStart', 'workEnd', 'commuteIn', 'commuteOut'];
+const DEFAULTS = { modeTimes: {}, goals: {}, mode: '', customModes: [], keepAwake: true, statusNotif: false, goal: 25, focusGoals: { '휴식': 0 }, alert: 'vibrate', acts: ['독서', '공부', '휴식', '기도', '운동'], act: '독서', notionUrl: '', remindAt: '21:30', notifyOn: false, wake: '06:30', sleep: '23:30', workStart: '09:00', workEnd: '18:00', commuteIn: 40, commuteOut: 40 };
+
+function load(key, fallback) {
+  try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; } catch (e) { return fallback; }
+}
+function store(key, val) {
+  try { localStorage.setItem(key, JSON.stringify(val)); } catch (e) {}
+}
+
+let settings = Object.assign({}, DEFAULTS, load('ft.settings', {}));
+let records = load('ft.records', {});
+// One-day changes to the work schedule, keyed by date: { workStart, workEnd, off, label }.
+let overrides = load('ft.overrides', {});
+migrateWeek();
+
+// Weekday plan for the main mode, { days, groups }: each day (0 = Sunday) is 'usual', 'off', or
+// the id of a group with its own hours. A biweekly group is on in weeks an even number of weeks
+// from its anchor Monday and a day off in between.
+function migrateWeek() {
+  if (settings.week) return;
+  const days = {}, groups = [];
+  for (let d = 0; d < 7; d++) {
+    const w = (settings.weekly || {})[d];
+    if (!w || w.type === 'same') days[d] = 'usual';
+    else if (w.type === 'off') days[d] = 'off';
+    else {
+      let g = groups.find(g => g.workStart === w.workStart && g.workEnd === w.workEnd);
+      if (!g) groups.push(g = { id: 'g' + (groups.length + 1), workStart: w.workStart, workEnd: w.workEnd, biweekly: false, anchor: '' });
+      days[d] = g.id;
+    }
+  }
+  settings.week = { days, groups };
+  delete settings.weekly;
+  store('ft.settings', settings);
+}
+
+const toMin = t => { const [h, m] = (t || '0:0').split(':').map(Number); return h * 60 + m; };
+const dateKey = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+const fmt = min => {
+  min = Math.max(0, Math.round(min));
+  const h = Math.floor(min / 60), m = min % 60;
+  return h ? (m ? h + '시간 ' + m + '분' : h + '시간') : m + '분';
+};
+
+// Length of a span from a to b on the clock, wrapping past midnight.
+const span = (a, b) => ((b - a) % 1440 + 1440) % 1440;
+
+const TIME_FIELDS = ['workStart', 'workEnd', 'commuteIn', 'commuteOut'];
+const DAYS = '일월화수목금토';
+
+// Times a mode uses: the main mode's live settings, or what another mode last used.
+function timesFor(mode) {
+  if (!mode || mode === settings.mode) return pick(settings);
+  return Object.assign(pick(settings), getMode(mode).times, (settings.modeTimes || {})[mode]);
+}
+const pick = o => Object.fromEntries(TIME_FIELDS.map(f => [f, o[f]]));
+
+// One date's schedule. Order: a change made for that date, then the weekday rule (main
+// mode only), then the usual settings.
+function dayPlan(key) {
+  const o = overrides[key] || {}, mode = o.mode || settings.mode;
+  const t = timesFor(mode);
+  let off = false, label = '';
+  if (mode !== settings.mode) label = getMode(mode).icon + ' ' + getMode(mode).name;
+  else if (settings.noFixed) off = true;
+  else {
+    const w = weekRule(key);
+    if (w) { off = !!w.off; label = w.label; }
+    if (w && w.workStart) { t.workStart = w.workStart; t.workEnd = w.workEnd; }
+  }
+  if (o.workStart) t.workStart = o.workStart;
+  if (o.workEnd) t.workEnd = o.workEnd;
+  if (o.off !== undefined) off = !!o.off;
+  if (o.label) label = o.label;
+  return Object.assign({}, settings, t, { off, label, mode });
+}
+
+// Monday of a date's week, and whether a biweekly group is on in that week.
+function monday(key) {
+  const d = new Date(key + 'T00:00');
+  d.setDate(d.getDate() - (d.getDay() + 6) % 7);
+  return d;
+}
+const onWeek = (g, key) => Math.round((monday(key) - monday(g.anchor)) / 6048e5) % 2 === 0;
+
+// The weekday rule for a date, or null when it is a usual day.
+function weekRule(key) {
+  const dow = new Date(key + 'T00:00').getDay(), v = settings.week.days[dow];
+  if (v === 'off') return { off: true, label: DAYS[dow] + '요일 · 쉬는 날' };
+  const g = settings.week.groups.find(g => g.id === v);
+  if (!g) return null;
+  if (g.biweekly && !onWeek(g, key)) return { off: true, label: '격주 · 쉬는 주' };
+  return { workStart: g.workStart, workEnd: g.workEnd, label: DAYS[dow] + '요일 시간' + (g.biweekly ? ' (격주)' : '') };
+}
+
+// Today's schedule.
+const sched = () => dayPlan(dateKey(new Date()));
+
+function plan() {
+  const s = sched(), off = s.off;
+  const wake = toMin(s.wake), sleep = toMin(s.sleep);
+  const awake = span(wake, sleep) || 1440;
+  const work = off ? 0 : span(toMin(s.workStart), toMin(s.workEnd));
+  const commute = off ? 0 : (+s.commuteIn || 0) + (+s.commuteOut || 0);
+  return { wake, sleep, awake, work, commute, off, free: Math.max(0, awake - work - commute) };
+}
+
+// Free minutes still ahead today, counting only the busy blocks that haven't passed yet.
+function freeLeft(p, now) {
+  const sinceWake = span(p.wake, now);
+  if (sinceWake >= p.awake) return 0;
+  const leftAwake = p.awake - sinceWake;
+  if (p.off) return leftAwake;
+  const s = sched(), ws = toMin(s.workStart), we = toMin(s.workEnd);
+  const blocks = [
+    [ws - (+s.commuteIn || 0), ws],
+    [ws, ws + p.work],
+    [we, we + (+s.commuteOut || 0)]
+  ];
+  let busy = 0;
+  for (const [a, b] of blocks) {
+    const start = span(p.wake, a), end = start + (b - a);
+    busy += Math.max(0, end - Math.max(start, sinceWake));
+  }
+  return Math.max(0, leftAwake - busy);
+}
+
+function render() {
+  const now = new Date(), p = plan();
+  const nowMin = now.getHours() * 60 + now.getMinutes();
+  $('today').textContent = now.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'long' });
+
+  const left = freeLeft(p, nowMin), s = sched();
+  $('roomLeft').textContent = fmt(left);
+  $('roomBadge').textContent = s.label ? '오늘: ' + s.label : '';
+  $('ovBadge').hidden = !s.label;
+  $('ovBadge').textContent = '오늘: ' + s.label + (s.off ? '' : ' · ' + s.workStart + '~' + s.workEnd);
+  $('left').textContent = fmt(left);
+  $('leftNote').textContent = '오늘 하루 나의 시간은 모두 ' + fmt(p.free) + '이에요.';
+
+  const sleepMin = 1440 - p.awake;
+  const parts = [['sleep', sleepMin], ['work', p.work], ['commute', p.commute], ['free', p.free]];
+  $('bar').innerHTML = parts.map(([k, v]) => '<span style="width:' + (v / 14.4) + '%;background:var(--' + k + ')"></span>').join('');
+  $('lgSleep').textContent = fmt(sleepMin);
+  $('lgWork').textContent = fmt(p.work);
+  $('lgCommute').textContent = fmt(p.commute);
+  $('lgFree').textContent = fmt(p.free);
+
+  $('freeSum').textContent = fmt(p.free);
+  // The one-line memo belongs to today; refill it when the date changes with the app left open.
+  if ($('note').dataset.day !== dateKey(now)) { $('note').value = (records[dateKey(now)] || {}).note || ''; $('note').dataset.day = dateKey(now); }
+  renderToday();
+  renderHistory();
+  renderFriend();
+  renderBackupNudge();
+  $('nudge').hidden = !!records[dateKey(now)] || nowMin < toMin(settings.remindAt);
+}
+
+const usedTotal = acts => Object.values(acts || {}).reduce((a, b) => a + b, 0);
+const actsText = acts => Object.entries(acts || {}).map(([k, v]) => k + ' ' + fmt(v)).join(', ');
+
+// Rows of "name ▮▮▮ minutes", longest first; onRemove adds a ✕ button per row.
+function fillBars(ul, acts, onRemove, rec) {
+  const entries = Object.entries(acts || {}).sort((a, b) => b[1] - a[1]);
+  const max = Math.max(1, ...entries.map(e => e[1]));
+  ul.innerHTML = '';
+  for (const [name, m] of entries) {
+    const li = document.createElement('li');
+    li.innerHTML = '<span class="name"></span><span class="track"><span></span></span><span class="m"></span>';
+    li.children[0].textContent = name;
+    const src = rec && SRC_BADGE[actSrc(rec, name)];
+    if (src) {
+      const tag = document.createElement('span');
+      tag.className = 'src ' + src[0]; tag.textContent = src[1];
+      li.children[0].appendChild(tag);
+    }
+    li.children[1].firstChild.style.width = (m / max * 100) + '%';
+    li.children[2].textContent = fmt(m);
+    if (onRemove) {
+      const b = document.createElement('button');
+      b.textContent = '✕';
+      b.onclick = () => onRemove(name);
+      li.appendChild(b);
+    }
+    ul.appendChild(li);
+  }
+}
+
+function renderToday() {
+  const r = records[dateKey(new Date())] || {};
+  fillBars($('used'), r.acts, null, r);
+  $('srcLegend').hidden = !usedTotal(r.acts);
+  $('usedSum').textContent = fmt(usedTotal(r.acts) + (timer && timer.date === dateKey(new Date()) ? elapsedMin() : 0));
+
+  renderTasks();
+
+  // Chips only pick which task the manual minute buttons add to.
+  const box = $('acts');
+  box.innerHTML = '';
+  for (const name of settings.acts) {
+    const b = document.createElement('button');
+    b.className = 'chip' + (name === settings.act ? ' on' : '');
+    b.textContent = name;
+    b.onclick = () => { settings.act = name; store('ft.settings', settings); renderToday(); };
+    box.appendChild(b);
+  }
+  for (const b of $('goalChips').children) b.classList.toggle('on', +b.dataset.goal === +settings.goal);
+  for (const b of $('alertChips').children) b.classList.toggle('on', b.dataset.alert === settings.alert);
+}
+
+// Today's minutes for one task, counting a running timer.
+function taskMinutes(name) {
+  const r = records[dateKey(new Date())] || {};
+  const run = timer && timer.act === name && timer.date === dateKey(new Date()) ? elapsedMin() : 0;
+  return ((r.acts || {})[name] || 0) + run;
+}
+
+// Picks 을/를 for a Korean word by whether its last syllable has a final consonant.
+const eul = w => { const c = w.charCodeAt(w.length - 1) - 0xac00; return w + (c >= 0 && c < 11172 && c % 28 ? '을' : '를'); };
+
+const clock = min => {
+  const sec = Math.floor(min * 60), h = Math.floor(sec / 3600), m = Math.floor(sec / 60) % 60, s2 = sec % 60;
+  return (h ? h + ':' + String(m).padStart(2, '0') : m) + ':' + String(s2).padStart(2, '0');
+};
+
+function renderTasks() {
+  const ul = $('tasks');
+  ul.innerHTML = '';
+  ul.classList.toggle('editing', editing);
+  for (const name of settings.acts) {
+    const li = document.createElement('li'), b = document.createElement('button');
+    const running = timer && timer.act === name;
+    b.className = 'task' + (running ? ' running' : '');
+    b.dataset.name = name;
+    b.innerHTML = '<span class="tname"></span><span class="ttime"></span><span class="ticon"></span>';
+    b.children[0].textContent = name;
+    const m = taskMinutes(name), goal = +(settings.goals || {})[name] || 0;
+    b.children[1].textContent = taskTime(name, m, running);
+    if (goal) {
+      const bar = document.createElement('span');
+      bar.className = 'tbar'; bar.style.width = Math.min(100, m / goal * 100) + '%';
+      b.appendChild(bar);
+      b.classList.toggle('done', m >= goal);
+    }
+    b.children[2].textContent = editing ? '✏️' : running ? '⏸' : '▶';
+    b.onclick = () => {
+      if (editing) openTaskDlg(name);
+      else if (running) stopTimer();
+      else startTimer(name);
+    };
+    li.appendChild(b);
+    if (editing) {
+      li.className = 'editing';
+      const del = document.createElement('button');
+      del.className = 'tdel'; del.textContent = '✕';
+      del.setAttribute('aria-label', name + ' 빼기');
+      del.onclick = async () => {
+        if (!await ask({ title: '"' + name + '" 할 일을 뺄까요?', text: '목록에서만 빠지고, 지난 기록은 그대로 남아요.', yes: '빼기' })) return;
+        if (timer && timer.act === name) stopTimer();
+        settings.acts = settings.acts.filter(a => a !== name);
+        if (settings.act === name) settings.act = settings.acts[0] || '';
+        store('ft.settings', settings); renderToday();
+      };
+      li.appendChild(del);
+    }
+    ul.appendChild(li);
+  }
+  $('taskEdit').textContent = editing ? '완료' : '편집';
+  $('taskHint').textContent = editing ? '✏️ 누르면 이름과 하루 목표를 고칠 수 있어요. ✕는 목록에서 빼기예요.' : '누르면 시간 재기 시작, 한 번 더 누르면 멈춰요.';
+}
+
+// Renames a task everywhere: the list, a running timer, and every day's records, so the
+// weekly totals keep adding up. Renaming onto an existing task merges the two.
+// "12분 / 30분 ✅" when a goal is set; the running task shows its clock instead of minutes.
+function taskTime(name, m, running) {
+  const goal = +(settings.goals || {})[name] || 0, now = running ? clock(elapsedMin()) : (m ? fmt(m) : '');
+  if (!goal) return now;
+  return (now || '0분') + ' / ' + goal + '분' + (m >= goal ? ' ✅' : '');
+}
+
+let taskDlgName = null;
+function openTaskDlg(name) {
+  taskDlgName = name;
+  $('taskName').value = name;
+  $('taskGoal').value = (settings.goals || {})[name] || 0;
+  const fg = (settings.focusGoals || {})[name];
+  $('taskFocus').value = fg === undefined ? '' : String(fg);
+  $('taskFocus').options[0].textContent = '기본값 따르기 (' + (+settings.goal ? settings.goal + '분' : '없음') + ')';
+  $('taskDlg').showModal();
+}
+$('taskCancel').onclick = () => $('taskDlg').close();
+$('taskSave').onclick = async () => {
+  const name = taskDlgName, to = $('taskName').value.trim().slice(0, 15) || name, goal = Math.max(0, parseInt($('taskGoal').value) || 0);
+  if (to !== name && !await renameTask(name, to)) return;
+  if (goal) settings.goals[to] = goal; else delete settings.goals[to];
+  if ($('taskFocus').value === '') delete settings.focusGoals[to]; else settings.focusGoals[to] = +$('taskFocus').value;
+  store('ft.settings', settings);
+  $('taskDlg').close();
+  render(); tick();
+};
+
+// Returns false if the user backs out of a merge.
+async function renameTask(name, to) {
+  if (!to || to === name) return true;
+  const merge = settings.acts.includes(to);
+  if (merge && !await ask({ title: '"' + to + '" 할 일이 이미 있어요', text: '둘을 하나로 합칠까요? 지난 기록의 시간도 합쳐져요.', yes: '합치기' })) return false;
+  if (settings.goals[name] && !settings.goals[to]) settings.goals[to] = settings.goals[name];
+  delete settings.goals[name];
+  if (name in settings.focusGoals && !(to in settings.focusGoals)) settings.focusGoals[to] = settings.focusGoals[name];
+  delete settings.focusGoals[name];
+  settings.acts = merge ? settings.acts.filter(a => a !== name) : settings.acts.map(a => a === name ? to : a);
+  if (settings.act === name) settings.act = to;
+  if (timer && timer.act === name) { timer.act = to; store('ft.timer', timer); syncStatusNotif(); }
+  for (const r of Object.values(records)) {
+    for (const e of r.log || []) if (e.act === name) e.act = to;
+    if (!r.acts || !(name in r.acts)) continue;
+    r.acts[to] = Math.round(((r.acts[to] || 0) + r.acts[name]) * 10) / 10;
+    delete r.acts[name];
+  }
+  for (const u of undoStack) if (u.act === name) u.act = to;
+  store('ft.settings', settings); store('ft.records', records);
+  render(); tick();
+  toast('"' + to + '"(으)로 바꿨어요');
+  return true;
+}
+
+function renderHistory() {
+  const keys = Object.keys(records).sort().reverse();
+  const list = $('list');
+  if (!keys.length) { list.innerHTML = '<li class="empty">아직 기록이 없어요. 오늘 첫 기록을 남겨 보세요.</li>'; }
+  else {
+    list.innerHTML = '';
+    for (const k of keys) {
+      const r = records[k], li = document.createElement('li');
+      const d = new Date(k + 'T00:00');
+      li.innerHTML = '<span class="d"></span><span class="h"></span><span class="n"></span><button>고치기</button>';
+      li.children[0].textContent = (d.getMonth() + 1) + '/' + d.getDate() + ' ' + '일월화수목금토'[d.getDay()];
+      li.children[1].textContent = fmt(usedTotal(r.acts));
+      const marked = Object.entries(r.acts || {}).map(([a, v]) => a + ' ' + fmt(v) + (SRC_MARK[actSrc(r, a)] || '')).join(', ');
+      li.children[2].textContent = (r.off ? '[쉬는 날] ' : '') + [marked, r.note].filter(Boolean).join(' · ');
+      li.children[3].onclick = () => openEditor(k);
+      list.appendChild(li);
+    }
+  }
+
+  const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 6);
+  const recentKeys = keys.filter(k => k >= dateKey(cutoff));
+  const recent = recentKeys.map(k => usedTotal(records[k].acts));
+  const total = recent.reduce((a, b) => a + b, 0);
+  const week = {};
+  for (const k of recentKeys) for (const [a, m] of Object.entries(records[k].acts || {})) week[a] = (week[a] || 0) + m;
+  fillBars($('weekActs'), week);
+  $('days').textContent = recent.length;
+  $('sum').textContent = recent.length ? fmt(total) : '–';
+  $('avg').textContent = recent.length ? fmt(total / recent.length) : '–';
+  renderStreak();
+  renderCalendar();
+}
+
+const usedOn = k => usedTotal((records[k] || {}).acts);
+
+// Days in a row with any time spent, counting back from today (or yesterday, so an
+// unrecorded morning doesn't break it).
+function renderStreak() {
+  const d = new Date();
+  if (!usedOn(dateKey(d))) d.setDate(d.getDate() - 1);
+  let n = 0;
+  while (usedOn(dateKey(d))) { n++; d.setDate(d.getDate() - 1); }
+  $('streak').textContent = n ? '🔥 ' + n + '일째 이어서 기록하고 있어요' : '🌱 오늘 첫 기록을 남기면 연속 기록이 시작돼요';
+}
+
+let calMonth = null;
+function renderCalendar() {
+  const now = new Date();
+  if (!calMonth) calMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const y = calMonth.getFullYear(), mo = calMonth.getMonth(), days = new Date(y, mo + 1, 0).getDate();
+  $('calTitle').textContent = y + '년 ' + (mo + 1) + '월';
+  $('calNext').disabled = y === now.getFullYear() && mo === now.getMonth();
+  const cal = $('cal');
+  cal.innerHTML = '';
+  for (const c of DAYS) { const h = document.createElement('div'); h.className = 'dh'; h.textContent = c; cal.appendChild(h); }
+  for (let i = 0; i < new Date(y, mo, 1).getDay(); i++) { const e = document.createElement('div'); e.className = 'empty'; cal.appendChild(e); }
+  let monthTotal = 0, active = 0;
+  for (let d = 1; d <= days; d++) {
+    const k = dateKey(new Date(y, mo, d)), m = usedOn(k), b = document.createElement('button');
+    monthTotal += m; if (m) active++;
+    b.className = (m >= 120 ? 'lv3' : m >= 45 ? 'lv2' : m > 0 ? 'lv1' : '') + (k === dateKey(now) ? ' today' : '');
+    b.innerHTML = '<span></span><small></small>';
+    b.firstChild.textContent = d;
+    b.lastChild.textContent = m ? (m >= 60 ? Math.floor(m / 60) + 'h' + (Math.round(m % 60) ? Math.round(m % 60) : '') : Math.round(m) + 'm') : '';
+    b.setAttribute('aria-label', (mo + 1) + '월 ' + d + '일 ' + (m ? fmt(m) : '기록 없음'));
+    if (k <= dateKey(now)) b.onclick = () => openEditor(k); else b.disabled = true;
+    cal.appendChild(b);
+  }
+  $('monthSum').textContent = active ? '이번 달 ' + active + '일 기록 · 모두 ' + fmt(monthTotal) + ' · 날짜를 누르면 그날 기록을 고칠 수 있어요' : '이 달은 아직 기록이 없어요';
+}
+$('calPrev').onclick = () => { calMonth.setMonth(calMonth.getMonth() - 1); renderCalendar(); };
+$('calNext').onclick = () => { calMonth.setMonth(calMonth.getMonth() + 1); renderCalendar(); };
+
+function toast(msg) {
+  const t = $('toast'); t.textContent = msg; t.classList.add('on');
+  clearTimeout(toast.timer); toast.timer = setTimeout(() => t.classList.remove('on'), 1600);
+}
+
+FIELDS.forEach(f => {
+  $(f).value = settings[f];
+  $(f).addEventListener('input', () => { settings[f] = $(f).value; store('ft.settings', settings); render(); renderDaySummary(); });
+});
+
+let editing = false;
+const undoStack = [];
+
+const todayKey = dateKey(new Date());
+if (records[todayKey]) $('note').value = records[todayKey].note || '';
+// Earlier versions kept "쉬는 날" only on the day's record; carry it over as a one-day change.
+if (records[todayKey] && records[todayKey].off && !overrides[todayKey]) overrides[todayKey] = { off: true, label: '쉬는 날' };
+// Drop one-day changes older than 60 days.
+{
+  const cut = new Date(); cut.setDate(cut.getDate() - 60);
+  for (const k of Object.keys(overrides)) if (k < dateKey(cut)) delete overrides[k];
+  store('ft.overrides', overrides);
+}
+
+// Everything saves as soon as it changes; a day with no minutes and no memo has no record.
+const withLog = (log, entries) => (log || []).concat((entries || []).map(e => Object.assign({ t: Date.now() }, e))).slice(-60);
+
+// How a task's minutes for a day came in, for the badge: a fix wins over manual over timer.
+function actSrc(r, act) {
+  const kinds = (r.log || []).filter(e => e.act === act).map(e => e.kind);
+  return kinds.includes('edit') ? 'edit' : kinds.includes('manual') ? 'manual' : kinds.includes('timer') ? 'timer' : '';
+}
+const SRC_BADGE = { timer: ['src-timer', '⏱'], manual: ['src-manual', '✋ 직접'], edit: ['src-edit', '✏️ 고침'] };
+const SRC_MARK = { manual: ' ✋', edit: ' ✏️' };
+
+function saveToday(acts, entries) {
+  const key = dateKey(new Date()), p = plan(), note = $('note').value.trim();
+  acts = acts || (records[key] || {}).acts || {};
+  if (!usedTotal(acts) && !note) delete records[key];
+  else records[key] = { free: p.free, work: p.work, commute: p.commute, off: p.off, acts, note,
+    log: withLog((records[key] || {}).log, entries) };
+  store('ft.records', records);
+  render();
+}
+
+// The date the "오늘만 다르게" panel is editing; today unless the user picks another day.
+let ovKey = dateKey(new Date());
+const dayName = key => { const d = new Date(key + 'T00:00'); return (d.getMonth() + 1) + '/' + d.getDate() + '(' + DAYS[d.getDay()] + ')'; };
+const dayWord = key => key === dateKey(new Date()) ? '오늘' : dayName(key);
+
+function setOverride(o) {
+  if (o) overrides[ovKey] = o; else delete overrides[ovKey];
+  store('ft.overrides', overrides);
+  renderOverride(); applyMode();
+  if (ovKey === dateKey(new Date()) && records[ovKey]) saveToday(); else render();
+}
+
+function renderOverride() {
+  const today = dateKey(new Date());
+  if (ovKey < today) ovKey = today;
+  const o = overrides[ovKey], s = dayPlan(ovKey), l = L(s.mode), tOv = overrides[today];
+  const ahead = Object.keys(overrides).filter(k => k > today).length;
+  $('ovBtn').textContent = (tOv ? '오늘만 다르게 · ' + tOv.label : '오늘만 다르게') + (ahead ? ' · 예정 ' + ahead : '');
+  $('ovBtn').classList.toggle('primary', !!tOv);
+  $('ovDate').value = ovKey;
+  $('ovDate').min = today;
+  $('ovHintText').textContent = l.ovHint;
+  const names = { am: l.am, pm: l.pm, off: l.off };
+  for (const b of $('ovPresets').children) {
+    if (names[b.dataset.ov]) b.textContent = names[b.dataset.ov];
+    b.classList.toggle('on', !!o && b.dataset.ov === o.kind);
+  }
+  $('ovStartLabel').textContent = dayWord(ovKey) + ' ' + l.start;
+  $('ovEndLabel').textContent = dayWord(ovKey) + ' ' + l.end;
+  $('ovTimes').hidden = s.off;
+  $('ovStart').value = s.workStart;
+  $('ovEnd').value = s.workEnd;
+
+  $('ovModes').innerHTML = '';
+  for (const [key, m] of allModes()) {
+    const b = document.createElement('button');
+    b.className = key === s.mode ? 'on' : '';
+    b.innerHTML = '<span></span><small></small>';
+    b.firstChild.textContent = m.icon + ' ' + m.name;
+    b.lastChild.textContent = key === settings.mode ? '평소 모드' : m.sub;
+    b.onclick = () => {
+      if (key === settings.mode) setOverride(null);
+      else setOverride({ kind: 'mode', mode: key, label: m.icon + ' ' + m.name });
+      toast(dayWord(ovKey) + '은 ' + m.icon + ' ' + m.name + (key === settings.mode ? '(평소)' : '') + '로 정했어요');
+    };
+    $('ovModes').appendChild(b);
+  }
+
+  const upcoming = Object.keys(overrides).filter(k => k >= today).sort();
+  $('ovListTitle').hidden = !upcoming.length;
+  $('ovList').innerHTML = '';
+  for (const k of upcoming) {
+    const li = document.createElement('li'), p = dayPlan(k);
+    li.innerHTML = '<span></span><button>고치기</button><button>✕</button>';
+    li.firstChild.textContent = dayWord(k) + ' · ' + p.label + (p.off ? '' : ' ' + p.workStart + '~' + p.workEnd);
+    li.children[1].onclick = () => { ovKey = k; renderOverride(); };
+    li.children[2].onclick = () => { const keep = ovKey; ovKey = k; setOverride(null); ovKey = keep; renderOverride(); };
+    $('ovList').appendChild(li);
+  }
+}
+
+$('ovBtn').onclick = () => { $('ovBox').hidden = !$('ovBox').hidden; ovKey = dateKey(new Date()); renderOverride(); };
+$('ovDate').addEventListener('change', () => { ovKey = $('ovDate').value || dateKey(new Date()); renderOverride(); });
+
+// Presets work inside whichever mode that day uses. Half days assume a 12:30 to 13:30 lunch;
+// the times stay editable below.
+$('ovPresets').onclick = e => {
+  const kind = e.target.dataset.ov;
+  if (!kind) return;
+  if (kind === 'reset') { setOverride(null); toast(dayWord(ovKey) + '은 원래대로 돌아왔어요'); return; }
+  const cur = overrides[ovKey] || {}, mode = cur.mode, t = timesFor(mode || settings.mode), l = L(mode || settings.mode);
+  const tag = mode ? getMode(mode).icon + ' ' : '';
+  const presets = {
+    am: { kind, mode, label: tag + l.am, workStart: '13:30', workEnd: t.workEnd },
+    pm: { kind, mode, label: tag + l.pm, workStart: t.workStart, workEnd: '12:30' },
+    off: { kind, mode, label: tag + l.off, off: true }
+  };
+  if (!mode) for (const v of Object.values(presets)) delete v.mode;
+  setOverride(presets[kind]);
+  toast(dayWord(ovKey) + '은 ' + presets[kind].label + '(으)로 바꿨어요');
+};
+
+for (const id of ['ovStart', 'ovEnd']) $(id).addEventListener('change', () => {
+  const cur = overrides[ovKey] || { kind: 'custom', label: '시간 변경' };
+  const o = Object.assign({}, cur, { off: false, workStart: $('ovStart').value, workEnd: $('ovEnd').value });
+  if (!o.workStart) delete o.workStart;
+  if (!o.workEnd) delete o.workEnd;
+  // Another mode remembers the hours it was last used with.
+  if (o.mode) {
+    settings.modeTimes[o.mode] = Object.assign({}, settings.modeTimes[o.mode], { workStart: o.workStart, workEnd: o.workEnd });
+    store('ft.settings', settings);
+  }
+  setOverride(o);
+});
+
+// Weekday rows: the usual hours, each group with its own hours, and days off. Tapping a day
+// moves it into that row; tapping it again in its own row sends it to 쉬는 날 (or back to 평소).
+function renderWeekly() {
+  const box = $('weeklyRows'), wk = settings.week, m = getMode(settings.mode || 'work');
+  const today = dateKey(new Date());
+  box.innerHTML = '';
+  const rows = [['usual']].concat(wk.groups.map(g => [g.id, g]), [['off']]);
+  for (const [id, g] of rows) {
+    const row = document.createElement('div');
+    row.className = 'wrow';
+    const head = document.createElement('div');
+    head.className = 'whead';
+    head.innerHTML = '<b></b><span class="hint"></span>';
+    head.firstChild.textContent = id === 'usual' ? m.icon + ' 평소' : id === 'off' ? '🌿 쉬는 날' : '🕘 다른 시간';
+    if (id === 'usual') head.children[1].id = 'wUsual';
+    if (g) {
+      const del = document.createElement('button');
+      del.textContent = '✕ 지우기';
+      del.onclick = () => {
+        for (const d in wk.days) if (wk.days[d] === id) wk.days[d] = 'usual';
+        wk.groups = wk.groups.filter(x => x !== g);
+        saveWeek();
+      };
+      head.appendChild(del);
+    }
+    row.appendChild(head);
+    const chips = document.createElement('div');
+    chips.className = 'chips wdays';
+    for (const d of [1, 2, 3, 4, 5, 6, 0]) {
+      const b = document.createElement('button');
+      b.className = 'chip' + (wk.days[d] === id ? ' on' : '');
+      b.textContent = DAYS[d];
+      b.onclick = () => { wk.days[d] = wk.days[d] !== id ? id : id === 'off' ? 'usual' : 'off'; saveWeek(); };
+      chips.appendChild(b);
+    }
+    row.appendChild(chips);
+    if (g) {
+      const t = document.createElement('div');
+      t.className = 'wt';
+      t.innerHTML = '<input type="time"><input type="time">';
+      const [a, b] = t.children;
+      a.value = g.workStart; b.value = g.workEnd;
+      a.onchange = b.onchange = () => { g.workStart = a.value || g.workStart; g.workEnd = b.value || g.workEnd; saveWeek(); };
+      row.appendChild(t);
+      const bi = document.createElement('label');
+      bi.className = 'check';
+      bi.innerHTML = '<input type="checkbox"> 격주 (2주에 한 번)';
+      bi.firstChild.checked = !!g.biweekly;
+      bi.firstChild.onchange = () => {
+        g.biweekly = bi.firstChild.checked;
+        if (g.biweekly && !g.anchor) g.anchor = dateKey(monday(today));
+        saveWeek();
+      };
+      row.appendChild(bi);
+      if (g.biweekly) {
+        const on = onWeek(g, today), choose = document.createElement('div');
+        choose.className = 'chips wbi';
+        choose.innerHTML = '<span>이번 주는</span><button class="chip"></button><button class="chip">쉬어요</button>';
+        const [, yes, no] = choose.children;
+        yes.textContent = (m.busy || '일정') + ' 있어요';
+        yes.classList.toggle('on', on); no.classList.toggle('on', !on);
+        const thisMon = monday(today), nextMon = new Date(thisMon);
+        nextMon.setDate(nextMon.getDate() + 7);
+        yes.onclick = () => { g.anchor = dateKey(thisMon); saveWeek(); };
+        no.onclick = () => { g.anchor = dateKey(nextMon); saveWeek(); };
+        row.appendChild(choose);
+      }
+    }
+    box.appendChild(row);
+  }
+  renderDaySummary();
+}
+function saveWeek() {
+  store('ft.settings', settings);
+  renderWeekly(); render(); renderOverride();
+}
+$('wAdd').onclick = () => {
+  settings.week.groups.push({ id: 'g' + Date.now().toString(36), workStart: settings.workStart, workEnd: settings.workEnd, biweekly: false, anchor: '' });
+  saveWeek();
+  toast('새 줄에서 요일을 누르고 시간을 골라요');
+};
+
+// Day names for a row, with runs of three or more written as 월~금.
+function dayNames(id) {
+  const ds = [1, 2, 3, 4, 5, 6, 0].filter(d => settings.week.days[d] === id), out = [];
+  for (let i = 0; i < ds.length;) {
+    let j = i;
+    while (j + 1 < ds.length && (ds[j + 1] + 6) % 7 === (ds[j] + 6) % 7 + 1) j++;
+    out.push(j - i >= 2 ? DAYS[ds[i]] + '~' + DAYS[ds[j]] : ds.slice(i, j + 1).map(d => DAYS[d]).join('·'));
+    i = j + 1;
+  }
+  return out.join('·');
+}
+$('note').addEventListener('input', () => saveToday());
+
+$('mins').onclick = e => {
+  const m = +e.target.dataset.m;
+  if (!m) return;
+  if (!settings.act) { toast('먼저 활동을 골라 주세요'); return; }
+  const key = dateKey(new Date());
+  const acts = Object.assign({}, (records[key] || {}).acts);
+  acts[settings.act] = (acts[settings.act] || 0) + m;
+  undoStack.push({ key, act: settings.act, m });
+  saveToday(acts, [{ act: settings.act, kind: 'manual', m }]);
+  toast(settings.act + ' +' + fmt(m) + ' → 오늘 ' + fmt(acts[settings.act]));
+};
+
+// Timer. Only the start time is stored, so it keeps counting while the app is closed or the
+// screen is off; minutes are credited to the day the timer started.
+let timer = load('ft.timer', null);
+const elapsedMin = () => timer ? Math.max(0, (Date.now() - timer.start) / 60000) : 0;
+let audio = null;
+
+// Saves one day's minutes; a past day with no minutes and no memo loses its record.
+// entries are change-log lines: { act, kind: timer|manual|edit|undo, m | from,to, reason }.
+function setDayActs(key, acts, entries) {
+  if (key === dateKey(new Date())) { saveToday(acts, entries); return; }
+  const p = plan();
+  const r = Object.assign({ free: p.free, work: p.work, commute: p.commute, off: p.off, note: '' }, records[key],
+    { acts, log: withLog((records[key] || {}).log, entries) });
+  if (!usedTotal(acts) && !r.note) delete records[key]; else records[key] = r;
+  store('ft.records', records);
+  render();
+}
+
+// kind is how the minutes came in; an "edit" carries the measured time it replaced.
+function addMinutes(key, act, m, kind, extra) {
+  m = Math.round(m * 10) / 10;
+  if (m <= 0) return;
+  const acts = Object.assign({}, (records[key] || {}).acts);
+  acts[act] = Math.round(((acts[act] || 0) + m) * 10) / 10;
+  undoStack.push({ key, act, m });
+  setDayActs(key, acts, [Object.assign({ act, kind: kind || 'timer', m }, extra)]);
+}
+
+function startTimer(name) {
+  if (timer) stopTimer(undefined, true);
+  // Sound needs an audio context unlocked by a tap, so make it here.
+  if (settings.alert === 'sound' && !audio) try { audio = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {}
+  timer = { act: name, start: Date.now(), date: dateKey(new Date()) };
+  settings.act = name;
+  store('ft.timer', timer); store('ft.settings', settings);
+  render(); tick(); syncStatusNotif();
+  toast(name + ' 시작!');
+}
+
+// minutes overrides the measured time (used when the user corrects a forgotten timer).
+function stopTimer(minutes, quiet, reason) {
+  if (!timer) return;
+  const measured = elapsedMin(), t = timer, m = minutes === undefined ? measured : minutes, before = starsLeft();
+  timer = null;
+  store('ft.timer', null);
+  syncStatusNotif();
+  if (m >= 0.1) {
+    if (minutes === undefined) addMinutes(t.date, t.act, m, 'timer');
+    else addMinutes(t.date, t.act, m, 'edit', { from: Math.round(measured), to: Math.round(m * 10) / 10, reason });
+  } else render();
+  tick();
+  // Stars can be owed after spending and then fixing minutes, so show only what was really gained.
+  const gained = starsLeft() - before;
+  if (!quiet) toast(m < 0.1 ? t.act + ' 기록할 시간이 없어서 저장하지 않았어요' : t.act + ' ' + (m >= 1 ? fmt(m) : '1분 미만') + ' 기록했어요' + (gained > 0 ? ' · ⭐+' + gained : ''));
+  if (m >= 1) hop();
+  if (gained > 0) starPop(gained);
+}
+
+// 나의 시간 친구: every recorded minute is a star, and stars buy clothes, things for the room,
+// and bigger homes. Stars come from the records, so fixing or deleting minutes changes them.
+const PETS = { cat: ['🐱', '고양이'], rabbit: ['🐰', '토끼'], bear: ['🐻', '곰'], chick: ['🐥', '병아리'], sheep: ['🐑', '양'], dog: ['🐶', '강아지'] };
+
+// Everything is drawn in one style: a dark pen line with soft pastel fills, roughened a little
+// by a displacement filter so it looks hand-drawn.
+const INK = '#333';
+const C = { pink: '#f7c6c0', rose: '#f4a3a3', mint: '#c8e6c9', green: '#a8d5a2', sky: '#cfe6f7', blue: '#b9d8f2', butter: '#fde9a8',
+  gold: '#f6d36b', lilac: '#ddd0f0', peach: '#fbd8b5', wood: '#e2c19d', brown: '#c9a27a', white: '#fff', gray: '#e4e0d8', orange: '#f7b980' };
+const WOB = id => '<filter id="' + id + '"><feTurbulence type="fractalNoise" baseFrequency=".05" numOctaves="2" seed="3"/><feDisplacementMap in="SourceGraphic" scale="1.5"/></filter>';
+const PEN = 'stroke="' + INK + '" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"';
+
+// Friends, seen from the side and facing right (viewBox 0 0 150 112, feet at y=106), shaped
+// like the real animals: a back that curves into the haunch and chest, and legs that narrow to
+// a paw, with a bent hock on the hind legs.
+const thick = (d, fill, w) => '<path d="' + d + '" fill="none" stroke="' + INK + '" stroke-width="' + (w + 5) + '"/><path d="' + d + '" fill="none" stroke="' + fill + '" stroke-width="' + w + '"/>';
+const eyes = (x1, x2, y, r) => { r = r || 1; return '<g class="eyes"><ellipse cx="' + x1 + '" cy="' + y + '" rx="' + 2.4 * r + '" ry="' + 3.2 * r + '" fill="' + INK + '" stroke="none"/><ellipse cx="' + x2 + '" cy="' + y + '" rx="' + 2.7 * r + '" ry="' + 3.6 * r + '" fill="' + INK + '" stroke="none"/>' +
+  '<circle cx="' + (x1 + .8) + '" cy="' + (y - 1.2) + '" r=".9" fill="#fff" stroke="none"/><circle cx="' + (x2 + .9) + '" cy="' + (y - 1.3) + '" r="1" fill="#fff" stroke="none"/></g>'; };
+const cheek = (x, y) => '<ellipse cx="' + x + '" cy="' + y + '" rx="4.5" ry="2.6" fill="#f6a6a6" opacity=".7" stroke="none"/>';
+const g = (cls, d, fill) => '<path class="' + cls + '" d="' + d + '" fill="' + fill + '"/>';
+// Legs are drawn in their own little space (hip at 0,0, paw at y=46); hind and fore legs
+// share one straight, narrowing shape, since a bent hind leg looked like a second haunch.
+// They are placed with a width factor. Far legs go behind the body with a full outline; near
+// legs go in front of it with no line across the top, so the body's outline runs into them.
+const NS = ' vector-effect="non-scaling-stroke"';
+const LEG = {
+  hind: ['M-7 0 C-6 16 -6 30 -6 40 Q0 47 7 43 L5 36 C5 26 6 14 7 0Z', 'M-6.4 14 C-6 24 -6 32 -6 40 Q0 47 7 43 L5 36 C5 28 5.5 20 6 14'],
+  fore: ['M-6 0 C-5 16 -5 30 -5 40 Q1 47 8 43 L5 36 C5 26 6 14 7 0Z', 'M-5.4 14 C-5 24 -5 32 -5 40 Q1 47 8 43 L5 36 C5 28 5.5 20 6 14']
+};
+const limb = (kind, x, w, fill, cls, near, y) => {
+  const [f, o] = LEG[kind];
+  return '<g class="leg ' + cls + '"><g transform="translate(' + x + ' ' + (y || 60) + ') scale(' + w + ' 1)">' +
+    (near ? '<path d="' + f + '" fill="' + fill + '" stroke="none"/><path d="' + o + '" fill="none"' + NS + '/><path d="M0 43 q2 -3 1 -6" fill="none" stroke-width="1.4"' + NS + '/>'
+      : '<path d="' + f + '" fill="' + fill + '"' + NS + '/>') + '</g></g>';
+};
+const ANIMALS = {
+  cat: { top: [114, 18], eye: [117, 33], neck: [100, 52], draw: () => {
+    const f = '#f4c58f', d = '#e3ac72';
+    return limb('hind', 44, .9, d, 'b') + limb('fore', 92, .9, d, 'a') + '<g class="tail">' + thick('M30 56 C10 54 4 40 12 28 C16 22 22 22 22 28', f, 7) + '</g>' +
+      '<path d="M28 58 C26 44 42 40 58 43 C74 46 88 42 98 40 L106 52 C112 60 110 72 102 77 C92 82 72 81 56 80 C42 80 30 72 28 58Z" fill="' + f + '"/>' +
+      '<path d="M58 45 q4 6 1 11 M70 45 q4 6 1 11 M46 46 q4 5 1 10" fill="none" stroke="' + d + '" stroke-width="3"/>' +
+      limb('hind', 52, .95, f, 'a', true) + limb('fore', 99, .9, f, 'b', true) +
+      '<path d="M104 56 C108 64 106 72 100 76 C96 70 98 62 104 56Z" fill="#fbe3c4" stroke="none"/>' +
+      '<path d="M101 26 L101 7 L113 18Z M117 17 L128 5 L129 24Z" fill="' + f + '"/><path d="M104 20 L104 12 L109 18Z M120 16 L126 10 L126 20Z" fill="#f6a6a6" stroke="none"/>' +
+      '<path d="M96 38 C93 26 100 17 112 17 C124 17 132 25 132 36 C132 46 126 54 114 55 C103 56 97 48 96 38Z" fill="' + f + '"/>' +
+      eyes(111, 123, 33) + cheek(108, 43) + '<path d="M128 40 l3 1 l-2 3z" fill="#f6a6a6" stroke-width="1.4"/><path d="M129 45 q-2 3 -5 2" fill="none" stroke-width="1.8"/>' +
+      '<path d="M130 42 h12 M130 46 l11 3" fill="none" stroke-width="1.4"/>';
+  } },
+  dog: { top: [110, 21], eye: [116.5, 31], neck: [98, 51], draw: () => {
+    const f = '#e8c9a0', d = '#d6b283';
+    return limb('hind', 44, 1, d, 'b') + limb('fore', 90, 1, d, 'a') + '<g class="tail wag">' + thick('M30 52 C20 46 18 34 24 26', f, 7) + '</g>' +
+      '<path d="M28 56 C28 44 46 42 62 44 C76 46 88 42 96 42 L106 54 C112 64 108 74 100 78 C90 82 72 80 58 80 C44 80 30 72 28 56Z" fill="' + f + '"/>' +
+      '<ellipse cx="60" cy="54" rx="11" ry="6" fill="#fff4e4" stroke="none"/>' + limb('hind', 52, 1, f, 'a', true) + limb('fore', 97, 1, f, 'b', true) +
+      '<path d="M94 40 C90 26 100 18 112 20 C120 22 124 28 125 33 L138 36 C143 40 141 48 134 49 C126 51 117 54 108 54 C100 54 95 49 94 40Z" fill="' + f + '"/>' +
+      '<path d="M122 42 C128 46 134 48 138 46" fill="none" stroke-width="1.8"/><ellipse cx="139" cy="38" rx="3.6" ry="3" fill="' + INK + '"/>' +
+      '<path d="M104 24 C96 26 93 40 98 50 C105 48 109 36 108 26Z" fill="#a6714d"/>' + eyes(112, 121, 31) + cheek(117, 42);
+  } },
+  bear: { top: [109, 25], eye: [115, 35], neck: [94, 53], draw: () => {
+    const f = '#c8936a', d = '#b17d55';
+    return limb('hind', 38, 1.4, d, 'b') + limb('fore', 86, 1.5, d, 'a') + '<circle cx="24" cy="60" r="6" fill="' + f + '"/>' +
+      '<path d="M22 64 C20 46 38 34 58 36 C72 34 86 32 94 40 L104 50 C110 62 108 74 100 80 C86 86 52 86 38 82 C28 78 22 72 22 64Z" fill="' + f + '"/>' +
+      limb('hind', 48, 1.45, f, 'a', true) + limb('fore', 96, 1.5, f, 'b', true) +
+      '<circle cx="100" cy="24" r="7" fill="' + f + '"/><circle cx="117" cy="24" r="7" fill="' + f + '"/><circle cx="100" cy="24" r="3" fill="#a6714d" stroke="none"/><circle cx="117" cy="24" r="3" fill="#a6714d" stroke="none"/>' +
+      '<path d="M90 42 C88 30 98 22 110 23 C120 24 127 32 128 38 L135 42 C139 46 137 52 131 53 L119 54 C110 60 96 58 92 50Z" fill="' + f + '"/>' +
+      '<path d="M120 42 C126 40 134 42 136 46 C134 52 126 52 120 50Z" fill="#ead2b8" stroke="none"/><ellipse cx="135" cy="43" rx="3.4" ry="2.6" fill="' + INK + '"/>' +
+      eyes(110, 120, 35) + cheek(112, 45) + '<path d="M131 49 q-3 3 -6 1" fill="none" stroke-width="1.8"/>';
+  } },
+  rabbit: { top: [98, 38], eye: [107, 49], neck: [90, 65], draw: () => {
+    const f = '#fbf7f0';
+    return '<path d="M96 42 C88 24 88 8 94 4 C100 6 102 24 100 42Z" fill="#efe8dc"/>' +
+      g('leg b', 'M80 76 L80 100 Q86 106 92 101 L90 76Z', f) +
+      '<circle cx="30" cy="74" r="8" fill="#fff"/><path d="M30 82 C24 62 40 50 60 52 C76 52 88 58 92 66 C96 78 90 90 76 92 L44 92 C34 92 30 88 30 82Z" fill="' + f + '"/>' +
+      '<g class="leg a"><path d="M40 98 C40 90 50 88 66 94 C71 97 70 104 64 104 L44 104 C40 104 40 101 40 98Z" fill="' + f + '"/></g>' +
+      '<path d="M104 40 C100 22 104 6 110 4 C116 6 114 24 108 40Z" fill="' + f + '"/><path d="M106 34 C104 22 106 12 109 10 C112 12 111 24 107 34Z" fill="#f6a6a6" stroke="none"/>' +
+      '<path d="M86 56 C82 44 90 36 102 36 C112 36 118 44 118 52 C118 60 110 66 100 66 C92 66 88 62 86 56Z" fill="' + f + '"/>' +
+      eyes(103, 111, 49) + cheek(104, 58) + '<path d="M116 52 l2.5 1 l-1.5 2.5z" fill="#f6a6a6" stroke-width="1.3"/><path d="M116 57 q-2 2 -4 1" fill="none" stroke-width="1.6"/>';
+  } },
+  sheep: { top: [110, 31], eye: [115.5, 42], neck: [102, 57], draw: () => {
+    const w = '#fbf7f0', k = '#6f625a';
+    const wool = 'M26 62 ' + [[30, 48], [42, 40], [56, 38], [70, 38], [84, 40], [96, 48], [100, 62], [94, 76], [80, 82], [64, 84], [48, 82], [34, 76], [26, 62]].map(([x, y], i, a) => i ? 'Q' + ((x + a[i - 1][0]) / 2 + (y - a[i - 1][1]) * .45) + ' ' + ((y + a[i - 1][1]) / 2 - (x - a[i - 1][0]) * .45) + ' ' + x + ' ' + y : '').join(' ') + 'Z';
+    const lg = (x, c, cls) => g('leg ' + cls, 'M' + x + ' 70 L' + x + ' 100 L' + (x - 1) + ' 105 h9 L' + (x + 7) + ' 100 L' + (x + 7) + ' 70Z', c);
+    return limb('hind', 44, .6, '#5f5149', 'b', false, 62) + limb('fore', 82, .7, '#5f5149', 'a', false, 62) + limb('hind', 52, .62, k, 'a', false, 62) + limb('fore', 90, .72, k, 'b', false, 62) + '<path d="' + wool + '" fill="' + w + '"/>' +
+      '<path d="M50 58 q4 -4 8 0 M66 52 q4 -4 8 0 M40 68 q4 -4 8 0 M74 68 q4 -4 8 0" fill="none" stroke-width="1.6"/>' +
+      '<path d="M100 42 C98 34 104 28 112 30 C120 32 126 42 129 52 C130 58 125 62 119 60 C110 58 102 52 100 42Z" fill="#ead9c6"/>' +
+      '<ellipse cx="104" cy="40" rx="9" ry="4" fill="#d9c7b5" transform="rotate(25 104 40)"/>' +
+      '<path d="M98 36 q2 -10 10 -8 q4 -6 10 0 q4 4 0 8" fill="' + w + '"/>' + eyes(112, 119, 42, .9) + cheek(116, 50) +
+      '<path d="M127 55 q-2 2 -4 1" fill="none" stroke-width="1.6"/>';
+  } },
+  chick: { top: [78, 36], eye: [92, 47], neck: [84, 72], draw: () => {
+    const f = '#ffd95a';
+    return '<path class="leg a" d="M64 88 l-2 16 l-6 3 M62 104 l6 3" fill="none" stroke="#f29b38" stroke-width="3"/><path class="leg b" d="M78 88 l2 16 l-6 3 M80 104 l6 3" fill="none" stroke="#f29b38" stroke-width="3"/>' +
+      '<path d="M44 58 L28 50 L38 70Z" fill="' + f + '"/><path d="M40 64 C40 44 58 32 76 34 C94 36 104 50 104 64 C104 82 90 94 72 94 C52 94 40 80 40 64Z" fill="' + f + '"/>' +
+      '<path class="wing" d="M52 64 C56 56 70 56 76 62 C78 72 70 80 60 78 C56 76 52 72 52 64Z" fill="#ffcb2e"/><path d="M60 72 l6 -4 M58 66 l8 -2" fill="none" stroke-width="1.4"/>' +
+      '<path d="M74 34 q0 -10 5 -4 q3 -8 6 0" fill="none"/><path d="M102 52 l12 3 l-11 5z" fill="#f29b38"/><path d="M103 56 l10 0" fill="none" stroke-width="1.2"/>' + eyes(88, 96, 47) + cheek(92, 58);
+  } }
+};
+// Clothes, drawn around the point they attach to: the top of the head, the eyes or the neck.
+const WEAR = {
+  ribbon: ['top', '<g transform="translate(-10 4) rotate(-20)"><path d="M0 0 l-12 -8 v16z M0 0 l12 -8 v16z" fill="' + C.rose + '"/><circle r="3.5" fill="' + C.pink + '"/></g>'],
+  cap: ['top', '<path d="M-15 4 q0 -18 15 -18 q15 0 15 18z" fill="' + C.sky + '"/><path d="M12 2 h16 q3 4 -3 5 h-13z" fill="' + C.blue + '"/><circle cy="-14" r="2.5" fill="' + C.blue + '"/>'],
+  flower: ['top', '<g transform="translate(-8 0)">' + [0, 72, 144, 216, 288].map(a => '<ellipse cy="-6" rx="4" ry="6" fill="' + C.pink + '" transform="rotate(' + a + ')"/>').join('') + '<circle r="3.5" fill="' + C.butter + '"/></g>'],
+  scarf: ['neck', '<path d="M-14 -6 q14 8 28 0 v9 q-14 8 -28 0z" fill="' + C.rose + '"/><path d="M-10 2 l-4 16 h8 l2 -14z" fill="' + C.rose + '"/><path d="M-12 14 h6" fill="none" stroke-width="1.6"/>'],
+  glasses: ['eye', '<circle cx="-6.5" r="6.5" fill="#fff" fill-opacity=".25"/><circle cx="6.5" r="6.5" fill="#fff" fill-opacity=".25"/><path d="M-13 -1 l-8 -3" fill="none" stroke-width="2"/>'],
+  phones: ['top', '<path d="M-17 16 q0 -30 17 -30 q17 0 17 30" fill="none" stroke-width="4"/><rect x="-22" y="10" width="10" height="16" rx="5" fill="' + C.lilac + '"/>'],
+  shades: ['eye', '<path d="M-14 -5 h11 q0 9 -6 9 q-5 0 -5 -9z M2 -5 h12 q0 9 -6 9 q-6 0 -6 -9z" fill="#555"/><path d="M-3 -4 h5 M-14 -4 l-7 -2" fill="none" stroke-width="2"/>'],
+  tophat: ['top', '<rect x="-12" y="-26" width="24" height="24" rx="2" fill="' + C.lilac + '"/><path d="M-20 -2 h40" fill="none" stroke-width="4"/><path d="M-12 -8 h24" fill="none" stroke="' + C.rose + '" stroke-width="4"/>'],
+  crown: ['top', '<path d="M-14 0 l-2 -18 l8 8 l8 -12 l8 12 l8 -8 l-2 18z" fill="' + C.gold + '"/><circle cy="-6" r="2.5" fill="' + C.rose + '"/>'],
+  grad: ['top', '<path d="M-12 0 v-8 h24 v8z" fill="#666"/><path d="M-22 -10 l22 -9 l22 9 l-22 9z" fill="#666"/><path d="M16 -8 v12" fill="none" stroke="' + C.gold + '" stroke-width="2.4"/><circle cx="16" cy="6" r="2.5" fill="' + C.gold + '" stroke="none"/>']
+};
+
+function sideSVG(kind, wear) {
+  const a = ANIMALS[kind] || ANIMALS.cat, w = WEAR[wear];
+  const on = w ? '<g transform="translate(' + a[w[0]].join(' ') + ')">' + w[1] + '</g>' : '';
+  return '<svg viewBox="0 0 150 112" aria-hidden="true" class="walk-' + kind + '"><defs>' + WOB('wp') + '</defs>' +
+    '<ellipse cx="72" cy="107" rx="44" ry="4" fill="#000" opacity=".08"/><g class="body" filter="url(#wp)" ' + PEN + '>' + a.draw() + on + '</g></svg>';
+}
+
+// Things for the room, drawn around (0, 0) = the middle of where they stand.
+const T = {
+  tea: '<ellipse cy="0" rx="14" ry="3" fill="' + C.white + '"/><path d="M-9 -2 h18 l2 -14 h-22z" fill="' + C.white + '"/><path d="M11 -13 q8 0 5 7 q-2 3 -6 2" fill="none"/><path d="M-3 -20 q-3 -4 0 -8 M3 -20 q-3 -4 0 -8" fill="none" stroke-width="1.6"/>',
+  plant: '<path d="M-13 0 L-16 -22 H16 L13 0Z" fill="' + C.pink + '"/><path d="M0 -22 C-4 -34 -18 -38 -22 -46 C-8 -46 -2 -36 0 -22 M0 -22 C2 -38 10 -48 20 -52 C18 -38 8 -30 0 -22 M0 -22 C0 -36 -2 -48 2 -60 C8 -48 4 -34 0 -22" fill="' + C.mint + '"/>',
+  books: '<rect x="-16" y="-8" width="32" height="8" rx="2" fill="' + C.pink + '"/><rect x="-13" y="-16" width="27" height="8" rx="2" fill="' + C.mint + '"/><rect x="-15" y="-24" width="24" height="8" rx="2" fill="' + C.butter + '"/>',
+  candle: '<ellipse rx="11" ry="3" fill="' + C.gold + '"/><rect x="-5" y="-20" width="10" height="20" rx="1" fill="' + C.white + '"/><path d="M0 -20 v-3" fill="none"/><path d="M0 -24 q-5 -6 0 -12 q5 6 0 12z" fill="' + C.butter + '"/>',
+  picture: '<path d="M-20 0 l6 -30 M20 0 l-6 -30 M0 -30 v30" fill="none"/><rect x="-22" y="-62" width="44" height="34" rx="2" fill="' + C.white + '"/><path d="M-16 -32 L-6 -46 L2 -38 L8 -44 L16 -32Z" fill="' + C.mint + '"/><circle cx="10" cy="-54" r="4" fill="' + C.butter + '"/>',
+  teddy: '<circle cx="-11" cy="-40" r="6" fill="' + C.brown + '"/><circle cx="11" cy="-40" r="6" fill="' + C.brown + '"/><ellipse cy="-12" rx="15" ry="12" fill="' + C.brown + '"/><circle cy="-30" r="13" fill="' + C.brown + '"/>' +
+    '<ellipse cy="-26" rx="5" ry="4" fill="' + C.peach + '"/><circle cx="-4.5" cy="-32" r="1.5" fill="' + INK + '"/><circle cx="4.5" cy="-32" r="1.5" fill="' + INK + '"/><path d="M-14 0 h8 M6 0 h8" fill="none"/><path d="M-6 -14 l3 4 l3 -4 l3 4 l3 -4" fill="none" stroke="' + C.rose + '" stroke-width="2"/>',
+  sofa: '<rect x="-40" y="-40" width="80" height="24" rx="11" fill="' + C.sky + '"/><rect x="-44" y="-24" width="88" height="20" rx="8" fill="' + C.sky + '"/><rect x="-50" y="-32" width="14" height="28" rx="6" fill="' + C.blue + '"/><rect x="36" y="-32" width="14" height="28" rx="6" fill="' + C.blue + '"/><path d="M-40 -4 v4 M40 -4 v4"/>',
+  moon: '<path d="M8 -18 a18 18 0 1 1 -14 -24 a14 14 0 1 0 14 24z" fill="' + C.butter + '"/><path d="M18 -48 l2 4 l4 1 l-4 2 l-1 4 l-2 -4 l-4 -1 l4 -2z" fill="' + C.butter + '" stroke-width="1.6"/>',
+  piano: '<rect x="-30" y="-52" width="60" height="52" rx="5" fill="' + C.lilac + '"/><rect x="-25" y="-28" width="50" height="9" fill="' + C.white + '"/><path d="M-17 -28 v5 M-9 -28 v5 M-1 -28 v5 M7 -28 v5 M15 -28 v5" fill="none" stroke-width="2"/><rect x="-11" y="-45" width="22" height="11" rx="2" fill="' + C.white + '"/><path d="M-23 0 v-6 M23 0 v-6"/>',
+  tree: '<path d="M-14 0 L-17 -20 H17 L14 0Z" fill="' + C.wood + '"/><path d="M-3 -20 v-26 h6 v26" fill="' + C.wood + '"/><circle cy="-62" r="20" fill="' + C.green + '"/><circle cx="-14" cy="-50" r="12" fill="' + C.green + '"/><circle cx="14" cy="-50" r="12" fill="' + C.green + '"/><circle cx="-5" cy="-66" r="3" fill="' + C.rose + '"/><circle cx="8" cy="-52" r="3" fill="' + C.rose + '"/>',
+  // 단칸방
+  calendar: '<rect x="-17" y="-34" width="34" height="34" rx="2" fill="' + C.white + '"/><rect x="-17" y="-34" width="34" height="9" fill="' + C.rose + '"/><path d="M-9 -38 v7 M9 -38 v7" fill="none"/><path d="M-10 -18 h20 M-10 -10 h20 M-3 -22 v18 M5 -22 v18" fill="none" stroke-width="1.4"/>',
+  socks: '<path d="M-30 -30 q30 6 60 0" fill="none" stroke-width="1.8"/><path d="M-16 -29 v14 q0 6 7 6 h5 v-5 h-5 v-15z" fill="' + C.mint + '"/><path d="M8 -28 v14 q0 6 7 6 h5 v-5 h-5 v-15z" fill="' + C.pink + '"/>',
+  radio: '<rect x="-22" y="-26" width="44" height="26" rx="6" fill="' + C.orange + '"/><circle cx="-8" cy="-13" r="7" fill="' + C.white + '"/><path d="M6 -18 h10 M6 -12 h10 M6 -6 h10" fill="none" stroke-width="1.6"/><path d="M14 -26 l8 -18" fill="none"/>',
+  basket: '<path d="M-20 -22 h40 l-4 22 h-32z" fill="' + C.wood + '"/><path d="M-14 -22 l2 22 M-4 -22 v22 M6 -22 l-1 22 M16 -22 l-3 22" fill="none" stroke-width="1.4"/><path d="M-14 -22 q4 -10 12 -4 q6 -8 14 0" fill="' + C.sky + '"/>',
+  quilt: '<rect x="-34" y="-16" width="68" height="16" rx="6" fill="' + C.pink + '"/><rect x="-30" y="-28" width="26" height="14" rx="6" fill="' + C.white + '"/><circle cx="8" cy="-8" r="2" fill="' + C.rose + '" stroke="none"/><circle cx="20" cy="-8" r="2" fill="' + C.rose + '" stroke="none"/><circle cx="-4" cy="-8" r="2" fill="' + C.rose + '" stroke="none"/>',
+  ramen: '<path d="M-12 0 l-3 -22 h30 l-3 22z" fill="' + C.white + '"/><path d="M-14 -14 h28" fill="none" stroke="' + C.rose + '" stroke-width="3"/><path d="M-4 -24 l10 -16 M2 -24 l12 -14" fill="none"/><path d="M-8 -30 q2 -4 0 -8" fill="none" stroke-width="1.4"/>',
+  // 원룸
+  mirror: '<ellipse cy="-24" rx="15" ry="22" fill="' + C.sky + '"/><ellipse cy="-24" rx="19" ry="26" fill="none" stroke="' + C.gold + '" stroke-width="4"/><path d="M-6 -36 l-4 8 M-1 -38 l-6 12" fill="none" stroke="#fff" stroke-width="2"/>',
+  vase: '<path d="M-26 0 h52" fill="none" stroke-width="3"/><path d="M-7 0 q-6 -10 0 -18 h14 q6 8 0 18z" fill="' + C.sky + '"/><path d="M0 -18 v-12 M-6 -18 l-6 -10 M6 -18 l6 -10" fill="none"/><path d="M0 -38 q-5 0 -5 -6 l5 4 l5 -4 q0 6 -5 6z M-12 -34 q-5 0 -5 -6 l5 4 l5 -4 q0 6 -5 6z M12 -34 q-5 0 -5 -6 l5 4 l5 -4 q0 6 -5 6z" fill="' + C.rose + '"/>',
+  computer: '<rect x="-24" y="-44" width="48" height="32" rx="3" fill="' + C.gray + '"/><rect x="-19" y="-39" width="38" height="22" rx="2" fill="' + C.sky + '"/><path d="M0 -12 v8 M-12 0 h24 l-4 -4 h-16z" fill="' + C.gray + '"/><path d="M-12 -32 h14 M-12 -26 h22" fill="none" stroke-width="1.6"/>',
+  fish: '<path d="M-18 0 h36 q6 -26 -8 -40 h-20 q-14 14 -8 40z" fill="' + C.sky + '" fill-opacity=".8"/><path d="M-14 -40 h28" fill="none"/><path d="M-6 -20 q6 -8 12 0 q-6 8 -12 0z M6 -20 l6 -5 v10z" fill="' + C.orange + '" stroke-width="1.6"/><circle cx="-8" cy="-32" r="2" fill="none" stroke-width="1.4"/>',
+  bed: '<rect x="-40" y="-20" width="80" height="16" rx="4" fill="' + C.wood + '"/><rect x="-40" y="-40" width="10" height="40" rx="3" fill="' + C.wood + '"/><rect x="-28" y="-30" width="66" height="12" rx="6" fill="' + C.lilac + '"/><rect x="-28" y="-34" width="20" height="10" rx="5" fill="' + C.white + '"/><path d="M36 -4 v4" fill="none"/>',
+  cupcake: '<path d="M-10 0 l-3 -14 h26 l-3 14z" fill="' + C.pink + '"/><path d="M-14 -14 q0 -14 14 -16 q14 2 14 16z" fill="' + C.white + '"/><circle cy="-32" r="4" fill="' + C.rose + '"/><path d="M-6 -12 v10 M0 -12 v10 M6 -12 v10" fill="none" stroke-width="1.4"/>',
+  // 작은 내 집
+  bird: '<path d="M-12 -10 q0 -14 14 -14 q12 0 12 12 q0 8 -10 10 h-12z" fill="' + C.sky + '"/><path d="M14 -16 l7 2 l-7 3z" fill="' + C.orange + '"/><circle cx="6" cy="-15" r="1.6" fill="' + INK + '"/><path d="M-4 -12 q6 6 12 0" fill="none"/><path d="M-12 -6 l-8 -6 v10z" fill="' + C.sky + '"/>',
+  chime: '<path d="M0 -60 v10" fill="none"/><path d="M-12 -50 h24 l-4 -6 h-16z" fill="' + C.white + '"/><path d="M-8 -50 v18 M0 -50 v24 M8 -50 v16" fill="none" stroke-width="3" stroke="' + C.sky + '"/><path d="M0 -26 v6" fill="none"/><path d="M-5 -20 h10 v14 h-10z" fill="' + C.pink + '"/>',
+  sunflower: '<path d="M0 0 v-54" fill="none" stroke-width="3"/><path d="M0 -24 q-12 -2 -14 -12 q10 0 14 12 M0 -32 q12 -2 14 -12 q-10 0 -14 12" fill="' + C.green + '"/>' +
+    [0, 40, 80, 120, 160, 200, 240, 280, 320].map(a => '<ellipse cy="-11" rx="4" ry="7" fill="' + C.gold + '" transform="translate(0 -60) rotate(' + a + ')"/>').join('') + '<circle cy="-60" r="7" fill="' + C.brown + '"/>',
+  mailbox: '<path d="M0 0 v-26" fill="none" stroke-width="3"/><rect x="-14" y="-44" width="28" height="18" rx="8" fill="' + C.rose + '"/><path d="M10 -42 v-10 h8 v5 h-8" fill="' + C.butter + '"/>',
+  bike: '<circle cx="-18" cy="-12" r="12" fill="none"/><circle cx="18" cy="-12" r="12" fill="none"/><path d="M-18 -12 l10 -16 h18 l8 16 M-8 -28 l8 16 l10 -16 M-10 -32 h6 M18 -12 l-6 -20 l6 -2" fill="none" stroke="' + C.rose + '" stroke-width="3"/><path d="M-18 -12 l10 -16 h18 l8 16" fill="none" stroke-width="1"/>',
+  tulip: '<path d="M0 0 v-22 M-8 0 v-16 M8 0 v-18" fill="none" stroke-width="2"/><path d="M-6 -22 q0 -10 6 -12 q6 2 6 12 q-6 4 -12 0z" fill="' + C.rose + '"/><path d="M-14 -16 q0 -8 6 -10 q6 2 6 10 q-6 4 -12 0z" fill="' + C.butter + '"/><path d="M2 -18 q0 -8 6 -10 q6 2 6 10 q-6 4 -12 0z" fill="' + C.lilac + '"/>',
+  // 아파트
+  balloon: '<path d="M0 -20 q-4 10 2 20" fill="none" stroke-width="1.6"/><ellipse cy="-36" rx="13" ry="16" fill="' + C.rose + '"/><path d="M-2 -20 h4 l-2 -3z" fill="' + C.rose + '"/><path d="M-6 -44 q2 -4 6 -4" fill="none" stroke="#fff" stroke-width="2"/>',
+  plane: '<path d="M-26 -20 q0 -6 8 -6 h34 q10 0 12 6 q-2 6 -12 6 h-34 q-8 0 -8 -6z" fill="' + C.white + '"/><path d="M-4 -24 l-8 -14 h8 l12 14z M-4 -16 l-6 12 h8 l10 -12z M-24 -22 l-6 -10 h6 l6 8z" fill="' + C.sky + '"/><path d="M14 -22 h6 M6 -22 h4" fill="none" stroke-width="1.6"/>',
+  slide: '<path d="M-30 0 v-44 M-16 0 v-44 M-30 -12 h14 M-30 -24 h14 M-30 -36 h14" fill="none" stroke-width="3"/><path d="M-16 -44 q20 0 30 30 q4 14 16 14 h4 v-6 q-12 0 -16 -14 q-10 -30 -34 -30z" fill="' + C.butter + '"/>',
+  car: '<path d="M-34 -10 v-12 q0 -6 8 -6 l10 -12 h26 l12 12 q12 0 12 8 v10z" fill="' + C.rose + '"/><path d="M-12 -28 l6 -8 h10 v8z M8 -28 v-8 h6 l6 8z" fill="' + C.sky + '"/><circle cx="-20" cy="-8" r="8" fill="' + C.gray + '"/><circle cx="20" cy="-8" r="8" fill="' + C.gray + '"/>',
+  ball: '<circle cy="-12" r="12" fill="' + C.orange + '"/><path d="M-12 -12 h24 M0 -24 v24 M-8 -22 q6 10 0 20 M8 -22 q-6 10 0 20" fill="none" stroke-width="1.6"/>',
+  kitty: '<path d="M10 -4 q14 -2 12 -16" fill="none" stroke-width="5" stroke="' + INK + '"/><path d="M10 -4 q14 -2 12 -16" fill="none" stroke-width="2" stroke="' + C.gray + '"/><path d="M-12 0 q-4 -20 4 -26 h12 q8 6 4 26z" fill="' + C.gray + '"/><circle cy="-32" r="11" fill="' + C.gray + '"/><path d="M-10 -38 l1 -10 l7 6z M10 -38 l-1 -10 l-7 6z" fill="' + C.gray + '"/><circle cx="-4" cy="-32" r="1.5" fill="' + INK + '"/><circle cx="4" cy="-32" r="1.5" fill="' + INK + '"/>',
+  // 마당 있는 땅
+  butterfly: '<path d="M0 -20 q-16 -16 -18 0 q2 8 18 0 q-14 10 -10 16 q6 2 10 -16 q16 -16 18 0 q-2 8 -18 0 q14 10 10 16 q-6 2 -10 -16z" fill="' + C.lilac + '"/><path d="M0 -26 v14 M0 -26 l-4 -6 M0 -26 l4 -6" fill="none" stroke-width="1.6"/>',
+  kite: '<path d="M0 -60 l16 20 l-16 24 l-16 -24z" fill="' + C.butter + '"/><path d="M0 -60 v44 M-16 -40 h32" fill="none" stroke-width="1.4"/><path d="M0 -16 q6 8 0 14 q-6 6 2 14" fill="none" stroke-width="1.4"/><path d="M-4 -6 l8 -2 M-2 6 l8 -2" fill="none" stroke="' + C.rose + '" stroke-width="3"/>',
+  carrot: '<ellipse rx="30" ry="6" fill="' + C.brown + '"/>' + [-18, 0, 18].map(x => '<path d="M' + x + ' -4 q-6 -12 -2 -16 M' + x + ' -4 q0 -14 4 -18 M' + x + ' -4 q6 -10 8 -14" fill="none" stroke="' + INK + '" stroke-width="2"/><path d="M' + (x - 4) + ' -3 h8 l-4 4z" fill="' + C.orange + '"/>').join(''),
+  hen: '<path d="M-18 -18 q-4 -14 6 -12 q-2 -8 6 -6" fill="' + C.white + '"/><ellipse cy="-16" rx="18" ry="14" fill="' + C.white + '"/><circle cx="14" cy="-30" r="9" fill="' + C.white + '"/><path d="M12 -40 q2 -6 6 -2 q4 -2 2 4z" fill="' + C.rose + '"/><path d="M22 -30 l6 2 l-6 2z" fill="' + C.orange + '"/><path d="M20 -24 q2 4 -2 4" fill="' + C.rose + '" stroke-width="1.4"/><circle cx="16" cy="-32" r="1.5" fill="' + INK + '"/><path d="M-4 -2 v4 M4 -2 v4" fill="none" stroke="' + C.orange + '"/>',
+  apple: '<path d="M-20 -18 h40 l-4 18 h-32z" fill="' + C.wood + '"/><path d="M-16 -18 q16 -18 32 0" fill="none" stroke-width="3"/>' + [-10, 0, 10].map(x => '<circle cx="' + x + '" cy="-20" r="6" fill="' + C.rose + '"/>').join(''),
+  daisy: [-22, -8, 6, 20].map((x, k) => '<path d="M' + x + ' 0 v-' + (12 + k % 2 * 6) + '" fill="none" stroke-width="2"/>' + [0, 60, 120, 180, 240, 300].map(a => '<ellipse cy="-5" rx="2.6" ry="4.5" fill="#fff" transform="translate(' + x + ' -' + (14 + k % 2 * 6) + ') rotate(' + a + ')"/>').join('') + '<circle cx="' + x + '" cy="-' + (14 + k % 2 * 6) + '" r="2.6" fill="' + C.gold + '"/>').join(''),
+  // 뒷산
+  rainbow: '<path d="M-46 0 a46 46 0 0 1 92 0" fill="none" stroke="' + C.rose + '" stroke-width="7"/><path d="M-38 0 a38 38 0 0 1 76 0" fill="none" stroke="' + C.butter + '" stroke-width="7"/><path d="M-30 0 a30 30 0 0 1 60 0" fill="none" stroke="' + C.mint + '" stroke-width="7"/><path d="M-22 0 a22 22 0 0 1 44 0" fill="none" stroke="' + C.sky + '" stroke-width="7"/>',
+  cloud: '<path d="M-26 0 q-12 0 -10 -12 q2 -10 12 -8 q4 -14 20 -10 q12 -6 18 6 q14 0 12 14z" fill="' + C.white + '"/>',
+  tent: '<path d="M-34 0 L0 -46 L34 0z" fill="' + C.orange + '"/><path d="M0 -46 L-10 0 h20z" fill="' + C.butter + '"/><path d="M0 -46 l-4 -8 M0 -46 l4 -8" fill="none"/>',
+  deer: '<path d="M-14 -22 v22 M-6 -22 v22 M10 -22 v22 M16 -22 v22" fill="none" stroke-width="3"/><ellipse cy="-26" rx="20" ry="11" fill="' + C.wood + '"/><circle cx="-8" cy="-28" r="2" fill="#fff" stroke="none"/><circle cx="2" cy="-30" r="2" fill="#fff" stroke="none"/>' +
+    '<path d="M14 -30 l6 -16" fill="none" stroke-width="7" stroke="' + INK + '"/><path d="M14 -30 l6 -16" fill="none" stroke-width="3" stroke="' + C.wood + '"/><ellipse cx="24" cy="-48" rx="8" ry="7" fill="' + C.wood + '"/><path d="M20 -54 l-4 -10 l-4 2 M20 -56 l2 -10 M28 -54 l4 -10 l4 2" fill="none" stroke-width="2"/><circle cx="26" cy="-49" r="1.5" fill="' + INK + '"/>',
+  fire: '<path d="M-18 0 l36 -8 M-18 -8 l36 8" fill="none" stroke="' + INK + '" stroke-width="8"/><path d="M-18 0 l36 -8 M-18 -8 l36 8" fill="none" stroke="' + C.brown + '" stroke-width="4"/><path d="M0 -8 q-14 -8 -6 -22 q2 8 6 6 q-2 -10 6 -16 q0 10 6 14 q4 12 -12 18z" fill="' + C.orange + '"/><path d="M0 -10 q-6 -4 -2 -10 q2 4 4 2 q4 4 -2 8z" fill="' + C.butter + '" stroke-width="1.6"/>',
+  mushroom: '<path d="M-6 0 v-12 h12 v12z" fill="' + C.white + '"/><path d="M-18 -12 q0 -18 18 -18 q18 0 18 18z" fill="' + C.rose + '"/><circle cx="-8" cy="-20" r="3" fill="#fff" stroke="none"/><circle cx="6" cy="-24" r="2.5" fill="#fff" stroke="none"/><circle cx="10" cy="-16" r="2" fill="#fff" stroke="none"/>',
+  // 우리 마을
+  fireworks: [[-20, -30, C.rose], [16, -40, C.gold], [0, -14, C.lilac]].map(([x, y, c]) => '<g transform="translate(' + x + ' ' + y + ')">' + [0, 45, 90, 135, 180, 225, 270, 315].map(a => '<path d="M0 -5 v-8" transform="rotate(' + a + ')" fill="none" stroke="' + c + '" stroke-width="3"/>').join('') + '<circle r="2.5" fill="' + c + '" stroke="none"/></g>').join(''),
+  dove: '<path d="M-16 -16 q4 -10 16 -8 q10 -8 14 0 l6 2 l-6 2 q-4 10 -18 10 h-14 l-6 4 l2 -8z" fill="' + C.white + '"/><path d="M-2 -20 q4 -16 18 -18 q-6 12 -10 18" fill="' + C.white + '"/><circle cx="12" cy="-22" r="1.4" fill="' + INK + '"/><path d="M-8 -10 q-6 4 -2 8 M-4 -10 q-2 6 2 8" fill="none" stroke="' + C.green + '" stroke-width="2"/>',
+  fountain: '<ellipse rx="34" ry="7" fill="' + C.gray + '"/><path d="M-34 0 v-8 h68 v8" fill="' + C.gray + '"/><ellipse cy="-8" rx="34" ry="6" fill="' + C.sky + '"/><path d="M-4 -8 v-20 h8 v20z" fill="' + C.gray + '"/><ellipse cy="-30" rx="14" ry="4" fill="' + C.gray + '"/><path d="M0 -32 q-4 -16 0 -20 q4 4 0 20 M-4 -32 q-16 -6 -18 18 M4 -32 q16 -6 18 18" fill="none" stroke="' + C.blue + '" stroke-width="2.4"/>',
+  carousel: '<path d="M-30 -52 L0 -70 L30 -52z" fill="' + C.rose + '"/><path d="M-30 -52 q5 6 10 0 q5 6 10 0 q5 6 10 0 q5 6 10 0 q5 6 10 0 q5 6 10 0" fill="' + C.butter + '"/><path d="M-22 -50 v44 M0 -50 v44 M22 -50 v44" fill="none" stroke-width="2"/><rect x="-32" y="-6" width="64" height="6" rx="2" fill="' + C.lilac + '"/><path d="M-8 -26 q2 -8 10 -6 h6 l4 -4 v8 q-2 8 -10 8 h-8z" fill="' + C.white + '"/><path d="M0 -70 v-6" fill="none"/><path d="M0 -76 l6 2 l-6 2" fill="' + C.rose + '" stroke-width="1.4"/>',
+  bread: '<path d="M-22 0 q-4 -14 10 -18 q4 -8 12 -8 q8 0 12 8 q14 4 10 18z" fill="' + C.gold + '"/><path d="M-10 -16 q2 8 -2 14 M0 -22 q2 10 0 20 M10 -16 q-2 8 2 14" fill="none" stroke-width="1.6"/>',
+  gift: '<rect x="-16" y="-24" width="32" height="24" rx="2" fill="' + C.sky + '"/><rect x="-18" y="-30" width="36" height="8" rx="2" fill="' + C.sky + '"/><path d="M0 -30 v30" fill="none" stroke="' + C.rose + '" stroke-width="5"/><path d="M0 -30 q-12 -12 -12 -2 q0 4 12 2 q12 2 12 -2 q0 -10 -12 2z" fill="' + C.rose + '"/>'
+};
+
+// Where things stand, in the room's 340 × 330 picture: a back row against the wall at y=252,
+// a front row near the bottom, and two high spots for things on the wall or in the sky.
+const SPOT = { A: [52, 140], B: [292, 128], C: [164, 252], D: [210, 252], E: [116, 316], F: [228, 318] };
+// Clothes are worn one at a time. Room things (at) show in every home; a home's own things
+// (home: index) show only there and can be bought once the friend has lived there.
+const SHOP = [
+  { id: 'ribbon', n: '리본', p: 80 }, { id: 'cap', n: '모자', p: 120 }, { id: 'flower', n: '꽃핀', p: 150 }, { id: 'scarf', n: '목도리', p: 200 },
+  { id: 'glasses', n: '안경', p: 250 }, { id: 'phones', n: '헤드폰', p: 300 }, { id: 'shades', n: '선글라스', p: 400 }, { id: 'tophat', n: '신사 모자', p: 500 },
+  { id: 'crown', n: '왕관', p: 600 }, { id: 'grad', n: '학사모', p: 700 },
+  { id: 'tea', n: '따뜻한 차', p: 60, at: [62, 312] }, { id: 'plant', n: '화분', p: 100, at: [14, 254] }, { id: 'books', n: '책', p: 150, at: [30, 310] },
+  { id: 'candle', n: '촛불', p: 200, at: [270, 316] }, { id: 'picture', n: '그림', p: 250, at: [118, 254] }, { id: 'teddy', n: '곰 인형', p: 300, at: [306, 314] },
+  { id: 'sofa', n: '소파', p: 400, at: [274, 256] }, { id: 'moon', n: '달 조명', p: 500, at: [178, 112] }, { id: 'piano', n: '피아노', p: 800, at: [64, 254] },
+  { id: 'tree', n: '나무', p: 1000, at: [328, 252] },
+  ...[
+    [['calendar', '달력', 50], ['socks', '양말 빨래', 60], ['radio', '라디오', 80], ['basket', '빨래 바구니', 90], ['quilt', '이불', 120], ['ramen', '컵라면', 40]],
+    [['mirror', '거울', 150], ['vase', '꽃병', 120], ['computer', '컴퓨터', 250], ['fish', '어항', 200], ['bed', '침대', 300], ['cupcake', '컵케이크', 100]],
+    [['bird', '작은 새', 150], ['chime', '풍경', 200], ['sunflower', '해바라기', 250], ['mailbox', '우체통', 300], ['bike', '자전거', 400], ['tulip', '튤립', 150]],
+    [['balloon', '풍선', 200], ['plane', '비행기', 300], ['slide', '미끄럼틀', 500], ['car', '자동차', 600], ['ball', '농구공', 250], ['kitty', '길고양이', 300]],
+    [['butterfly', '나비', 250], ['kite', '연', 400], ['carrot', '텃밭', 500], ['hen', '닭', 600], ['apple', '사과', 450], ['daisy', '꽃밭', 300]],
+    [['rainbow', '무지개', 600], ['cloud', '구름', 300], ['tent', '텐트', 800], ['deer', '사슴', 900], ['fire', '모닥불', 500], ['mushroom', '버섯', 400]],
+    [['fireworks', '불꽃놀이', 1200], ['dove', '비둘기', 600], ['fountain', '분수', 1500], ['carousel', '회전목마', 1800], ['bread', '빵', 700], ['gift', '선물', 900]]
+  ].flatMap((set, home) => set.map(([id, n, p], k) => ({ id, n, p, home, at: SPOT['ABCDEF'[k]] })))
+];
+const isThing = it => !!it.at;
+
+// Homes the friend moves through, bought in order with stars. Each is a background picture;
+// the floor or grass starts at y=252.
+const HOMES = [
+  { n: '단칸방 (월세)', to: '단칸방으로', p: 0 }, { n: '원룸 (전세)', to: '원룸 전세로', p: 400 }, { n: '작은 내 집', to: '작은 내 집으로', p: 1200 },
+  { n: '아파트', to: '아파트로', p: 2500 }, { n: '마당 있는 땅', to: '마당 있는 땅으로', p: 4000 }, { n: '뒷산', to: '뒷산으로', p: 6500 },
+  { n: '우리 마을', to: '우리 마을로', p: 10000 }
+];
+const FLOOR = fill => '<rect x="-5" y="250" width="350" height="90" fill="' + fill + '"/><path d="M-5 250 q85 -3 175 0 t175 0" fill="none"/>';
+const OUT = (sky) => '<rect x="-5" y="-5" width="350" height="350" fill="' + (sky || '#eef7fc') + '" stroke="none"/><g transform="translate(300 64)"><circle r="15" fill="' + C.butter + '"/>' +
+  [0, 45, 90, 135, 180, 225, 270, 315].map(a => '<path d="M0 -21 v-6" transform="rotate(' + a + ')" fill="none"/>').join('') + '</g>';
+const HOUSE = (x, y, s, wall, roof) => '<g transform="translate(' + x + ' ' + y + ') scale(' + s + ')"><rect x="-40" y="-56" width="80" height="56" fill="' + wall + '"/><path d="M-50 -54 L0 -92 L50 -54Z" fill="' + roof + '"/>' +
+  '<rect x="-10" y="-30" width="20" height="30" rx="3" fill="' + C.wood + '"/><rect x="18" y="-44" width="14" height="14" fill="' + C.sky + '"/><rect x="-32" y="-44" width="14" height="14" fill="' + C.sky + '"/></g>';
+const BUSH = (x, y, s) => '<g transform="translate(' + x + ' ' + y + ') scale(' + (s || 1) + ')"><path d="M-20 0 q-6 -16 8 -18 q4 -12 16 -6 q12 -4 14 10 q8 4 2 14z" fill="' + C.green + '"/></g>';
+const SCENES = [
+  // 단칸방: a bare wall, a small window, a hanging bulb, a crack and floorboards.
+  '<rect x="-5" y="-5" width="350" height="350" fill="#f6efe2" stroke="none"/>' + FLOOR('#e9d6b8') + '<path d="M40 290 h60 M180 300 h70 M90 316 h50" fill="none" stroke-width="1.6"/>' +
+    '<rect x="214" y="150" width="56" height="48" rx="3" fill="' + C.sky + '"/><path d="M242 150 v48 M214 174 h56" fill="none"/><path d="M316 -5 v86" fill="none" stroke-width="1.6"/><circle cx="316" cy="90" r="8" fill="' + C.butter + '"/>' +
+    '<path d="M26 170 l8 10 l-5 8 l8 12" fill="none" stroke-width="1.8"/>',
+  // 원룸 전세: striped wallpaper, a big window with curtains, a clock.
+  '<rect x="-5" y="-5" width="350" height="350" fill="#fdf3ea" stroke="none"/>' + [20, 60, 100, 140, 180, 220, 260, 300].map(x => '<path d="M' + x + ' 0 v250" stroke="#f4e1d2" stroke-width="10"/>').join('') + FLOOR('#ecd3b2') +
+    '<rect x="196" y="136" width="80" height="66" rx="5" fill="' + C.sky + '"/><path d="M236 136 v66 M196 169 h80" fill="none"/><path d="M188 130 q10 36 0 76 h14 q-6 -40 0 -76z M284 130 q-10 36 0 76 h-14 q6 -40 0 -76z" fill="' + C.pink + '"/><path d="M184 130 h104" fill="none"/>' +
+    '<circle cx="40" cy="168" r="15" fill="#fff"/><path d="M40 168 v-9 M40 168 l6 4" fill="none"/>',
+  // 작은 내 집: outdoors, in front of our own little house.
+  OUT() + '<path d="M-5 250 h350 v90 h-350z" fill="#e3f2d9"/><path d="M-5 250 q85 -4 175 0 t175 0" fill="none"/>' + HOUSE(232, 250, 1, C.peach, C.pink) + BUSH(320, 252) + BUSH(150, 252, .8) +
+    '<path d="M60 90 q-10 0 -8 -10 q2 -8 10 -6 q4 -10 16 -6 q10 -4 14 6 q10 0 8 10z" fill="#fff"/>',
+  // 아파트: tall buildings with rows of windows.
+  OUT() + '<rect x="196" y="70" width="90" height="182" fill="' + C.gray + '"/><rect x="86" y="140" width="60" height="112" fill="#efe9df"/>' +
+    [92, 124, 156, 188, 220].map(y => '<rect x="208" y="' + y + '" width="16" height="14" fill="' + C.sky + '"/><rect x="234" y="' + y + '" width="16" height="14" fill="' + C.sky + '"/><rect x="260" y="' + y + '" width="16" height="14" fill="' + C.butter + '"/>').join('') +
+    [158, 188, 218].map(y => '<rect x="96" y="' + y + '" width="14" height="12" fill="' + C.sky + '"/><rect x="122" y="' + y + '" width="14" height="12" fill="' + C.sky + '"/>').join('') +
+    '<path d="M-5 250 h350 v90 h-350z" fill="#e8ece6"/><path d="M-5 250 q85 -4 175 0 t175 0" fill="none"/><path d="M-5 286 h350" fill="none" stroke-dasharray="14 10" stroke-width="1.6"/>',
+  // 마당 있는 땅: a house with a fenced garden.
+  OUT() + '<path d="M-5 236 h350 v100 h-350z" fill="#e3f2d9"/><path d="M-5 236 q85 -4 175 0 t175 0" fill="none"/>' + HOUSE(250, 236, .9, C.peach, C.pink) +
+    '<path d="M-5 226 h190 M-5 238 h190" fill="none"/>' + [6, 26, 46, 66, 86, 106, 126, 146, 166].map(x => '<path d="M' + x + ' 246 v-30 l4 -5 l4 5 v30z" fill="#fff"/>').join('') + BUSH(320, 240),
+  // 뒷산: mountains behind the house, trees around.
+  OUT() + '<path d="M-20 252 L80 110 L170 252Z" fill="#d6ebc8"/><path d="M110 252 L230 80 L360 252Z" fill="' + C.mint + '"/><path d="M210 108 L230 80 L250 108 q-10 8 -20 0 q-10 8 -20 0z" fill="#fff"/>' +
+    '<path d="M-5 250 h350 v90 h-350z" fill="#e3f2d9"/><path d="M-5 250 q85 -4 175 0 t175 0" fill="none"/>' + HOUSE(270, 250, .7, C.peach, C.pink) +
+    [[24, 250], [320, 252]].map(([x, y]) => '<g transform="translate(' + x + ' ' + y + ')"><path d="M-3 0 v-16 h6 v16" fill="' + C.wood + '"/><path d="M0 -60 l16 30 h-8 l12 16 h-40 l12 -16 h-8z" fill="' + C.green + '"/></g>').join(''),
+  // 우리 마을: mountains, a few houses and a little church.
+  OUT() + '<path d="M-20 252 L70 130 L160 252Z" fill="#d6ebc8"/><path d="M120 252 L240 100 L360 252Z" fill="' + C.mint + '"/>' +
+    '<path d="M-5 250 h350 v90 h-350z" fill="#e3f2d9"/><path d="M-5 250 q85 -4 175 0 t175 0" fill="none"/>' +
+    HOUSE(28, 250, .55, C.peach, C.pink) + HOUSE(320, 250, .55, '#e6f0d0', C.orange) +
+    '<g transform="translate(240 250)"><rect x="-24" y="-60" width="48" height="60" fill="#fff"/><path d="M-30 -58 L0 -90 L30 -58Z" fill="' + C.sky + '"/><path d="M0 -90 v-20 M-7 -102 h14" fill="none" stroke-width="3"/>' +
+    '<path d="M-8 0 v-20 q8 -10 16 0 v20z" fill="' + C.wood + '"/><circle cy="-42" r="7" fill="' + C.butter + '"/></g>'
+];
+
+const put = (id, [x, y]) => '<g transform="translate(' + x + ' ' + y + ')">' + T[id] + '</g>';
+function sceneSVG(home, owned) {
+  const things = SHOP.filter(it => isThing(it) && owned.includes(it.id) && (it.home === undefined || it.home === home)).sort((a, b) => a.at[1] - b.at[1]);
+  return '<svg viewBox="0 0 340 330" preserveAspectRatio="xMidYMax slice" aria-hidden="true"><defs>' + WOB('wh') + '</defs><g filter="url(#wh)" ' + PEN + '>' +
+    SCENES[home] + things.map(it => put(it.id, it.at)).join('') + '</g></svg>';
+}
+
+// Shop pictures: each thing or piece of clothing on its own, framed to its drawn size.
+const thumbBox = {};
+function thumbSVG(it) {
+  const inner = isThing(it) ? T[it.id] : WEAR[it.id][1];
+  if (!thumbBox[it.id]) {
+    const probe = $('probe');
+    probe.innerHTML = '<g ' + PEN + '>' + inner + '</g>';
+    const b = probe.firstChild.getBBox(), pad = 4;
+    if (b.width) thumbBox[it.id] = [b.x - pad, b.y - pad, b.width + pad * 2, b.height + pad * 2].join(' ');
+  }
+  return '<svg viewBox="' + (thumbBox[it.id] || '-30 -60 60 64') + '" aria-hidden="true"><g ' + PEN + '>' + inner + '</g></svg>';
+}
+
+const STAGES = [[0, '🥚 아기 친구'], [7, '🌱 꼬마 친구'], [30, '🌿 좋은 친구'], [100, '🌳 단짝 친구']];
+const friend = () => settings.friend || (settings.friend = { pet: 'cat', name: '', spent: 0, owned: [], wear: '', stage: 0, home: 0 });
+const starsLeft = () => Math.max(0, Math.floor(Object.values(records).reduce((a, r) => a + usedTotal(r.acts), 0)) - friend().spent);
+
+function friendLine() {
+  const m = usedTotal((records[dateKey(new Date())] || {}).acts), h = new Date().getHours();
+  if (timer) return timer.act + ' 하는 중이구나! 옆에서 조용히 응원할게.';
+  if (m >= 1) return '오늘 벌써 ' + fmt(m) + '을 너를 위해 썼네! 고마워. ⭐';
+  const lines = h < 5 ? ['늦은 밤이네. 오늘도 수고 많았어.', '푹 자고 내일 또 만나자.']
+    : sched().off && !settings.noFixed ? ['오늘은 쉬는 날이네! 마음 편히 보내.', '쉬는 날에도 와 줘서 반가워.']
+    : h < 12 ? ['좋은 아침! 오늘도 와 줘서 반가워.', '오늘 하루도 천천히 가 보자.']
+    : h < 18 ? ['오늘 하루 어때? 잠깐 쉬어 가도 좋아.', '바쁜 하루 속에서 보러 와 줘서 고마워.']
+    : ['오늘도 수고 많았어. 이제 나의 시간이야.', '5분만이라도 너를 위한 시간 써 볼까?'];
+  return lines[new Date().getDate() % lines.length];
+}
+
+function renderFriend() {
+  const f = friend(), name = f.name || (PETS[f.pet] || PETS.cat)[1];
+  const days = Object.values(records).filter(r => usedTotal(r.acts) > 0).length;
+  const stage = STAGES.reduce((a, [d], i) => days >= d ? i : a, 0);
+  const home = f.home || 0, maxHome = Math.max(f.maxHome || 0, home);
+  // Redraw the pictures only when something in them changed.
+  const petKey = f.pet + '|' + f.wear, sceneKey = home + '|' + f.owned.join();
+  if ($('petFace').dataset.key !== petKey) { $('petFace').innerHTML = sideSVG(f.pet, f.wear); $('petFace').dataset.key = petKey; }
+  if ($('scene').dataset.key !== sceneKey) { $('scene').innerHTML = sceneSVG(home, f.owned); $('scene').dataset.key = sceneKey; }
+  $('stars').textContent = $('roomStars').textContent = '⭐ ' + starsLeft().toLocaleString();
+  $('friendDays').textContent = STAGES[stage][1] + ' · 함께한 날 ' + days + '일';
+  $('friendTitle').textContent = name + ' · 🏠 ' + HOMES[home].n;
+  $('friendSay').textContent = friendLine();
+  if (stage > (f.stage || 0)) {
+    f.stage = stage; store('ft.settings', settings);
+    toast('🎉 이제 ' + STAGES[stage][1] + '예요!'); hop();
+  }
+  const homes = $('homes');
+  homes.innerHTML = '';
+  HOMES.forEach((h, i) => {
+    const b = document.createElement('button');
+    b.className = i === home ? 'here' : i === maxHome + 1 ? 'next' : i > maxHome ? 'locked' : '';
+    b.innerHTML = '<span></span><small></small>';
+    b.firstChild.textContent = (i > maxHome + 1 ? '🔒 ' : '') + h.n;
+    b.lastChild.textContent = i === home ? '지금 있는 곳' : i <= maxHome ? '놀러 가기' : '⭐ ' + h.p.toLocaleString() + (i === maxHome + 1 ? ' 이사하기' : '');
+    if (i !== home && i <= maxHome) b.onclick = () => { f.home = i; store('ft.settings', settings); renderFriend(); hop(); };
+    if (i === maxHome + 1) b.onclick = () => moveHome(i);
+    homes.appendChild(b);
+  });
+  if ($('shopBox').open) renderShop();
+  for (const c of $('petKinds').children) c.classList.toggle('on', c.dataset.pet === (f.pet || 'cat'));
+}
+
+// The shop is drawn only while it is open, since its pictures are measured on screen.
+function renderShop() {
+  const f = friend(), home = f.home || 0, maxHome = Math.max(f.maxHome || 0, home), shop = $('shop');
+  shop.innerHTML = '';
+  const section = (title, items, note) => {
+    const h = document.createElement('h3');
+    h.textContent = title;
+    shop.appendChild(h);
+    if (note) { const p = document.createElement('p'); p.textContent = note; shop.appendChild(p); }
+    for (const it of items) {
+      const b = document.createElement('button'), own = f.owned.includes(it.id);
+      b.className = own ? 'owned' + (f.wear === it.id ? ' on' : '') : '';
+      b.innerHTML = thumbSVG(it) + '<span></span><small></small>';
+      b.children[1].textContent = it.n;
+      b.children[2].textContent = !own ? '⭐ ' + it.p.toLocaleString() : isThing(it) ? '놓여 있어요' : f.wear === it.id ? '입는 중' : '입히기';
+      b.onclick = () => shopTap(it);
+      shop.appendChild(b);
+    }
+  };
+  section('🏡 ' + HOMES[home].n + ' 꾸미기', SHOP.filter(i => i.home === home), '이 집에만 놓여요.' + (maxHome < HOMES.length - 1 ? ' 다음 집으로 이사하면 새 물건이 나와요.' : ''));
+  section('🧸 어느 집에서나', SHOP.filter(i => isThing(i) && i.home === undefined));
+  section('👕 옷', SHOP.filter(i => !isThing(i)));
+}
+$('shopBox').addEventListener('toggle', () => { if ($('shopBox').open) renderShop(); });
+
+async function moveHome(i) {
+  const f = friend(), h = HOMES[i], left = starsLeft();
+  if (left < h.p) { toast('별이 ' + (h.p - left).toLocaleString() + '개 더 필요해요'); return; }
+  if (!await ask({ title: '🏠 ' + h.to + ' 이사할까요?', text: '별 ⭐ ' + h.p.toLocaleString() + '개를 써요. 지금 가진 별은 ' + left.toLocaleString() + '개예요.', yes: '이사하기' })) return;
+  f.spent += h.p; f.home = i; f.maxHome = i;
+  store('ft.settings', settings);
+  renderFriend(); hop();
+  toast('🎉 ' + h.to + ' 이사했어요!');
+  $('friendSay').textContent = '우와, 새집이다! 고마워!';
+}
+
+async function shopTap(it) {
+  const f = friend();
+  if (f.owned.includes(it.id)) {
+    if (isThing(it)) return;
+    f.wear = f.wear === it.id ? '' : it.id;
+  } else {
+    const left = starsLeft();
+    if (left < it.p) { toast('별이 ' + (it.p - left) + '개 더 필요해요'); return; }
+    if (!await ask({ title: eul(it.n) + ' 살까요?', text: '별 ⭐ ' + it.p.toLocaleString() + '개를 써요. 지금 가진 별은 ' + left.toLocaleString() + '개예요.', yes: '사기' })) return;
+    f.spent += it.p; f.owned.push(it.id);
+    if (!isThing(it)) f.wear = it.id;
+    toast(it.n + ' 샀어요!');
+  }
+  store('ft.settings', settings);
+  renderFriend(); hop();
+}
+
+// A little "+26⭐" that floats up from the star badge when minutes are recorded.
+function starPop(n) {
+  if (!n || settings.showFriend === false) return;
+  const el = document.createElement('div');
+  el.className = 'starpop hand'; el.textContent = '+' + n + '⭐';
+  $('room').appendChild(el);
+  setTimeout(() => el.remove(), 1700);
+}
+
+// The app's own question box instead of the browser's confirm/prompt. Resolves to true/false,
+// or to the typed number when a number field is asked for (null on 취소).
+// A text field is asked for with `input` (its starting value) and an optional `placeholder`.
+function ask({ title, text, yes, no, number, input, placeholder }) {
+  const field = number !== undefined || input !== undefined;
+  return new Promise(resolve => {
+    $('askTitle').textContent = title || '';
+    $('askText').textContent = text || '';
+    $('askBody').innerHTML = number !== undefined ? '<input type="number" id="askNum" inputmode="decimal" min="0" step="1">'
+      : input !== undefined ? '<input type="text" id="askNum" maxlength="15">' : '';
+    if (field) { $('askNum').value = number !== undefined ? number : input; $('askNum').placeholder = placeholder || ''; }
+    $('askYes').textContent = yes || '확인';
+    $('askNo').textContent = no || '취소';
+    const done = v => { $('askDlg').close(); resolve(v); };
+    $('askYes').onclick = () => done(field ? $('askNum').value : true);
+    $('askNo').onclick = () => done(field ? null : false);
+    $('askDlg').oncancel = e => { e.preventDefault(); done(field ? null : false); };
+    $('askDlg').showModal();
+    // Typing a name needs the keyboard; anything else starts on the main button, not a field.
+    if (field) $('askNum').onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); $('askYes').click(); } };
+    (input !== undefined ? $('askNum') : $('askYes')).focus();
+  });
+}
+
+function hop() {
+  const p = $('pet');
+  p.classList.remove('hop'); void p.offsetWidth; p.classList.add('hop');
+}
+
+const PET_CHEERS = ['헤헤, 간지러워!', '오늘도 같이 있어 줘서 좋아.', '천천히 해도 괜찮아.', '너는 생각보다 잘하고 있어.'];
+$('pet').onclick = () => { hop(); $('friendSay').textContent = PET_CHEERS[Math.floor(Math.random() * PET_CHEERS.length)]; };
+for (const [key, [, kind]] of Object.entries(PETS)) {
+  const c = document.createElement('button');
+  c.className = 'chip'; c.dataset.pet = key; c.innerHTML = sideSVG(key) + '<span></span>';
+  c.lastChild.textContent = kind;
+  c.onclick = () => { friend().pet = key; store('ft.settings', settings); renderFriend(); hop(); };
+  $('petKinds').appendChild(c);
+}
+$('petName').value = friend().name;
+$('petName').addEventListener('input', () => { friend().name = $('petName').value.trim(); store('ft.settings', settings); renderFriend(); });
+
+function alertGoal() {
+  if (settings.alert === 'vibrate' && navigator.vibrate) navigator.vibrate([300, 150, 300]);
+  if (settings.alert === 'sound' && audio) {
+    try {
+      audio.resume();
+      [0, 0.35].forEach(d => {
+        const o = audio.createOscillator(), g = audio.createGain();
+        o.frequency.value = 880; o.connect(g); g.connect(audio.destination);
+        g.gain.setValueAtTime(0.2, audio.currentTime + d);
+        g.gain.exponentialRampToValueAtTime(0.001, audio.currentTime + d + 0.3);
+        o.start(audio.currentTime + d); o.stop(audio.currentTime + d + 0.3);
+      });
+    } catch (e) {}
+  }
+  toast('목표 ' + (timer ? focusGoal(timer.act) : settings.goal) + '분 달성! 🎉 계속하거나 멈추세요');
+}
+
+// A task's own focus goal if it has one (휴식 starts with none), otherwise the default.
+const focusGoal = name => { const g = (settings.focusGoals || {})[name]; return g === undefined ? +settings.goal : +g; };
+
+// Runs every second while a timer is on: updates the focus banner and the running row.
+function tick() {
+  $('focus').hidden = !timer;
+  if (!timer !== !wakeLock) syncWakeLock();
+  if (!timer) return;
+  const m = elapsedMin(), goal = focusGoal(timer.act);
+  $('fName').textContent = '● ' + timer.act;
+  $('fTime').textContent = clock(m);
+  $('fBarWrap').hidden = !goal;
+  $('fBar').style.width = goal ? Math.min(100, m / goal * 100) + '%' : '0';
+  $('fGoal').textContent = !goal ? '' : m < goal ? '목표 ' + goal + '분까지 ' + Math.ceil(goal - m) + '분' : '목표 ' + goal + '분 달성 🎉';
+  const today = (records[dateKey(new Date())] || {}).acts;
+  $('usedSum').textContent = fmt(usedTotal(today) + (timer.date === dateKey(new Date()) ? m : 0));
+  const row = document.querySelector('.task.running');
+  if (row) {
+    const name = row.dataset.name, total = taskMinutes(name), goal2 = +(settings.goals || {})[name] || 0;
+    row.querySelector('.ttime').textContent = taskTime(name, total, true);
+    const bar = row.querySelector('.tbar');
+    if (bar && goal2) bar.style.width = Math.min(100, total / goal2 * 100) + '%';
+  }
+  if (goal && m >= goal && !timer.alerted) {
+    timer.alerted = true; store('ft.timer', timer); syncStatusNotif();
+    if (!document.hidden) alertGoal();
+  }
+}
+setInterval(tick, 1000);
+
+// Modes only rename things: the arithmetic is the same busy block plus travel either side.
+const MODES = {
+  work: { icon: '💼', name: '직장인', sub: '근무 · 출퇴근', busy: '근무', go: '출퇴근', start: '출근', end: '퇴근', in: '출근길', out: '퇴근길',
+    am: '오전 반차', pm: '오후 반차', off: '연차·쉬는 날', ovHint: '반차·연차·조퇴처럼' },
+  student: { icon: '🎒', name: '학생', sub: '수업 · 등하교', busy: '수업', go: '등하교', start: '등교', end: '하교', in: '등굣길', out: '하굣길',
+    am: '오전 수업 없음', pm: '오후 수업 없음', off: '방학·쉬는 날', ovHint: '단축 수업·방학처럼',
+    acts: ['국어', '영어', '수학', '독서', '휴식'], times: { workStart: '08:30', workEnd: '16:30', commuteIn: 20, commuteOut: 20 } },
+  exam: { icon: '📚', name: '수험생·공부', sub: '학원·독서실', busy: '학원·독서실', go: '오가는 길', start: '시작', end: '끝', in: '가는 길', out: '오는 길',
+    am: '오전 쉼', pm: '오후 쉼', off: '쉬는 날', ovHint: '일찍 끝나는 날·쉬는 날처럼',
+    acts: ['문제 풀이', '암기', '복습', '운동', '휴식'], times: { workStart: '13:00', workEnd: '22:00', commuteIn: 20, commuteOut: 20 } },
+  trip: { icon: '🧳', name: '여행·특별한 날', sub: '일정 · 이동', busy: '일정', go: '이동', start: '일정 시작', end: '일정 끝', in: '가는 길', out: '오는 길',
+    am: '오전 자유', pm: '오후 자유', off: '하루 종일 자유', ovHint: '여행·행사처럼',
+    times: { workStart: '10:00', workEnd: '18:00', commuteIn: 0, commuteOut: 0 } }
+};
+const MODE_ICONS = ['✍️', '🍼', '💪', '⛪', '🏥', '🎨', '💻', '🛒', '🚗', '🌿'];
+
+// The user's own modes are kept as { id, icon, name, busy, go } and keyed "c-<id>".
+function customMode(c) {
+  const busy = c.busy || c.name, go = c.go || '이동';
+  return { icon: c.icon, name: c.name, sub: busy + ' · ' + go, custom: true, busy, go, start: busy + ' 시작', end: busy + ' 끝',
+    in: '가는 길', out: '오는 길', am: '오전만 쉼', pm: '오후만 쉼', off: '쉬는 날', ovHint: '평소와 다른 날처럼' };
+}
+const allModes = () => Object.entries(MODES).concat((settings.customModes || []).map(c => ['c-' + c.id, customMode(c)]));
+const getMode = key => (allModes().find(([k]) => k === key) || [null, MODES.work])[1];
+
+// Labels for a mode (today's mode when none is given).
+function L(mode) {
+  return getMode(mode || (overrides[dateKey(new Date())] || {}).mode || settings.mode);
+}
+
+// Before modes could be added, "직접 정하기" was a single mode named by two fields; carry it over.
+if (settings.mode === 'custom' || Object.values(overrides).some(o => o.mode === 'custom')) {
+  const c = { id: 'old', icon: '✍️', name: settings.customBusy || '직접 정하기', busy: settings.customBusy || '', go: settings.customGo || '' };
+  settings.customModes = (settings.customModes || []).concat(c);
+  if (settings.mode === 'custom') settings.mode = 'c-old';
+  if (settings.modeTimes.custom) { settings.modeTimes['c-old'] = settings.modeTimes.custom; delete settings.modeTimes.custom; }
+  for (const o of Object.values(overrides)) if (o.mode === 'custom') o.mode = 'c-old';
+  store('ft.settings', settings); store('ft.overrides', overrides);
+}
+
+function applyMode() {
+  const l = L();
+  for (const el of document.querySelectorAll('[data-l]')) if (l[el.dataset.l]) el.textContent = l[el.dataset.l];
+  $('welcome').hidden = !!settings.mode;
+  for (const box of [$('welcomeModes'), $('dayModes')]) {
+    const welcome = box === $('welcomeModes');
+    box.innerHTML = '';
+    for (const [key, m] of allModes()) {
+      if (key === 'trip') continue;
+      const wrap = document.createElement('div'), b = document.createElement('button');
+      wrap.className = 'mwrap';
+      b.className = key === settings.mode ? 'on' : '';
+      b.innerHTML = '<span></span><small></small>';
+      b.firstChild.textContent = m.icon + ' ' + m.name;
+      b.lastChild.textContent = m.sub;
+      b.onclick = () => chooseMode(key, welcome);
+      wrap.appendChild(b);
+      if (m.custom && !welcome) {
+        const del = document.createElement('button');
+        del.className = 'mdel'; del.textContent = '✕';
+        del.setAttribute('aria-label', m.name + ' 모드 지우기');
+        del.onclick = e => { e.stopPropagation(); deleteMode(key); };
+        wrap.appendChild(del);
+      }
+      box.appendChild(wrap);
+    }
+    const add = document.createElement('button');
+    add.className = 'madd';
+    add.innerHTML = '<span>+ 모드 추가</span><small>나만의 모드 만들기</small>';
+    add.onclick = () => openModeDlg(welcome);
+    box.appendChild(add);
+  }
+  renderDaySummary();
+}
+
+$('noFixed').checked = !!settings.noFixed;
+$('noFixed').addEventListener('change', () => { settings.noFixed = $('noFixed').checked; store('ft.settings', settings); render(); renderOverride(); renderDaySummary(); });
+
+function renderDaySummary() {
+  const l = L(settings.mode || 'work'), m = getMode(settings.mode || 'work');
+  const wk = settings.week.groups.filter(g => dayNames(g.id)).map(g => dayNames(g.id) + ' ' + g.workStart + '~' + g.workEnd + (g.biweekly ? ' 격주' : ''));
+  if (dayNames('off')) wk.push(dayNames('off') + ' 쉼');
+  if ($('wUsual')) $('wUsual').textContent = dayNames('usual') ? settings.workStart + '~' + settings.workEnd + ' (위에서 정한 시간)' : '';
+  if (settings.noFixed) { $('daySummary').textContent = m.icon + ' ' + m.name + ' · 정해진 바쁜 시간 없음 · 취침 ' + settings.sleep; return; }
+  $('daySummary').textContent = m.icon + ' ' + m.name + ' · ' + l.busy + ' ' + settings.workStart + '~' + settings.workEnd +
+    ' · ' + l.go + ' ' + fmt((+settings.commuteIn || 0) + (+settings.commuteOut || 0)) + ' · 취침 ' + settings.sleep +
+    (wk.length ? ' · ' + wk.join(', ') : '');
+}
+
+// On first run a mode also brings sensible starting tasks and times; later switches only rename.
+function chooseMode(key, firstRun) {
+  const fresh = firstRun && !Object.keys(records).length && !timer;
+  const m = getMode(key);
+  // Each mode keeps its own hours: park the old mode's, bring back (or default) the new one's.
+  if (settings.mode && settings.mode !== key) {
+    settings.modeTimes[settings.mode] = pick(settings);
+    Object.assign(settings, timesFor(key));
+  }
+  settings.mode = key;
+  if (fresh && m.acts) { settings.acts = m.acts.slice(); settings.act = m.acts[0]; }
+  if (fresh && m.times) Object.assign(settings, m.times);
+  // A new user starts with the weekend off; a later mode switch keeps their weekday plan.
+  if (fresh && Object.values(settings.week.days).every(v => v === 'usual')) settings.week.days[0] = settings.week.days[6] = 'off';
+  FIELDS.forEach(f => { $(f).value = settings[f]; });
+  store('ft.settings', settings);
+  applyMode(); renderOverride(); render(); renderWeekly();
+  if (fresh) { askFirstTimes(); return; }
+  toast(m.icon + ' ' + m.name + ' 모드로 바꿨어요');
+}
+
+// On a fresh install, ask the two or three times the whole app depends on instead of guessing.
+async function askFirstTimes() {
+  const l = L(settings.mode);
+  $('askBody').innerHTML = '';
+  const ok = await new Promise(resolve => {
+    $('askTitle').textContent = getMode(settings.mode).icon + ' 나의 하루를 알려 주세요';
+    $('askText').textContent = '이 시간에 맞춰 잠들 때까지 남은 나의 시간을 계산해 드려요. 나중에 설정에서 바꿀 수 있어요.';
+    $('askBody').innerHTML = '<div class="grid" style="margin-top:6px"><label>' + l.start + ' 시간<input type="time" id="fwStart"></label><label>' + l.end + ' 시간<input type="time" id="fwEnd"></label>' +
+      '<label>잠드는 시간<input type="time" id="fwSleep"></label><label>일어나는 시간<input type="time" id="fwWake"></label></div>' +
+      '<label class="check"><input type="checkbox" id="fwNoFixed">정해진 바쁜 시간이 없어요 (육아·집안일처럼 하루가 들쭉날쭉해요)</label>';
+    $('fwStart').value = settings.workStart; $('fwEnd').value = settings.workEnd; $('fwSleep').value = settings.sleep; $('fwWake').value = settings.wake;
+    $('askYes').textContent = '시작하기'; $('askNo').textContent = '나중에';
+    const done = v => { $('askDlg').close(); resolve(v); };
+    $('askYes').onclick = () => done(true);
+    $('askNo').onclick = () => done(false);
+    $('askDlg').oncancel = e => { e.preventDefault(); done(false); };
+    $('fwNoFixed').onchange = () => { for (const id of ['fwStart', 'fwEnd']) $(id).closest('label').style.display = $('fwNoFixed').checked ? 'none' : ''; };
+    $('askDlg').showModal();
+    $('askYes').focus();
+  });
+  if (!ok) { toast(getMode(settings.mode).icon + ' ' + getMode(settings.mode).name + ' 모드로 시작해요'); return; }
+  settings.noFixed = $('fwNoFixed').checked;
+  $('noFixed').checked = settings.noFixed;
+  for (const [f, id] of [['workStart', 'fwStart'], ['workEnd', 'fwEnd'], ['sleep', 'fwSleep'], ['wake', 'fwWake']]) if ($(id).value) settings[f] = $(id).value;
+  FIELDS.forEach(f => { $(f).value = settings[f]; });
+  store('ft.settings', settings);
+  render(); renderDaySummary();
+  toast('좋아요! 이제 할 일을 눌러 시간을 재 보세요');
+}
+
+// Adding and removing the user's own modes.
+let modeDlgFirstRun = false, modeIcon = MODE_ICONS[0];
+function openModeDlg(firstRun) {
+  modeDlgFirstRun = firstRun;
+  modeIcon = MODE_ICONS[0];
+  for (const id of ['modeName', 'modeBusy', 'modeGo']) $(id).value = '';
+  renderModeIcons();
+  $('modeDlg').showModal();
+}
+function renderModeIcons() {
+  $('modeIcons').innerHTML = '';
+  for (const ic of MODE_ICONS) {
+    const b = document.createElement('button');
+    b.className = 'chip' + (ic === modeIcon ? ' on' : '');
+    b.textContent = ic;
+    b.onclick = () => { modeIcon = ic; renderModeIcons(); };
+    $('modeIcons').appendChild(b);
+  }
+}
+$('modeCancel').onclick = () => $('modeDlg').close();
+$('modeName').addEventListener('input', () => $('modeName').setCustomValidity(''));
+$('modeSave').onclick = () => {
+  const name = $('modeName').value.trim();
+  if (!name) { $('modeName').setCustomValidity('모드 이름을 적어 주세요'); $('modeName').reportValidity(); return; }
+  const c = { id: Date.now().toString(36), icon: modeIcon, name, busy: $('modeBusy').value.trim(), go: $('modeGo').value.trim() };
+  settings.customModes = (settings.customModes || []).concat(c);
+  store('ft.settings', settings);
+  $('modeDlg').close();
+  chooseMode('c-' + c.id, modeDlgFirstRun);
+};
+
+async function deleteMode(key) {
+  const m = getMode(key);
+  if (!await ask({ title: '"' + m.name + '" 모드를 지울까요?', text: '지금까지의 기록은 그대로 남아요.', yes: '지우기' })) return;
+  if (settings.mode === key) chooseMode('work');
+  settings.customModes = settings.customModes.filter(c => 'c-' + c.id !== key);
+  delete settings.modeTimes[key];
+  // Days planned with this mode go back to the usual mode, keeping any times set for them.
+  for (const [k, o] of Object.entries(overrides)) {
+    if (o.mode !== key) continue;
+    delete o.mode;
+    if (o.kind === 'mode') delete overrides[k];
+  }
+  store('ft.settings', settings); store('ft.overrides', overrides);
+  applyMode(); renderOverride(); render();
+  toast(m.icon + ' ' + m.name + ' 모드를 지웠어요');
+}
+
+// A quiet notification in the phone's notification shade while a timer runs. A web app
+// can't tick the number in it, so it shows when the timer started, plus a stop button
+// (Android) that the service worker passes back to this page.
+async function syncStatusNotif() {
+  if (!('serviceWorker' in navigator) || !('Notification' in window)) return;
+  const reg = await navigator.serviceWorker.getRegistration().catch(() => null);
+  if (!reg) return;
+  if (timer && settings.statusNotif && Notification.permission === 'granted') {
+    const d = new Date(timer.start), at = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+    const goal = focusGoal(timer.act);
+    reg.showNotification('⏱ ' + timer.act + ' 재는 중', {
+      body: at + '부터' + (timer.alerted && goal ? ' · 목표 ' + goal + '분 달성 🎉' : '') + ' · 눌러서 지금까지 시간 보기',
+      tag: 'ft-timer', renotify: false, silent: true, requireInteraction: true,
+      icon: 'icons/icon-192.png', badge: 'icons/icon-192.png',
+      actions: [{ action: 'stop', title: '⏸ 멈추기' }]
+    }).catch(() => {});
+  } else {
+    (await reg.getNotifications({ tag: 'ft-timer' }).catch(() => [])).forEach(n => n.close());
+  }
+}
+$('statusNotif').checked = settings.statusNotif && 'Notification' in window && Notification.permission === 'granted';
+$('statusNotif').addEventListener('change', async () => {
+  if ($('statusNotif').checked) {
+    if (!('Notification' in window)) { toast('이 휴대폰에서는 알림을 쓸 수 없어요'); $('statusNotif').checked = false; return; }
+    if (await Notification.requestPermission() !== 'granted') {
+      toast('알림이 허용되지 않았어요. 휴대폰 설정에서 허용해 주세요'); $('statusNotif').checked = false; return;
+    }
+  }
+  settings.statusNotif = $('statusNotif').checked;
+  store('ft.settings', settings);
+  syncStatusNotif();
+});
+if ('serviceWorker' in navigator) navigator.serviceWorker.addEventListener('message', e => {
+  if (e.data && e.data.type === 'stop-timer') stopTimer();
+});
+
+// Keep the screen on while timing, if the browser allows it; released when the timer stops.
+let wakeLock = null;
+async function syncWakeLock() {
+  const want = !!timer && settings.keepAwake && !document.hidden && 'wakeLock' in navigator;
+  if (want && !wakeLock) {
+    try { wakeLock = await navigator.wakeLock.request('screen'); wakeLock.addEventListener('release', () => { wakeLock = null; }); } catch (e) {}
+  } else if (!want && wakeLock) { wakeLock.release().catch(() => {}); wakeLock = null; }
+}
+$('keepAwake').checked = settings.keepAwake;
+$('keepAwake').addEventListener('change', () => { settings.keepAwake = $('keepAwake').checked; store('ft.settings', settings); syncWakeLock(); });
+
+// A timer left on for hours is usually forgotten; ask once every 3 hours.
+async function checkForgotten() {
+  if (!timer || $('askDlg').open) return;
+  // Past the user's bedtime, the likeliest story is that they fell asleep with it on.
+  const bed = new Date(timer.start), [bh, bm] = settings.sleep.split(':').map(Number);
+  bed.setHours(bh, bm, 0, 0);
+  if (bed <= new Date(timer.start)) bed.setDate(bed.getDate() + 1);
+  if (Date.now() > bed && !timer.bedAsked) {
+    timer.bedAsked = true; store('ft.timer', timer);
+    const guess = Math.round(Math.min(elapsedMin(), (bed - timer.start) / 60000));
+    const ans = await ask({ title: eul(timer.act) + ' 재다가 잠드신 것 같아요 😴', text: '잠드는 시간(' + settings.sleep + ')이 지나도록 타이머가 켜져 있었어요.\n실제로 몇 분 했나요?', number: guess, yes: '이만큼 했어요', no: '아직 하는 중' });
+    if (ans === null) { timer.askedAt = Date.now(); store('ft.timer', timer); return; }
+    const m = parseFloat(ans);
+    stopTimer(isNaN(m) ? guess : Math.max(0, m), false, '잠들어 버렸어요');
+    return;
+  }
+  const every = settings.longAsk === undefined ? 180 : +settings.longAsk;
+  if (!every || elapsedMin() < every) return;
+  if (timer.askedAt && (Date.now() - timer.askedAt) / 60000 < every) return;
+  if (await ask({ title: '아직 하는 중이에요?', text: eul(timer.act) + ' ' + fmt(elapsedMin()) + ' 동안 재고 있어요.', yes: '계속 재기', no: '멈추기' })) {
+    timer.askedAt = Date.now(); store('ft.timer', timer); return;
+  }
+  const ans = await ask({ title: '실제로 몇 분 했나요?', number: Math.round(elapsedMin()), yes: '이만큼 했어요', no: '나중에' });
+  const m = parseFloat(ans);
+  if (ans === null) { timer.askedAt = Date.now(); store('ft.timer', timer); return; }
+  stopTimer(isNaN(m) ? elapsedMin() : Math.max(0, m), false, '멈추는 걸 깜빡함');
+}
+
+$('fStop').onclick = () => stopTimer();
+$('taskAdd').onclick = async () => {
+  const name = ((await ask({ title: '할 일 추가', input: '', placeholder: '예: 영어 단어, 피아노, 성경 읽기', yes: '추가하기' })) || '').trim().slice(0, 15);
+  if (!name) return;
+  if (!settings.acts.includes(name)) settings.acts.push(name);
+  editing = false;
+  store('ft.settings', settings); renderToday();
+};
+$('taskEdit').onclick = () => { editing = !editing; renderToday(); };
+$('goalChips').onclick = e => {
+  if (e.target.dataset.goal === undefined) return;
+  settings.goal = +e.target.dataset.goal; store('ft.settings', settings); renderToday(); tick();
+};
+// How often a long-running timer asks whether the user is still going (0 = never; bedtime still asks).
+function renderLongChips() {
+  const v = String(settings.longAsk === undefined ? 180 : settings.longAsk);
+  for (const b of $('longChips').children) b.classList.toggle('on', b.dataset.long === v);
+}
+$('longChips').onclick = e => {
+  const v = e.target.dataset.long;
+  if (v === undefined) return;
+  settings.longAsk = +v; store('ft.settings', settings); renderLongChips();
+};
+renderLongChips();
+$('alertChips').onclick = e => {
+  const a = e.target.dataset.alert;
+  if (!a) return;
+  settings.alert = a; store('ft.settings', settings); renderToday();
+  if (a === 'sound' && !audio) try { audio = new (window.AudioContext || window.webkitAudioContext)(); } catch (e2) {}
+  alertGoal();  // a sample, so the user knows what it feels like
+};
+
+// Memo pad: one note kept until the user clears it, separate from the daily records.
+function renderMemo() {
+  const v = $('memo').value;
+  $('memoPreview').textContent = v.trim() ? v.trim().split('\n')[0] : '떠오른 생각을 적어 두는 곳';
+  $('memoClearRow').hidden = !v;
+}
+$('memo').value = load('ft.memo', '');
+$('memo').addEventListener('input', () => { store('ft.memo', $('memo').value); renderMemo(); });
+$('memoClear').onclick = async () => {
+  if (!await ask({ title: '메모를 모두 지울까요?', text: '지우면 되돌릴 수 없어요.', yes: '지우기' })) return;
+  $('memo').value = ''; store('ft.memo', ''); renderMemo();
+};
+renderMemo();
+
+// Each card's ? button folds its own help open and shut; inside a <summary> it must not
+// also fold the card.
+document.addEventListener('click', e => {
+  const b = e.target.closest('.helpbtn');
+  if (!b) return;
+  e.preventDefault(); e.stopPropagation();
+  const box = $('help-' + b.dataset.help), open = box.hidden;
+  box.hidden = !open;
+  b.classList.toggle('on', open);
+  const fold = box.closest('details');
+  if (open && fold && !fold.open) fold.open = true;
+}, true);
+// Tabs: 홈 holds the friend's room (or the plain 나의 시간 card) and the tasks; 기록, 꾸미기 and
+// 설정 hold everything else. 나의 시간 친구 can be turned off in 설정 for the plain text look.
+if (/\.netlify\.app$/.test(location.hostname)) document.body.classList.add('netlify');
+function showTab(name) {
+  for (const t of document.querySelectorAll('.tab')) t.hidden = t.id !== 'tab-' + name;
+  for (const b of $('tabbar').children) b.classList.toggle('on', b.dataset.tab === name);
+  window.scrollTo(0, 0);
+  if (name === 'deco' && $('shopBox').open) renderShop();
+}
+for (const b of $('tabbar').children) b.onclick = () => showTab(b.dataset.tab);
+function applyFriendView() {
+  const on = settings.showFriend !== false;
+  $('friendHome').hidden = !on;
+  $('mainCard').hidden = on;
+  $('decoTab').hidden = !on;
+  $('showFriend').checked = on;
+}
+$('showFriend').addEventListener('change', () => { settings.showFriend = $('showFriend').checked; store('ft.settings', settings); applyFriendView(); });
+applyFriendView();
+
+$('guideLink').onclick = e => {
+  e.preventDefault();
+  showTab('home');
+  $('help-start').hidden = false;
+  document.querySelector('[data-help="start"]').classList.add('on');
+  $('help-start').scrollIntoView({ behavior: 'smooth', block: 'center' });
+};
+
+// Editor for one day's minutes, so a wrong timer or tap can be fixed afterwards.
+let editKey = null;
+function openEditor(key) {
+  editKey = key;
+  const r = records[key] || {}, acts = r.acts || {}, d = new Date(key + 'T00:00');
+  $('editTitle').textContent = (d.getMonth() + 1) + '월 ' + d.getDate() + '일 기록 고치기';
+  const names = Object.keys(acts).concat(settings.acts.filter(a => !(a in acts)));
+  $('editRows').innerHTML = '';
+  for (const name of names) {
+    const row = document.createElement('label');
+    row.className = 'erow';
+    row.innerHTML = '<span></span><input type="number" min="0" step="1" inputmode="numeric"> 분';
+    row.firstChild.textContent = name;
+    row.children[1].value = Math.round(acts[name] || 0);
+    row.children[1].dataset.name = name;
+    $('editRows').appendChild(row);
+  }
+  $('editDelete').hidden = !records[key];
+  for (const c of $('reasonChips').children) c.classList.remove('on');
+  $('reasonText').value = '';
+  renderLog(r);
+  $('editDlg').showModal();
+}
+$('editToday').onclick = () => {
+  if (timer) toast('재고 있는 ' + timer.act + ' 시간은 멈출 때 더해져요');
+  openEditor(dateKey(new Date()));
+};
+$('editCancel').onclick = () => $('editDlg').close();
+function logLine(e, key) {
+  const d = new Date(e.t), sameDay = dateKey(d) === key;
+  const when = (sameDay ? '' : (d.getMonth() + 1) + '/' + d.getDate() + ' ') + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+  const what = e.kind === 'timer' ? '⏱ 타이머 ' + fmt(e.m)
+    : e.kind === 'manual' ? '✋ 직접 +' + fmt(e.m)
+    : e.kind === 'undo' ? '↩️ 되돌리기 -' + fmt(-e.m)
+    : '✏️ ' + fmt(e.from) + ' → ' + fmt(e.to);
+  return [when, e.act, what, e.reason];
+}
+
+function renderLog(r) {
+  const log = (r.log || []).slice().reverse();
+  $('logBox').hidden = !log.length;
+  $('logBox').open = false;
+  $('logList').innerHTML = '';
+  for (const e of log) {
+    const [when, act, what, why] = logLine(e, editKey);
+    const li = document.createElement('li');
+    li.innerHTML = '<span></span> <b></b> <span></span><span class="why"></span>';
+    li.children[0].textContent = when;
+    li.children[1].textContent = act;
+    li.children[2].textContent = what;
+    li.children[3].textContent = why ? ' · ' + why : '';
+    $('logList').appendChild(li);
+  }
+}
+
+$('reasonChips').onclick = e => {
+  if (!e.target.classList.contains('chip')) return;
+  const on = !e.target.classList.contains('on');
+  for (const c of $('reasonChips').children) c.classList.remove('on');
+  e.target.classList.toggle('on', on);
+};
+
+$('editSave').onclick = () => {
+  const acts = {}, old = (records[editKey] || {}).acts || {};
+  for (const inp of $('editRows').querySelectorAll('input')) {
+    const m = parseFloat(inp.value);
+    if (m > 0) acts[inp.dataset.name] = Math.round(m * 10) / 10;
+  }
+  const chip = $('reasonChips').querySelector('.on'), typed = $('reasonText').value.trim();
+  const reason = [chip && chip.textContent, typed].filter(Boolean).join(' · ');
+  // The inputs show whole minutes, so only count a task as changed if its rounded value moved.
+  const entries = [];
+  for (const name of new Set(Object.keys(old).concat(Object.keys(acts)))) {
+    const from = old[name] || 0, to = acts[name] || 0;
+    if (Math.round(from) === Math.round(to)) { if (from) acts[name] = from; continue; }
+    entries.push({ act: name, kind: 'edit', from: Math.round(from * 10) / 10, to, reason });
+  }
+  if (!entries.length) { $('editDlg').close(); return; }
+  undoStack.length = 0;
+  setDayActs(editKey, acts, entries);
+  $('editDlg').close();
+  toast('기록을 고쳤어요');
+};
+$('editDelete').onclick = async () => {
+  if (!await ask({ title: '이 날 기록을 모두 지울까요?', text: '지우면 되돌릴 수 없어요.', yes: '지우기' })) return;
+  delete records[editKey];
+  store('ft.records', records);
+  $('editDlg').close();
+  render();
+  toast('지웠어요');
+};
+
+$('undo').onclick = () => {
+  const last = undoStack.pop();
+  if (!last || !records[last.key]) { toast('되돌릴 기록이 없어요'); return; }
+  const acts = Object.assign({}, records[last.key].acts);
+  acts[last.act] = Math.round(((acts[last.act] || 0) - last.m) * 10) / 10;
+  if (acts[last.act] <= 0) delete acts[last.act];
+  setDayActs(last.key, acts, [{ act: last.act, kind: 'undo', m: -last.m }]);
+  toast(last.act + ' ' + fmt(last.m) + ' 뺐어요');
+};
+
+// Hand a file to the phone's share sheet (KakaoTalk, Drive, Files...) when it can take
+// files; otherwise download it. Chrome only shares a short list of types, so the backup
+// is JSON in a .txt file.
+async function shareOrDownload(file) {
+  if (navigator.canShare && navigator.canShare({ files: [file] })) {
+    try { await navigator.share({ files: [file], title: file.name }); return true; }
+    catch (e) { if (e.name === 'AbortError') return false; }
+  }
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(file);
+  a.download = file.name;
+  a.click();
+  return true;
+}
+
+function renderBackupInfo() {
+  const last = settings.lastBackup;
+  if (!last) { $('backupInfo').textContent = '아직 백업한 적이 없어요.'; return; }
+  const days = Math.round((new Date(dateKey(new Date())) - new Date(last)) / 864e5);
+  $('backupInfo').textContent = '마지막 백업: ' + (days <= 0 ? '오늘' : days + '일 전') + (days >= 7 ? ' · 백업할 때가 됐어요' : '');
+}
+
+// Records live only on this phone, so after 7 days without a backup (or a few days of records and
+// none yet) the home tab asks once a day; 나중에 hides it until tomorrow.
+function renderBackupNudge() {
+  const today = dateKey(new Date()), days = Object.keys(records).length, last = settings.lastBackup;
+  const since = last ? Math.round((new Date(today) - new Date(last)) / 864e5) : null;
+  const due = last ? since >= 7 : days >= 3;
+  $('backupNudge').hidden = !due || settings.backupSnooze === today;
+  $('backupNudgeText').textContent = last
+    ? '마지막 백업이 ' + since + '일 전이에요. 기록은 이 휴대폰에만 있어서, 가끔 백업해 두면 휴대폰을 바꿔도 되살릴 수 있어요.'
+    : days + '일치 기록이 쌓였어요. 기록은 이 휴대폰에만 있어서, 백업해 두면 휴대폰을 바꿔도 되살릴 수 있어요.';
+}
+$('backupNow').onclick = () => $('backupBtn').click();
+$('backupLater').onclick = () => { settings.backupSnooze = dateKey(new Date()); store('ft.settings', settings); renderBackupNudge(); };
+// Ask the browser to keep this site's storage instead of clearing it when space runs low.
+if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
+
+$('backupBtn').onclick = async () => {
+  const today = dateKey(new Date());
+  const data = { app: 'namun-sigan', version: 1, savedAt: new Date().toISOString(), settings, records, overrides, memo: load('ft.memo', '') };
+  const file = new File([JSON.stringify(data)], 'namun-sigan-backup-' + today.replace(/-/g, '') + '.txt', { type: 'text/plain' });
+  if (!await shareOrDownload(file)) return;
+  settings.lastBackup = today;
+  renderBackupNudge();
+  store('ft.settings', settings);
+  renderBackupInfo();
+  toast('백업 파일을 만들었어요');
+};
+
+$('restoreBtn').onclick = () => $('restoreFile').click();
+$('restoreFile').onchange = async () => {
+  const f = $('restoreFile').files[0];
+  $('restoreFile').value = '';
+  if (!f) return;
+  let data;
+  try { data = JSON.parse(await f.text()); } catch (e) {}
+  if (!data || data.app !== 'namun-sigan' || typeof data.records !== 'object') {
+    toast('이 앱의 백업 파일이 아니에요'); return;
+  }
+  const incoming = Object.keys(data.records);
+  if (!await ask({ title: incoming.length + '일치 기록을 불러올까요?', text: '같은 날짜가 이미 있으면 지금 휴대폰의 기록을 남겨요.', yes: '불러오기' })) return;
+  const fresh = !Object.keys(records).length;
+  let added = 0;
+  for (const k of incoming) if (!records[k]) { records[k] = data.records[k]; added++; }
+  for (const [k, o] of Object.entries(data.overrides || {})) if (!overrides[k]) overrides[k] = o;
+  if (data.memo && !$('memo').value.trim()) { $('memo').value = data.memo; store('ft.memo', data.memo); renderMemo(); }
+  store('ft.overrides', overrides);
+  // On a new phone take the old settings too; otherwise only bring over missing activities.
+  if (fresh && data.settings) { settings = Object.assign({}, DEFAULTS, data.settings); migrateWeek(); }
+  else if (data.settings) {
+    if (Array.isArray(data.settings.acts)) for (const a of data.settings.acts) if (!settings.acts.includes(a)) settings.acts.push(a);
+    // A friend still untouched on this phone takes the backup's friend, with its room and stars spent.
+    const mine = settings.friend, theirs = data.settings.friend;
+    if (theirs && (!mine || (!mine.spent && !(mine.owned || []).length))) settings.friend = theirs;
+  }
+  store('ft.records', records);
+  store('ft.settings', settings);
+  FIELDS.forEach(f => { $(f).value = settings[f]; });
+  $('remindAt').value = settings.remindAt;
+  $('notionUrl').value = settings.notionUrl;
+  $('note').value = (records[dateKey(new Date())] || {}).note || '';
+  render(); renderBackupInfo(); renderOverride(); applyMode(); renderWeekly(); $('keepAwake').checked = settings.keepAwake;
+  toast(added + '일치 기록을 불러왔어요');
+};
+
+$('csv').onclick = () => {
+  const rows = [['날짜', '나의 시간(분)', '쓴 시간(분)', '활동', '근무(분)', '출퇴근(분)', '쉬는 날', '메모', '고친 기록']];
+  Object.keys(records).sort().forEach(k => {
+    const r = records[k];
+    const fixes = (r.log || []).filter(e => e.kind === 'edit').map(e => logLine(e, k).filter(Boolean).join(' ')).join(' / ');
+    rows.push([k, r.free, usedTotal(r.acts), actsText(r.acts), r.work, r.commute, r.off ? 'O' : '', r.note || '', fixes]);
+  });
+  const csv = '﻿' + rows.map(r => r.map(c => '"' + String(c).replace(/"/g, '""') + '"').join(',')).join('\r\n');
+  shareOrDownload(new File([csv], 'namun-sigan-records.csv', { type: 'text/csv' }));
+};
+
+applyMode();
+renderOverride();
+renderWeekly();
+render();
+setInterval(() => { if (!editing) render(); }, 30000);
+tick();
+if (new URLSearchParams(location.search).has('stop')) { stopTimer(); history.replaceState(null, '', location.pathname); }
+syncStatusNotif();
+setTimeout(checkForgotten, 500);
+document.addEventListener('visibilitychange', () => { syncWakeLock(); if (!document.hidden) { render(); tick(); checkForgotten(); } });
+
+// Notion link. A static page can't call the Notion API (no CORS, and a token would be
+// exposed), so we copy today's line to the clipboard and open the user's own Notion page.
+$('notionUrl').value = settings.notionUrl;
+// Save on every keystroke: on phones the app is often closed before the field loses focus.
+$('notionUrl').addEventListener('input', () => {
+  settings.notionUrl = $('notionUrl').value.trim();
+  store('ft.settings', settings);
+});
+renderBackupInfo();
+
+// Copy and open synchronously inside the tap so phones don't block the new window as a popup.
+function copyText(text) {
+  const ta = document.createElement('textarea');
+  ta.value = text; ta.setAttribute('readonly', ''); ta.style.position = 'fixed'; ta.style.opacity = '0';
+  document.body.appendChild(ta); ta.select(); ta.setSelectionRange(0, text.length);
+  let ok = false;
+  try { ok = document.execCommand('copy'); } catch (e) {}
+  ta.remove();
+  if (!ok && navigator.clipboard) { navigator.clipboard.writeText(text).catch(() => {}); ok = true; }
+  return ok;
+}
+
+// One line for the Notion column; the weekly summary parses this format, so keep it stable.
+function notionLine() {
+  const p = plan(), note = $('note').value.trim(), acts = (records[dateKey(new Date())] || {}).acts;
+  const used = usedTotal(acts) ? '쓴 시간 ' + fmt(usedTotal(acts)) + ' (' + actsText(acts) + ')' : '';
+  return ['나의 시간 ' + fmt(p.free) + (p.off ? ' (쉬는 날)' : ''), used, note].filter(Boolean).join(' · ');
+}
+
+// A friendlier multi-line version for KakaoTalk, memo apps, and so on.
+function shareText() {
+  const now = new Date(), p = plan(), r = records[dateKey(now)] || {};
+  const lines = ['📅 ' + now.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' }) + ' 나의 시간',
+    '나의 시간 ' + fmt(p.free) + (p.off ? ' (쉬는 날)' : '') + ' 중 ' + fmt(usedTotal(r.acts)) + ' 사용'];
+  Object.entries(r.acts || {}).sort((a, b) => b[1] - a[1]).forEach(([k, v]) => lines.push('· ' + k + ' ' + fmt(v)));
+  if ($('note').value.trim()) lines.push('메모: ' + $('note').value.trim());
+  return lines.join('\n');
+}
+
+$('shareBtn').onclick = async () => {
+  const text = shareText();
+  if (navigator.share) {
+    try { await navigator.share({ text }); return; }
+    catch (e) { if (e.name === 'AbortError') return; }
+  }
+  toast(copyText(text) ? '복사했어요. 원하는 곳에 붙여넣으세요' : '복사가 안 됐어요');
+};
+
+$('toNotion').onclick = () => {
+  if (!settings.notionUrl) {
+    showTab('log');
+    $('notionSetup').open = true;
+    $('notionUrl').focus();
+    toast('먼저 노션 페이지 주소를 넣어 주세요');
+    return;
+  }
+  const ok = copyText(notionLine());
+  toast(ok ? '복사했어요. 노션 오늘 줄에 붙여넣으세요' : '복사가 안 됐어요. 직접 적어 주세요');
+  window.open(settings.notionUrl, '_blank');
+};
+
+// Daily reminder. Phone browsers can't wake a closed web app on a schedule without a push
+// server, so the dependable path is a repeating calendar alarm; the in-app notification
+// only fires while the app is still running.
+const REMIND_TITLE = '오늘 나의 시간 기록하기';
+const REMIND_TEXT = '나의 시간을 어디에 썼는지 한 줄 남겨요.';
+const appUrl = location.protocol.startsWith('http') ? location.href.split('#')[0] : '';
+const stamp = (d, t) => dateKey(d).replace(/-/g, '') + 'T' + t.replace(':', '') + '00';
+const plus10 = t => { const m = toMin(t) + 10; return String(Math.floor(m / 60) % 24).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0'); };
+
+$('remindAt').value = settings.remindAt;
+$('remindAt').addEventListener('change', () => {
+  settings.remindAt = $('remindAt').value || DEFAULTS.remindAt;
+  store('ft.settings', settings); render(); scheduleNotify();
+});
+
+$('icsBtn').onclick = () => {
+  const t = settings.remindAt, desc = (REMIND_TEXT + (appUrl ? '\\n' + appUrl : '')).replace(/,/g, '\\,');
+  const ics = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//free-time//KO', 'BEGIN:VEVENT',
+    'UID:free-time-reminder-' + Date.now() + '@free-time',
+    'DTSTAMP:' + new Date().toISOString().replace(/[-:]/g, '').slice(0, 15) + 'Z',
+    'DTSTART:' + stamp(new Date(), t), 'DTEND:' + stamp(new Date(), plus10(t)),
+    'RRULE:FREQ=DAILY', 'SUMMARY:' + REMIND_TITLE, 'DESCRIPTION:' + desc]
+    .concat(appUrl ? ['URL:' + appUrl] : [])
+    .concat(['BEGIN:VALARM', 'ACTION:DISPLAY', 'TRIGGER:PT0M', 'DESCRIPTION:' + REMIND_TITLE, 'END:VALARM',
+      'END:VEVENT', 'END:VCALENDAR']).join('\r\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([ics], { type: 'text/calendar' }));
+  a.download = 'namun-sigan-reminder.ics';
+  a.click();
+};
+
+$('gcalBtn').onclick = () => {
+  const t = settings.remindAt, d = new Date();
+  const q = new URLSearchParams({
+    action: 'TEMPLATE', text: REMIND_TITLE,
+    dates: stamp(d, t) + '/' + stamp(d, plus10(t)),
+    ctz: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    recur: 'RRULE:FREQ=DAILY',
+    details: REMIND_TEXT + (appUrl ? '\n' + appUrl : '')
+  });
+  window.open('https://calendar.google.com/calendar/render?' + q, '_blank');
+};
+
+let notifyTimer = null;
+function scheduleNotify() {
+  clearTimeout(notifyTimer);
+  if (!settings.notifyOn || !('Notification' in window) || Notification.permission !== 'granted') return;
+  const now = new Date(), at = new Date(now);
+  const m = toMin(settings.remindAt);
+  at.setHours(Math.floor(m / 60), m % 60, 0, 0);
+  if (at <= now) at.setDate(at.getDate() + 1);
+  notifyTimer = setTimeout(async () => {
+    if (!records[dateKey(new Date())]) {
+      const opts = { body: REMIND_TEXT, icon: 'icons/icon-192.png', tag: 'daily-reminder' };
+      const reg = 'serviceWorker' in navigator && await navigator.serviceWorker.getRegistration();
+      if (reg) reg.showNotification(REMIND_TITLE, opts); else new Notification(REMIND_TITLE, opts);
+    }
+    render();
+    scheduleNotify();
+  }, at - now);
+}
+
+$('notifyOn').checked = !!settings.notifyOn && 'Notification' in window && Notification.permission === 'granted';
+$('notifyOn').addEventListener('change', async () => {
+  if ($('notifyOn').checked) {
+    if (!('Notification' in window)) { toast('이 브라우저는 알림을 지원하지 않아요'); $('notifyOn').checked = false; return; }
+    if (await Notification.requestPermission() !== 'granted') {
+      toast('알림이 허용되지 않았어요'); $('notifyOn').checked = false; return;
+    }
+  }
+  settings.notifyOn = $('notifyOn').checked;
+  store('ft.settings', settings);
+  scheduleNotify();
+});
+scheduleNotify();
+
+// Home-screen install: Chrome/Edge/Samsung fire beforeinstallprompt; iOS Safari needs the Share menu.
+if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+const standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+const dismissed = load('ft.installDismissed', false);
+let deferredPrompt = null;
+const showInstall = () => { if (!standalone && !dismissed) $('install').hidden = false; };
+
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  showInstall();
+});
+window.addEventListener('appinstalled', () => { $('install').hidden = true; toast('홈 화면에 설치했어요'); });
+
+const ios = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+if (ios) {
+  $('installText').textContent = 'Safari 아래쪽 공유 버튼(□↑)을 누르고 "홈 화면에 추가"를 골라 주세요. 아이폰은 설치하지 않고 오래 열지 않으면 기록이 지워질 수 있어요.';
+  $('installBtn').hidden = true;
+  showInstall();
+}
+
+$('installBtn').onclick = async () => {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  await deferredPrompt.userChoice;
+  deferredPrompt = null;
+  $('install').hidden = true;
+};
+$('installClose').onclick = () => { $('install').hidden = true; store('ft.installDismissed', true); };
+</script>
+</body>
+</html>
