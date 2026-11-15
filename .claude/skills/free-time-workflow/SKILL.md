@@ -59,6 +59,8 @@ The owner is a beginner who builds only by talking to Claude, often from a phone
 
 ## Money and the workplace
 
+- The owner doesn't expect income and asked to skip the HR letter for now ("설레발 같아"). Don't steer conversations toward selling; follow their lead.
+
 - The owner works at a hospital. Before any income — sales, donations, anything — they need the hospital's written permission; never use the hospital's name and keep hospital or patient information out of everything. A draft request letter is on the Notion page 💰 유료화 계획.
 - Give realistic advice: no investment picks, point to official sources (국세청 126, 홈택스, platform seller guides) for tax and registration, and flag anything uncertain.
 - Bible verse text (개역개정) is copyrighted; references like "요한복음 3:16" are fine in anything sold.
