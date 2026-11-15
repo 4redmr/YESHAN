@@ -181,7 +181,7 @@
   @media (max-height: 700px) {
     #room { height: 228px; min-height: 0; }
     .roomtop small { font-size: 14px; } .roomtop b { font-size: 30px; }
-    #room .bubble { top: 72px; font-size: 15px; padding: 2px 10px; }
+    #room .bubble { top: 88px; font-size: 15px; padding: 2px 10px; }
     .walker { width: 100px; height: 75px; margin-left: -50px; bottom: 18px; }
   }
   .roomstars { position: absolute; right: 10px; bottom: 8px; z-index: 2; background: #fff; color: #333; border: 2px solid #333; border-radius: 12px; padding: 0 9px; font-size: 17px; }
@@ -312,6 +312,14 @@
   </div>
 
   <div class="tab" id="tab-home">
+  <section class="card" id="inapp" hidden>
+    <h2>🔗 다른 앱 안에서 열려 있어요</h2>
+    <p id="inappText" style="margin:0"></p>
+    <div class="row">
+      <button class="primary" id="inappOpen" hidden>브라우저로 열기</button>
+      <button id="inappCopy">주소 복사</button>
+    </div>
+  </section>
   <section class="card" id="welcome" hidden>
     <h2>👋 반가워요! 나에게 맞는 모드를 골라 주세요</h2>
     <p class="hint" style="margin:0">고르면 화면의 이름이 나에게 맞게 바뀌어요. 나중에 "나의 하루"에서 언제든 바꿀 수 있어요.</p>
@@ -344,6 +352,7 @@
         <li>맨 위 친구 방은 할 일을 기록할수록 별이 쌓이는 곳이에요. 오른쪽 아래에 지금 가진 별이 보여요. 설정의 <b>친구 보기</b>를 끄면 글자로만 보여요.</li>
         <li>각 칸 오른쪽 위의 <b>?</b>를 누르면 그 칸의 사용법이 나와요.</li>
         <li>휴대폰 홈 화면에 설치하면 앱처럼 쓸 수 있어요. 아이폰은 Safari의 공유(□↑) → "홈 화면에 추가"예요.</li>
+        <li>인스타그램·카카오톡 안에서 열었다면 크롬이나 Safari로 다시 열어 주세요. 그래야 기록이 안전하게 남아요.</li>
       </ul>
     </div>
 
@@ -1780,7 +1789,7 @@ async function shopTap(it) {
     if (!await ask({ title: eul(it.n) + ' 살까요?', text: '별 ⭐ ' + it.p.toLocaleString() + '개를 써요. 지금 가진 별은 ' + left.toLocaleString() + '개예요.', yes: '사기' })) return;
     f.spent += it.p; f.owned.push(it.id);
     if (!isThing(it)) f.wear = it.id;
-    toast(it.n + ' 샀어요!');
+    toast(it.n + (isThing(it) ? ' 샀어요! 🏠 홈 방에 놓였어요' : ' 샀어요! 친구가 입었어요'));
   }
   store('ft.settings', settings);
   renderFriend(); hop();
@@ -2586,7 +2595,7 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 const standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
 const dismissed = load('ft.installDismissed', false);
 let deferredPrompt = null;
-const showInstall = () => { if (!standalone && !dismissed) $('install').hidden = false; };
+const showInstall = () => { if (!standalone && !dismissed && $('inapp').hidden) $('install').hidden = false; };
 
 window.addEventListener('beforeinstallprompt', e => {
   e.preventDefault();
@@ -2600,6 +2609,28 @@ if (ios) {
   $('installText').textContent = 'Safari 아래쪽 공유 버튼(□↑)을 누르고 "홈 화면에 추가"를 골라 주세요. 아이폰은 설치하지 않고 오래 열지 않으면 기록이 지워질 수 있어요.';
   $('installBtn').hidden = true;
   showInstall();
+}
+
+// Opened from an Instagram/KakaoTalk/YouTube link, the page runs inside that app's own browser:
+// it can't be installed there and its records stay locked inside that app, so send people out first.
+const inApp = /Instagram|FBAN|FBAV|FB_IAB|Threads|KAKAOTALK|Line\/|NAVER\(inapp|DaumApps|YouTube|everytimeApp|BAND\//i.test(navigator.userAgent);
+if (inApp && !standalone) {
+  const kakao = /KAKAOTALK/i.test(navigator.userAgent), android = /android/i.test(navigator.userAgent);
+  $('inappText').textContent = '여기서 쓰면 기록이 이 앱 안에만 남아서 나중에 안 보일 수 있어요. ' +
+    (kakao ? '아래 버튼을 누르거나, ' : android ? '아래 버튼을 누르거나, ' : '') +
+    (ios ? '화면의 ⋯ 를 누르고 "Safari로 열기"(또는 "외부 브라우저로 열기")를 골라 주세요.' : '오른쪽 위 ⋮ 를 누르고 "다른 브라우저로 열기"(또는 "Chrome으로 열기")를 골라 주세요.');
+  if (kakao || android) $('inappOpen').hidden = false;
+  $('inappOpen').onclick = () => {
+    const url = location.href.split('#')[0];
+    location.href = kakao ? 'kakaotalk://web/openExternal?url=' + encodeURIComponent(url)
+      : 'intent://' + url.replace(/^https?:\/\//, '') + '#Intent;scheme=https;package=com.android.chrome;end';
+  };
+  $('inappCopy').onclick = async () => {
+    try { await navigator.clipboard.writeText(location.origin + location.pathname); toast('주소를 복사했어요. 크롬이나 Safari 주소창에 붙여 넣어 주세요'); }
+    catch { ask({ title: '이 주소를 길게 눌러 복사해 주세요', text: location.origin + location.pathname, no: '' }); }
+  };
+  $('inapp').hidden = false;
+  $('install').hidden = true;
 }
 
 $('installBtn').onclick = async () => {
